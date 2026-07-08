@@ -11,8 +11,7 @@ select = [
     "B",   # bugbear
 ]
 
-ignore = [
-]
+ignore = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"
