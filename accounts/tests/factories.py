@@ -2,7 +2,7 @@ import factory
 from django.contrib.auth import get_user_model
 from factory.django import DjangoModelFactory
 
-from accounts.models import Role
+from accounts.models import Role, UserSession
 
 User = get_user_model()
 
@@ -32,3 +32,13 @@ class RoleFactory(DjangoModelFactory):
 
     name = "student"
     description = factory.Faker("paragraph")
+
+
+class UserSessionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = UserSession
+
+    user = factory.SubFactory("tests.factories.UserFactory")
+    device = factory.Faker("word")
+    ip_address = factory.Faker("ipv4")
+    user_agent = factory.Faker("user_agent")

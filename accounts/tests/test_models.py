@@ -1,9 +1,10 @@
 import pytest
 from django.db import IntegrityError
+from django.utils import timezone
 
-from accounts.models import Role, User
+from accounts.models import Role, User, UserSession
 
-from .factories import RoleFactory, UserFactory
+from .factories import RoleFactory, UserFactory, UserSessionFactory
 
 
 @pytest.mark.django_db
@@ -120,3 +121,88 @@ class TestRoleModel:
         role = RoleFactory(name="student")
 
         assert str(role) == "Student"
+
+
+@pytest.mark.django_db
+class TestUserSessionModel:
+    @pytest.fixture
+    def user(self):
+        return UserFactory()
+
+    @pytest.fixture
+    def session(self, user):
+        return UserSessionFactory(user=user)
+
+    def test_create_session(self, user):
+        """A session can be created successfully."""
+        session = UserSession.objects.create(
+            user=user,
+            device="Chrome",
+            ip_address="127.0.0.1",
+            user_agent="Mozilla/5.0",
+        )
+
+        assert session.user == user
+        assert session.device == "Chrome"
+        assert session.ip_address == "127.0.0.1"
+        assert session.user_agent == "Mozilla/5.0"
+
+    def test_string_representation(self, session):
+        """The string representation includes the username and device."""
+        expected = f"{session.user} - {session.device}"
+
+        assert str(session) == expected
+
+    def test_session_is_not_revoked_by_default(self, session):
+        """New sessions should be active by default."""
+        assert session.is_revoked is False
+
+    def test_login_time_is_set_on_creation(self, session):
+        """Creating a session should automatically set the login time."""
+        assert session.login_at is not None
+        assert session.login_at <= timezone.now()
+
+    def test_last_activity_time_is_set_on_creation(self, session):
+        """Creating a session should automatically set the last activity time."""
+        assert session.last_activity_at is not None
+        assert session.last_activity_at <= timezone.now()
+
+    def test_last_activity_time_updates_after_save(self, session):
+        """Saving a session should update its last activity timestamp."""
+        original = session.last_activity_at
+
+        session.device = "Firefox"
+        session.save()
+
+        session.refresh_from_db()
+
+        assert session.last_activity_at >= original
+
+    def test_user_can_access_its_sessions(self, user):
+        """A user should access related sessions through the sessions relation."""
+        session = UserSessionFactory(user=user)
+
+        assert session in user.sessions.all()
+
+    def test_deleting_user_deletes_related_sessions(self, user):
+        """Deleting a user should cascade and remove its sessions."""
+        UserSessionFactory.create_batch(3, user=user)
+
+        user.delete()
+
+        assert UserSession.objects.count() == 0
+
+    def test_sessions_are_returned_newest_first(self, user):
+        """Sessions should be ordered by most recent login."""
+        older = UserSessionFactory(user=user)
+        newer = UserSessionFactory(user=user)
+
+        older.login_at = timezone.now() - timezone.timedelta(days=1)
+        older.save(update_fields=["login_at"])
+
+        newer.login_at = timezone.now()
+        newer.save(update_fields=["login_at"])
+
+        sessions = list(UserSession.objects.all())
+
+        assert sessions == [newer, older]
