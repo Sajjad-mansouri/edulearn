@@ -47,3 +47,37 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
+
+
+class InstructorProfile(models.Model):
+    profile = models.OneToOneField(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="instructor_profile",
+        verbose_name=_("Profile"),
+    )
+
+    professional_title = models.CharField(_("Professional Title"), max_length=255)
+    organization = models.CharField(_("Organization"), max_length=255, blank=True)
+
+    is_verified = models.BooleanField(_("Is Verified"), default=False)
+
+    introduction_video = models.FileField(
+        _("Introduction Video"),
+        upload_to="instructors/introduction_videos/",
+        blank=True,
+    )
+
+    years_of_experience = models.PositiveSmallIntegerField(
+        _("Years of Experience"), default=0
+    )
+
+    class Meta:
+        ordering = ["profile__user__username"]
+        indexes = [
+            models.Index(fields=["is_verified"]),
+            models.Index(fields=["years_of_experience"]),
+        ]
+
+    def __str__(self):
+        return f"{self.profile.user.username} - {self.professional_title}"
