@@ -2,6 +2,8 @@ import factory
 from django.contrib.auth import get_user_model
 from factory.django import DjangoModelFactory
 
+from accounts.models import Role
+
 User = get_user_model()
 
 
@@ -22,3 +24,11 @@ class UserFactory(DjangoModelFactory):
     def _after_postgeneration(cls, instance, create, results=None):
         if create:
             instance.save()
+
+
+class RoleFactory(DjangoModelFactory):
+    class Meta:
+        model = Role
+
+    name = "student"
+    description = factory.Faker("paragraph")

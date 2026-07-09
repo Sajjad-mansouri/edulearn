@@ -26,3 +26,6 @@ class Role(models.Model):
     user = models.ManyToManyField(User, related_name="roles", verbose_name=_("User"))
     name = models.CharField(_("Name"), choices=ROLE_CHOICES, max_length=18)
     description = models.TextField(_("Description"))
+
+    def __str__(self):
+        return f"{self.get_name_display()}"
