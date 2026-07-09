@@ -5,9 +5,9 @@ from django.db import IntegrityError
 from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
-from profiles.models import Profile
+from profiles.models import InstructorProfile, Profile
 
-from .factories import ProfileFactory
+from .factories import InstructorProfileFactory, ProfileFactory
 
 
 @pytest.mark.django_db
@@ -95,3 +95,73 @@ class TestProfileModel:
         user.delete()
 
         assert Profile.objects.count() == 0
+
+
+@pytest.mark.django_db
+class TestInstructorProfileModel:
+    @pytest.fixture
+    def profile(self):
+        return ProfileFactory()
+
+    @pytest.fixture
+    def instructor_profile(self, profile):
+        return InstructorProfileFactory(profile=profile)
+
+    def test_create_instructor_profile(self, profile):
+        """An instructor profile can be created."""
+        instructor = InstructorProfile.objects.create(
+            profile=profile,
+            professional_title="Senior Python Instructor",
+            organization="OpenAI Academy",
+            years_of_experience=8,
+        )
+
+        assert instructor.profile == profile
+        assert instructor.professional_title == "Senior Python Instructor"
+        assert instructor.organization == "OpenAI Academy"
+        assert instructor.years_of_experience == 8
+        assert instructor.is_verified is False
+
+    def test_string_representation(self, instructor_profile):
+        """The string representation should include the username and title."""
+        expected = (
+            f"{instructor_profile.profile.user.username} - "
+            f"{instructor_profile.professional_title}"
+        )
+
+        assert str(instructor_profile) == expected
+
+    def test_profile_can_access_instructor_profile(self, instructor_profile):
+        """A profile should access its instructor profile through the reverse relation."""
+        assert instructor_profile.profile.instructor_profile == instructor_profile
+
+    def test_profile_can_have_only_one_instructor_profile(self, profile):
+        """A profile cannot have more than one instructor profile."""
+        InstructorProfileFactory(profile=profile)
+
+        with pytest.raises(IntegrityError):
+            InstructorProfileFactory(profile=profile)
+
+    def test_is_verified_defaults_to_false(self, instructor_profile):
+        """New instructor profiles should not be verified by default."""
+        assert instructor_profile.is_verified is False
+
+    def test_optional_fields_can_be_blank(self, profile):
+        """Optional fields may be omitted when creating a profile."""
+        instructor = InstructorProfile.objects.create(
+            profile=profile,
+            professional_title="Backend Instructor",
+        )
+
+        assert instructor.organization == ""
+        assert instructor.introduction_video.name == ""
+        assert instructor.years_of_experience == 0
+
+    def test_deleting_profile_deletes_instructor_profile(self):
+        """Deleting a profile should delete its instructor profile."""
+        profile = ProfileFactory()
+        InstructorProfileFactory(profile=profile)
+
+        profile.delete()
+
+        assert InstructorProfile.objects.count() == 0

@@ -2,7 +2,7 @@
 
 import factory
 
-from profiles.models import Profile
+from profiles.models import InstructorProfile, Profile
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
@@ -20,3 +20,17 @@ class ProfileFactory(factory.django.DjangoModelFactory):
     github = factory.Faker("url")
     company = factory.Faker("company")
     job_title = factory.Faker("job")
+
+
+class InstructorProfileFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = InstructorProfile
+
+    profile = factory.SubFactory(ProfileFactory)
+    professional_title = factory.Faker("job")
+    organization = factory.Faker("company")
+    years_of_experience = factory.Faker(
+        "random_int",
+        min=0,
+        max=30,
+    )
