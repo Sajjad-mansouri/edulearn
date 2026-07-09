@@ -5,9 +5,14 @@ from django.db import IntegrityError
 from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
-from profiles.models import InstructorProfile, Profile, StudentProfile
+from profiles.models import InstructorProfile, Profile, Skill, StudentProfile
 
-from .factories import InstructorProfileFactory, ProfileFactory, StudentProfileFactory
+from .factories import (
+    InstructorProfileFactory,
+    ProfileFactory,
+    SkillFactory,
+    StudentProfileFactory,
+)
 
 
 @pytest.mark.django_db
@@ -229,3 +234,107 @@ class TestStudentProfileModel:
         profile.delete()
 
         assert StudentProfile.objects.count() == 0
+
+
+@pytest.mark.django_db
+class TestSkillModel:
+    @pytest.fixture
+    def profile(self):
+        return ProfileFactory()
+
+    @pytest.fixture
+    def skill(self):
+        return SkillFactory()
+
+    def test_create_skill(self):
+        """A skill can be created."""
+        skill = Skill.objects.create(
+            name="Python",
+            slug="python",
+            description="Programming language",
+        )
+
+        assert skill.name == "Python"
+        assert skill.slug == "python"
+        assert skill.description == "Programming language"
+
+    def test_string_representation(self, skill):
+        """The string representation should return the skill name."""
+        assert str(skill) == skill.name
+
+    def test_description_is_optional(self):
+        """A skill can be created without a description."""
+        skill = Skill.objects.create(
+            name="Django",
+            slug="django",
+        )
+
+        assert skill.description == ""
+
+    def test_slug_must_be_unique(self):
+        """Two skills cannot share the same slug."""
+        SkillFactory(slug="python")
+
+        with pytest.raises(IntegrityError):
+            SkillFactory(slug="python")
+
+    def test_profile_can_have_multiple_skills(self, profile):
+        """A profile can have multiple skills."""
+        python = SkillFactory(name="Python", slug="python")
+        django = SkillFactory(name="Django", slug="django")
+
+        profile.skills.add(python, django)
+
+        assert set(profile.skills.all()) == {python, django}
+
+    def test_skill_can_belong_to_multiple_profiles(self):
+        """A skill can be shared by multiple profiles."""
+        skill = SkillFactory()
+
+        profile1 = ProfileFactory()
+        profile2 = ProfileFactory()
+
+        skill.profiles.add(profile1, profile2)
+
+        assert set(skill.profiles.all()) == {profile1, profile2}
+
+    def test_profile_can_access_its_skills(self, profile):
+        """A profile should access its skills through the reverse relation."""
+        skill = SkillFactory()
+
+        profile.skills.add(skill)
+
+        assert skill in profile.skills.all()
+
+    def test_skill_can_access_assigned_profiles(self, skill):
+        """A skill should access its assigned profiles."""
+        profile = ProfileFactory()
+
+        skill.profiles.add(profile)
+
+        assert profile in skill.profiles.all()
+
+    def test_generates_slug_when_slug_is_not_provided(self):
+        skill = Skill.objects.create(
+            name="Machine Learning",
+        )
+
+        assert skill.slug == "machine-learning"
+
+    def test_does_not_override_existing_slug(self):
+        skill = Skill.objects.create(
+            name="Machine Learning",
+            slug="ml",
+        )
+
+        assert skill.slug == "ml"
+
+    def test_slug_does_not_change_when_name_is_updated(self, skill):
+        slug = skill.slug
+        skill.name = "Advanced Python"
+
+        skill.save()
+
+        skill.refresh_from_db()
+
+        assert skill.slug == slug

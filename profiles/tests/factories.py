@@ -2,7 +2,7 @@
 
 import factory
 
-from profiles.models import InstructorProfile, Profile, StudentProfile
+from profiles.models import InstructorProfile, Profile, Skill, StudentProfile
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
@@ -45,3 +45,12 @@ class StudentProfileFactory(factory.django.DjangoModelFactory):
     learning_goal = factory.Faker("sentence")
     current_streak = 5
     longest_streak = 10
+
+
+class SkillFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Skill
+
+    name = factory.Sequence(lambda n: f"Skill {n}")
+    slug = factory.Sequence(lambda n: f"skill-{n}")
+    description = factory.Faker("sentence")
