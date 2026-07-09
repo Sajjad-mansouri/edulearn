@@ -2,9 +2,9 @@ import pytest
 from django.db import IntegrityError
 from django.utils import timezone
 
-from accounts.models import Role, User, UserSession
+from accounts.models import LoginHistory, Role, User, UserSession
 
-from .factories import RoleFactory, UserFactory, UserSessionFactory
+from .factories import LoginHistoryFactory, RoleFactory, UserFactory, UserSessionFactory
 
 
 @pytest.mark.django_db
@@ -206,3 +206,96 @@ class TestUserSessionModel:
         sessions = list(UserSession.objects.all())
 
         assert sessions == [newer, older]
+
+
+@pytest.mark.django_db
+class TestLoginHistoryModel:
+    @pytest.fixture
+    def user(
+        self,
+    ):
+        return UserFactory()
+
+    @pytest.fixture
+    def login_history(self, user):
+        return LoginHistoryFactory(user=user)
+
+    def test_create_login_history(self, user):
+        """A login history record can be created."""
+        history = LoginHistory.objects.create(
+            user=user,
+            is_successful=True,
+            ip_address="127.0.0.1",
+            device="Chrome",
+            location="London",
+        )
+
+        assert history.user == user
+        assert history.is_successful is True
+        assert history.ip_address == "127.0.0.1"
+        assert history.device == "Chrome"
+        assert history.location == "London"
+
+    def test_timestamp_is_set_automatically(self, login_history):
+        """Creating a record should automatically populate the timestamp."""
+        assert login_history.timestamp is not None
+        assert login_history.timestamp <= timezone.now()
+
+    @pytest.mark.parametrize(
+        ("is_successful", "status"),
+        [
+            (True, "Success"),
+            (False, "Failed"),
+        ],
+    )
+    def test_string_representation(self, user, is_successful, status):
+        """The string representation should include the user, status and timestamp."""
+        history = LoginHistoryFactory(
+            user=user,
+            is_successful=is_successful,
+        )
+
+        expected = f"{user} - {status} ({history.timestamp:%Y-%m-%d %H:%M:%S})"
+
+        assert str(history) == expected
+
+    def test_location_can_be_blank(self, user):
+        """A login record may be created without a location."""
+        history = LoginHistory.objects.create(
+            user=user,
+            is_successful=True,
+            ip_address="127.0.0.1",
+            device="Chrome",
+            location="",
+        )
+
+        assert history.location == ""
+
+    def test_user_can_access_login_history(self, user):
+        """Users should access their login history through the reverse relation."""
+        history = LoginHistoryFactory(user=user)
+
+        assert history in user.login_history.all()
+
+    def test_deleting_user_deletes_login_history(self, user):
+        """Deleting a user should delete its login history."""
+        LoginHistoryFactory.create_batch(3, user=user)
+
+        user.delete()
+
+        assert LoginHistory.objects.count() == 0
+
+    def test_login_history_is_ordered_by_newest_first(self, user):
+        """The newest login records should be returned first."""
+        older = LoginHistoryFactory(user=user)
+        newer = LoginHistoryFactory(user=user)
+
+        older.timestamp = timezone.now() - timezone.timedelta(days=1)
+        older.save(update_fields=["timestamp"])
+
+        newer.timestamp = timezone.now()
+        newer.save(update_fields=["timestamp"])
+
+        histories = list(LoginHistory.objects.all())
+
+        assert histories == [newer, older]

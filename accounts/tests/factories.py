@@ -2,7 +2,7 @@ import factory
 from django.contrib.auth import get_user_model
 from factory.django import DjangoModelFactory
 
-from accounts.models import Role, UserSession
+from accounts.models import LoginHistory, Role, UserSession
 
 User = get_user_model()
 
@@ -38,7 +38,18 @@ class UserSessionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = UserSession
 
-    user = factory.SubFactory("tests.factories.UserFactory")
+    user = factory.SubFactory(UserFactory)
     device = factory.Faker("word")
     ip_address = factory.Faker("ipv4")
     user_agent = factory.Faker("user_agent")
+
+
+class LoginHistoryFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LoginHistory
+
+    user = factory.SubFactory(UserFactory)
+    is_successful = True
+    ip_address = factory.Faker("ipv4")
+    device = factory.Faker("word")
+    location = factory.Faker("city")
