@@ -5,9 +5,9 @@ from django.db import IntegrityError
 from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
-from profiles.models import InstructorProfile, Profile
+from profiles.models import InstructorProfile, Profile, StudentProfile
 
-from .factories import InstructorProfileFactory, ProfileFactory
+from .factories import InstructorProfileFactory, ProfileFactory, StudentProfileFactory
 
 
 @pytest.mark.django_db
@@ -165,3 +165,67 @@ class TestInstructorProfileModel:
         profile.delete()
 
         assert InstructorProfile.objects.count() == 0
+
+
+@pytest.mark.django_db
+class TestStudentProfileModel:
+    @pytest.fixture
+    def profile(self):
+        return ProfileFactory()
+
+    @pytest.fixture
+    def student_profile(self, profile):
+        return StudentProfileFactory(profile=profile)
+
+    def test_create_student_profile(self, profile):
+        """A student profile can be created."""
+        student_profile = StudentProfile.objects.create(
+            profile=profile,
+            learning_goal="Become a Django developer",
+            current_streak=15,
+            longest_streak=42,
+        )
+
+        assert student_profile.profile == profile
+        assert student_profile.learning_goal == "Become a Django developer"
+        assert student_profile.current_streak == 15
+        assert student_profile.longest_streak == 42
+
+    def test_string_representation(self, student_profile):
+        """Returns a human-readable representation."""
+        expected = f"{student_profile.profile.user.username}'s Student Profile"
+
+        assert str(student_profile) == expected
+
+    def test_profile_can_access_student_profile(self, student_profile):
+        """A profile should access its student profile through the reverse relation."""
+        assert student_profile.profile.student_profile == student_profile
+
+    def test_profile_cannot_have_multiple_student_profiles(self, profile):
+        """A profile can own only one student profile."""
+        StudentProfileFactory(profile=profile)
+
+        with pytest.raises(IntegrityError):
+            StudentProfileFactory(profile=profile)
+
+    def test_learning_goal_is_optional(self, profile):
+        """A learning goal is not required."""
+        student_profile = StudentProfile.objects.create(profile=profile)
+
+        assert student_profile.learning_goal == ""
+
+    def test_streaks_default_to_zero(self, profile):
+        """New student profiles should start with zero streaks."""
+        student_profile = StudentProfile.objects.create(profile=profile)
+
+        assert student_profile.current_streak == 0
+        assert student_profile.longest_streak == 0
+
+    def test_deleting_profile_deletes_student_profile(self):
+        """Deleting a profile should delete the related student profile."""
+        profile = ProfileFactory()
+        StudentProfileFactory(profile=profile)
+
+        profile.delete()
+
+        assert StudentProfile.objects.count() == 0

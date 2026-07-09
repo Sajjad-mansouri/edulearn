@@ -2,7 +2,7 @@
 
 import factory
 
-from profiles.models import InstructorProfile, Profile
+from profiles.models import InstructorProfile, Profile, StudentProfile
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
@@ -34,3 +34,14 @@ class InstructorProfileFactory(factory.django.DjangoModelFactory):
         min=0,
         max=30,
     )
+
+
+class StudentProfileFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = StudentProfile
+
+    profile = factory.SubFactory(ProfileFactory)
+
+    learning_goal = factory.Faker("sentence")
+    current_streak = 5
+    longest_streak = 10
