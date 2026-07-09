@@ -53,3 +53,27 @@ class UserSession(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.device}"
+
+
+class LoginHistory(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="login_history",
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_successful = models.BooleanField()
+    ip_address = models.GenericIPAddressField()
+    device = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["user"]),
+            models.Index(fields=["timestamp"]),
+        ]
+
+    def __str__(self):
+        status = "Success" if self.is_successful else "Failed"
+        return f"{self.user} - {status} ({self.timestamp:%Y-%m-%d %H:%M:%S})"
