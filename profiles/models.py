@@ -81,3 +81,27 @@ class InstructorProfile(models.Model):
 
     def __str__(self):
         return f"{self.profile.user.username} - {self.professional_title}"
+
+
+class StudentProfile(models.Model):
+    profile = models.OneToOneField(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="student_profile",
+        verbose_name=_("Profile"),
+    )
+
+    learning_goal = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Student's primary learning objective.",
+    )
+
+    current_streak = models.PositiveIntegerField(_("Current Streak"), default=0)
+    longest_streak = models.PositiveIntegerField(_("Longest Streak"), default=0)
+
+    class Meta:
+        ordering = ["profile__user__username"]
+
+    def __str__(self):
+        return f"{self.profile.user.username}'s Student Profile"
