@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -133,3 +134,51 @@ class Skill(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
+
+class Education(models.Model):
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="education",
+        verbose_name=_("Profile"),
+    )
+
+    institution = models.CharField(_("Institution"), max_length=255)
+    degree = models.CharField(_("Degree"), max_length=255)
+    field_of_study = models.CharField(_("Field Of Study"), max_length=255)
+
+    start_year = models.PositiveSmallIntegerField(
+        _("Start Year"), null=True, blank=True
+    )
+    end_year = models.PositiveSmallIntegerField(
+        _("End Year"),
+        null=True,
+        blank=True,
+        help_text="Leave blank if currently studying.",
+    )
+
+    class Meta:
+        ordering = ["-start_year", "-end_year", "institution"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(end_year__isnull=True)
+                | models.Q(end_year__gte=models.F("start_year")),
+                name="education_end_year_gte_start_year",
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+
+        if (
+            self.end_year is not None
+            and self.start_year is not None
+            and self.end_year < self.start_year
+        ):
+            raise ValidationError(
+                {"end_year": ("End year must be greater than or equal to start year.")}
+            )
+
+    def __str__(self):
+        return f"{self.degree} in {self.field_of_study} at {self.institution}"
