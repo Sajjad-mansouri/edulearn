@@ -257,3 +257,43 @@ class Experience(models.Model):
 
     def __str__(self):
         return f"{self.position} at {self.company}"
+
+
+class SocialLink(models.Model):
+    class Visibility(models.TextChoices):
+        PUBLIC = "public", _("Public")
+        PRIVATE = "private", _("Private")
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="social_links",
+        verbose_name=_("Profile"),
+    )
+
+    platform = models.CharField(
+        _("Platform"),
+        max_length=100,
+    )
+
+    url = models.URLField(
+        _("URL"),
+    )
+
+    visibility = models.CharField(
+        _("Visibility"),
+        max_length=20,
+        choices=Visibility.choices,
+        default=Visibility.PUBLIC,
+    )
+
+    display_order = models.PositiveSmallIntegerField(
+        _("Display Order"),
+        default=0,
+    )
+
+    class Meta:
+        ordering = ["display_order", "platform"]
+
+    def __str__(self):
+        return f"{self.platform} ({self.profile.user.username})"
