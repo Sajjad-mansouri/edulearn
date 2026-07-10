@@ -1,13 +1,15 @@
 # tests/accounts/test_profile_model.py
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
-from profiles.models import InstructorProfile, Profile, Skill, StudentProfile
+from profiles.models import Education, InstructorProfile, Profile, Skill, StudentProfile
 
 from .factories import (
+    EducationFactory,
     InstructorProfileFactory,
     ProfileFactory,
     SkillFactory,
@@ -338,3 +340,119 @@ class TestSkillModel:
         skill.refresh_from_db()
 
         assert skill.slug == slug
+
+
+@pytest.mark.django_db
+class TestEducationModel:
+    @pytest.fixture
+    def profile(self):
+        return ProfileFactory()
+
+    @pytest.fixture
+    def education(self, profile):
+        return EducationFactory(profile=profile)
+
+    def test_create_education(self, profile):
+        """An education record can be created."""
+        education = Education.objects.create(
+            profile=profile,
+            institution="MIT",
+            degree="Bachelor",
+            field_of_study="Computer Science",
+            start_year=2018,
+            end_year=2022,
+        )
+
+        assert education.profile == profile
+        assert education.institution == "MIT"
+        assert education.degree == "Bachelor"
+        assert education.field_of_study == "Computer Science"
+        assert education.start_year == 2018
+        assert education.end_year == 2022
+
+    def test_string_representation(self, education):
+        """Returns a human-readable representation."""
+        assert (
+            str(education)
+            == "Master of Science in Computer Science at University of Oxford"
+        )
+
+    def test_profile_can_access_education_records(self, profile):
+        """A profile should access its education records through the reverse relation."""
+        education = EducationFactory(profile=profile)
+
+        assert education in profile.education.all()
+
+    def test_multiple_education_records_can_belong_to_profile(self, profile):
+        """A profile can have multiple education records."""
+        EducationFactory.create_batch(3, profile=profile)
+
+        assert profile.education.count() == 3
+
+    def test_end_year_can_be_blank(self, profile):
+        """An education record may represent ongoing studies."""
+        education = Education.objects.create(
+            profile=profile,
+            institution="MIT",
+            degree="Bachelor",
+            field_of_study="Computer Science",
+            start_year=2022,
+            end_year=None,
+        )
+
+        assert education.end_year is None
+
+    def test_start_year_can_be_blank(self, profile):
+        """An education record may omit the start year."""
+        education = Education.objects.create(
+            profile=profile,
+            institution="MIT",
+            degree="Bachelor",
+            field_of_study="Computer Science",
+            start_year=None,
+            end_year=2022,
+        )
+
+        assert education.start_year is None
+
+    def test_clean_allows_equal_start_and_end_year(self, education):
+        """The same start and end year is valid."""
+        education.start_year = 2022
+        education.end_year = 2022
+
+        education.full_clean()
+        assert education.start_year == education.end_year
+
+    def test_clean_raises_validation_error_when_end_year_before_start_year(
+        self,
+        education,
+    ):
+        """End year cannot be earlier than start year."""
+        education.start_year = 2023
+        education.end_year = 2022
+
+        with pytest.raises(ValidationError) as exc_info:
+            education.full_clean()
+
+        assert "end_year" in exc_info.value.message_dict
+
+    def test_database_constraint_prevents_invalid_years(self, profile):
+        """The database should reject records with an invalid year range."""
+        with pytest.raises(IntegrityError):
+            Education.objects.create(
+                profile=profile,
+                institution="MIT",
+                degree="Bachelor",
+                field_of_study="Computer Science",
+                start_year=2023,
+                end_year=2022,
+            )
+
+    def test_deleting_profile_deletes_education_records(self):
+        """Deleting a profile should delete its education records."""
+        profile = ProfileFactory()
+        EducationFactory.create_batch(2, profile=profile)
+
+        profile.delete()
+
+        assert not Education.objects.exists()

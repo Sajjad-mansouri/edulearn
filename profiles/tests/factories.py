@@ -2,7 +2,7 @@
 
 import factory
 
-from profiles.models import InstructorProfile, Profile, Skill, StudentProfile
+from profiles.models import Education, InstructorProfile, Profile, Skill, StudentProfile
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
@@ -54,3 +54,17 @@ class SkillFactory(factory.django.DjangoModelFactory):
     name = factory.Sequence(lambda n: f"Skill {n}")
     slug = factory.Sequence(lambda n: f"skill-{n}")
     description = factory.Faker("sentence")
+
+
+class EducationFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Education
+
+    profile = factory.SubFactory(Profile)
+
+    institution = "University of Oxford"
+    degree = "Master of Science"
+    field_of_study = "Computer Science"
+
+    start_year = 2020
+    end_year = 2022
