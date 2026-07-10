@@ -1,8 +1,16 @@
 # tests/factories.py
+from datetime import date
 
 import factory
 
-from profiles.models import Education, InstructorProfile, Profile, Skill, StudentProfile
+from profiles.models import (
+    Education,
+    Experience,
+    InstructorProfile,
+    Profile,
+    Skill,
+    StudentProfile,
+)
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
@@ -68,3 +76,16 @@ class EducationFactory(factory.django.DjangoModelFactory):
 
     start_year = 2020
     end_year = 2022
+
+
+class ExperienceFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Experience
+
+    profile = factory.SubFactory(Profile)
+
+    company = "test_company"
+    position = "Backend Developer"
+    start_date = date(2022, 1, 1)
+    end_date = date(2024, 1, 1)
+    is_current = False

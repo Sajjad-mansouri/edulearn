@@ -1,4 +1,5 @@
 # tests/accounts/test_profile_model.py
+from datetime import date
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -6,10 +7,18 @@ from django.db import IntegrityError
 from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
-from profiles.models import Education, InstructorProfile, Profile, Skill, StudentProfile
+from profiles.models import (
+    Education,
+    Experience,
+    InstructorProfile,
+    Profile,
+    Skill,
+    StudentProfile,
+)
 
 from .factories import (
     EducationFactory,
+    ExperienceFactory,
     InstructorProfileFactory,
     ProfileFactory,
     SkillFactory,
@@ -119,13 +128,13 @@ class TestInstructorProfileModel:
         instructor = InstructorProfile.objects.create(
             profile=profile,
             professional_title="Senior Python Instructor",
-            organization="OpenAI Academy",
+            organization="test_company Academy",
             years_of_experience=8,
         )
 
         assert instructor.profile == profile
         assert instructor.professional_title == "Senior Python Instructor"
-        assert instructor.organization == "OpenAI Academy"
+        assert instructor.organization == "test_company Academy"
         assert instructor.years_of_experience == 8
         assert instructor.is_verified is False
 
@@ -456,3 +465,123 @@ class TestEducationModel:
         profile.delete()
 
         assert not Education.objects.exists()
+
+
+@pytest.mark.django_db
+class TestExperienceModel:
+    @pytest.fixture
+    def profile(self):
+        return ProfileFactory()
+
+    @pytest.fixture
+    def experience(self, profile):
+        return ExperienceFactory(profile=profile)
+
+    def test_create_experience(self, profile):
+        """An experience record can be created."""
+        experience = Experience.objects.create(
+            profile=profile,
+            company="test_company",
+            position="Backend Developer",
+            start_date=date(2022, 1, 1),
+            end_date=date(2024, 1, 1),
+        )
+
+        assert experience.profile == profile
+        assert experience.company == "test_company"
+        assert experience.position == "Backend Developer"
+        assert experience.start_date == date(2022, 1, 1)
+        assert experience.end_date == date(2024, 1, 1)
+        assert experience.is_current is False
+
+    def test_string_representation(self, experience):
+        """Returns a human-readable representation."""
+        assert str(experience) == "Backend Developer at test_company"
+
+    def test_profile_can_access_experiences(self, profile):
+        """A profile should access its experiences through the reverse relation."""
+        experience = ExperienceFactory(profile=profile)
+
+        assert experience in profile.experiences.all()
+
+    def test_profile_can_have_multiple_experiences(self, profile):
+        """A profile can have multiple experience records."""
+        ExperienceFactory.create_batch(3, profile=profile)
+
+        assert profile.experiences.count() == 3
+
+    def test_current_position_can_have_no_end_date(self, experience):
+        """A current position may omit the end date."""
+        experience.is_current = True
+        experience.end_date = None
+
+        experience.full_clean()
+
+        assert experience.end_date is None
+
+    def test_end_date_can_be_blank(self, experience):
+        """An experience may omit the end date."""
+        experience.end_date = None
+
+        experience.full_clean()
+
+        assert experience.end_date is None
+
+    def test_clean_rejects_end_date_before_start_date(self, experience):
+        """End date must not be earlier than the start date."""
+        experience.start_date = date(2024, 1, 1)
+        experience.end_date = date(2023, 1, 1)
+
+        with pytest.raises(ValidationError) as exc_info:
+            experience.full_clean()
+
+        assert exc_info.value.message_dict == {
+            "end_date": ["End date must be greater than or equal to the start date."]
+        }
+
+    def test_clean_rejects_current_position_with_end_date(self, experience):
+        """A current position cannot have an end date."""
+        experience.is_current = True
+        experience.end_date = date(2024, 1, 1)
+
+        with pytest.raises(ValidationError) as exc_info:
+            experience.full_clean()
+
+        assert exc_info.value.message_dict == {
+            "end_date": ["Current positions cannot have an end date."]
+        }
+
+    def test_database_constraint_rejects_invalid_date_range(self, profile):
+        """The database should reject an invalid date range."""
+        with pytest.raises(IntegrityError):
+            Experience.objects.create(
+                profile=profile,
+                company="test_company",
+                position="Backend Developer",
+                start_date=date(2024, 1, 1),
+                end_date=date(2023, 1, 1),
+            )
+
+    def test_database_constraint_rejects_current_position_with_end_date(
+        self,
+        profile,
+    ):
+        """The database should reject a current position that has an end date."""
+        with pytest.raises(IntegrityError):
+            Experience.objects.create(
+                profile=profile,
+                company="test_company",
+                position="Backend Developer",
+                start_date=date(2022, 1, 1),
+                end_date=date(2024, 1, 1),
+                is_current=True,
+            )
+
+    def test_deleting_profile_deletes_related_experiences(self):
+        """Deleting a profile should delete its experience records."""
+        profile = ProfileFactory()
+        ExperienceFactory.create_batch(2, profile=profile)
+
+        profile.delete()
+
+        assert not Experience.objects.exists()
