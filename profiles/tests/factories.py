@@ -9,6 +9,7 @@ from profiles.models import (
     InstructorProfile,
     Profile,
     Skill,
+    SocialLink,
     StudentProfile,
 )
 
@@ -89,3 +90,15 @@ class ExperienceFactory(factory.django.DjangoModelFactory):
     start_date = date(2022, 1, 1)
     end_date = date(2024, 1, 1)
     is_current = False
+
+
+class SocialLinkFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SocialLink
+
+    profile = factory.SubFactory(Profile)
+
+    platform = "GitHub"
+    url = "https://github.com/test_user"
+    visibility = SocialLink.Visibility.PUBLIC
+    display_order = 0

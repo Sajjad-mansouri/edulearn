@@ -13,6 +13,7 @@ from profiles.models import (
     InstructorProfile,
     Profile,
     Skill,
+    SocialLink,
     StudentProfile,
 )
 
@@ -22,6 +23,7 @@ from .factories import (
     InstructorProfileFactory,
     ProfileFactory,
     SkillFactory,
+    SocialLinkFactory,
     StudentProfileFactory,
 )
 
@@ -585,3 +587,91 @@ class TestExperienceModel:
         profile.delete()
 
         assert not Experience.objects.exists()
+
+
+@pytest.mark.django_db
+class TestSocialLinkModel:
+    @pytest.fixture
+    def profile(self):
+        return ProfileFactory()
+
+    @pytest.fixture
+    def social_link(self, profile):
+        return SocialLinkFactory(profile=profile)
+
+    def test_create_social_link(self, profile):
+        """A social link can be created."""
+        social_link = SocialLink.objects.create(
+            profile=profile,
+            platform="GitHub",
+            url="https://github.com/test_user",
+            visibility=SocialLink.Visibility.PUBLIC,
+            display_order=1,
+        )
+
+        assert social_link.profile == profile
+        assert social_link.platform == "GitHub"
+        assert social_link.url == "https://github.com/test_user"
+        assert social_link.visibility == SocialLink.Visibility.PUBLIC
+        assert social_link.display_order == 1
+
+    def test_string_representation(self, social_link):
+        """Returns a human-readable representation."""
+        expected = f"{social_link.platform} ({social_link.profile.user.username})"
+
+        assert str(social_link) == expected
+
+    def test_visibility_defaults_to_public(self, profile):
+        """New social links should be public by default."""
+        social_link = SocialLink.objects.create(
+            profile=profile,
+            platform="LinkedIn",
+            url="https://linkedin.com/in/test_user",
+        )
+
+        assert social_link.visibility == SocialLink.Visibility.PUBLIC
+
+    def test_display_order_defaults_to_zero(self, profile):
+        """New social links should have a display order of zero."""
+        social_link = SocialLink.objects.create(
+            profile=profile,
+            platform="LinkedIn",
+            url="https://linkedin.com/in/test_user",
+        )
+
+        assert social_link.display_order == 0
+
+    def test_profile_can_access_social_links(self, profile):
+        """A profile should access its social links through the reverse relation."""
+        social_link = SocialLinkFactory(profile=profile)
+
+        assert social_link in profile.social_links.all()
+
+    def test_profile_can_have_multiple_social_links(self, profile):
+        """A profile can have multiple social links."""
+        SocialLinkFactory.create_batch(3, profile=profile)
+
+        assert profile.social_links.count() == 3
+
+    def test_deleting_profile_deletes_social_links(self):
+        """Deleting a profile should delete its social links."""
+        profile = ProfileFactory()
+        SocialLinkFactory.create_batch(2, profile=profile)
+
+        profile.delete()
+
+        assert not SocialLink.objects.exists()
+
+    def test_same_platform_can_be_used_by_different_profiles(self):
+        """Different profiles can use the same platform."""
+        SocialLinkFactory(
+            profile=ProfileFactory(),
+            platform="GitHub",
+        )
+
+        SocialLinkFactory(
+            profile=ProfileFactory(),
+            platform="GitHub",
+        )
+
+        assert SocialLink.objects.filter(platform="GitHub").count() == 2
