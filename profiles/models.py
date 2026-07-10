@@ -182,3 +182,78 @@ class Education(models.Model):
 
     def __str__(self):
         return f"{self.degree} in {self.field_of_study} at {self.institution}"
+
+
+class Experience(models.Model):
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="experiences",
+        verbose_name=_("Profile"),
+    )
+
+    company = models.CharField(
+        _("Company"),
+        max_length=255,
+    )
+
+    position = models.CharField(
+        _("Position"),
+        max_length=255,
+    )
+
+    start_date = models.DateField(
+        _("Start Date"),
+    )
+
+    end_date = models.DateField(
+        _("End Date"),
+        blank=True,
+        null=True,
+        help_text=_("Leave blank if this is the current position."),
+    )
+
+    is_current = models.BooleanField(
+        _("Current Position"),
+        default=False,
+    )
+
+    class Meta:
+        ordering = ["-start_date", "-end_date", "company"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(end_date__isnull=True)
+                    | models.Q(end_date__gte=models.F("start_date"))
+                ),
+                name="experience_end_date_gte_start_date",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(is_current=False) | models.Q(end_date__isnull=True)
+                ),
+                name="experience_current_requires_null_end_date",
+            ),
+        ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        super().clean()
+
+        if self.end_date is not None and self.end_date < self.start_date:
+            raise ValidationError(
+                {
+                    "end_date": _(
+                        "End date must be greater than or equal to the start date."
+                    )
+                }
+            )
+
+        if self.is_current and self.end_date is not None:
+            raise ValidationError(
+                {"end_date": _("Current positions cannot have an end date.")}
+            )
+
+    def __str__(self):
+        return f"{self.position} at {self.company}"
