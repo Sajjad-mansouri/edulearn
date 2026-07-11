@@ -23,7 +23,7 @@ class Role(models.Model):
         ("support agent", "Support Agent"),
         ("admin", "Admin"),
     ]
-    user = models.ManyToManyField(User, related_name="roles", verbose_name=_("User"))
+    users = models.ManyToManyField(User, related_name="roles", verbose_name=_("Users"))
     name = models.CharField(_("Name"), choices=ROLE_CHOICES, max_length=18)
     description = models.TextField(_("Description"))
 
