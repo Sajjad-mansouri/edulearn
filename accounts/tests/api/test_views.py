@@ -106,3 +106,78 @@ class TestRegisterApiView:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "username" in response.data
+
+
+@pytest.mark.django_db
+class TestRegisterInstructorApiView:
+    """Tests for RegisterInstructorApiView."""
+
+    @pytest.fixture
+    def api_client(self):
+        return APIClient()
+
+    @pytest.fixture
+    def url(self):
+        return reverse("accounts:register_instructor")
+
+    @pytest.fixture
+    def valid_payload(self):
+        return {
+            "first_name": "Test",
+            "last_name": "Instructor",
+            "username": "test_instructor",
+            "email": "instructor@example.com",
+            "password1": "StrongPassword123!",
+            "password2": "StrongPassword123!",
+        }
+
+    @patch("accounts.api.views.register_user")
+    def test_register_calls_register_user_with_teacher_role(
+        self,
+        mock_register_user,
+        api_client,
+        url,
+        valid_payload,
+    ):
+        """Registration delegates to the service using the teacher role."""
+        response = api_client.post(url, valid_payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        mock_register_user.assert_called_once_with(
+            data={
+                "first_name": "Test",
+                "last_name": "Instructor",
+                "username": "test_instructor",
+                "email": "instructor@example.com",
+                "password1": "StrongPassword123!",
+                "password2": "StrongPassword123!",
+            },
+            role_name="teacher",
+            request=ANY,
+        )
+
+    def test_register_returns_201_for_valid_data(
+        self,
+        api_client,
+        url,
+        valid_payload,
+    ):
+        """An instructor can register with valid data."""
+        response = api_client.post(url, valid_payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_register_endpoint_is_accessible_without_authentication(
+        self,
+        api_client,
+        url,
+        valid_payload,
+    ):
+        """Anonymous users can access the instructor registration endpoint."""
+        response = api_client.post(url, valid_payload)
+
+        assert response.status_code not in (
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
+        )
