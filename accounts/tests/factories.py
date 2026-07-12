@@ -14,7 +14,7 @@ class UserFactory(DjangoModelFactory):
         model = User
         skip_postgeneration_save = True
 
-    username = factory.Sequence(lambda n: f"user_{n}")
+    username = factory.Sequence(lambda n: f"test_user_{n}")
     email = factory.LazyAttribute(lambda obj: f"{obj.username}@example.com")
     password = factory.PostGenerationMethodCall("set_password", "secure_pass_1234")
     first_name = factory.Faker("first_name")
@@ -33,8 +33,13 @@ class RoleFactory(DjangoModelFactory):
     name = "student"
     description = factory.Faker("paragraph")
 
+    class Params:
+        instructor = factory.Trait(name="instructor")
+        moderator = factory.Trait(name="moderator")
+        admin = factory.Trait(name="admin")
 
-class UserSessionFactory(factory.django.DjangoModelFactory):
+
+class UserSessionFactory(DjangoModelFactory):
     class Meta:
         model = UserSession
 
@@ -44,7 +49,7 @@ class UserSessionFactory(factory.django.DjangoModelFactory):
     user_agent = factory.Faker("user_agent")
 
 
-class LoginHistoryFactory(factory.django.DjangoModelFactory):
+class LoginHistoryFactory(DjangoModelFactory):
     class Meta:
         model = LoginHistory
 

@@ -15,10 +15,10 @@ class TestUserModel:
         assert user.email_verified is False
 
     def test_email_unique(self):
-        UserFactory(email="john@example.com")
+        UserFactory(email="test_user@example.com")
 
         with pytest.raises(IntegrityError):
-            UserFactory(email="john@example.com")
+            UserFactory(email="test_user@example.com")
 
     def test_required_fields(self):
         assert User.REQUIRED_FIELDS == ["email"]
@@ -48,10 +48,10 @@ class TestRoleModel:
         role = RoleFactory()
         user = UserFactory()
 
-        role.user.add(user)
+        role.users.add(user)
 
-        assert role.user.count() == 1
-        assert role.user.first() == user
+        assert role.users.count() == 1
+        assert role.users.first() == user
 
     def test_add_multiple_users(self):
         """Multiple users can be assigned to the same role."""
@@ -59,17 +59,17 @@ class TestRoleModel:
 
         users = UserFactory.create_batch(3)
 
-        role.user.add(*users)
+        role.users.add(*users)
 
-        assert role.user.count() == 3
-        assert set(role.user.all()) == set(users)
+        assert role.users.count() == 3
+        assert set(role.users.all()) == set(users)
 
     def test_reverse_relation_from_user(self):
         """Users should access assigned roles through the related_name."""
         user = UserFactory()
         role = RoleFactory()
 
-        role.user.add(user)
+        role.users.add(user)
 
         assert user.roles.count() == 1
         assert user.roles.first() == role
@@ -89,7 +89,7 @@ class TestRoleModel:
 
     def test_user_field_configuration(self):
         """The user field should be configured correctly."""
-        field = Role._meta.get_field("user")
+        field = Role._meta.get_field("users")
 
         assert field.many_to_many is True
         assert field.related_model.__name__ == "User"
@@ -113,7 +113,7 @@ class TestRoleModel:
 
     def test_model_verbose_names(self):
         """Field verbose names should be defined correctly."""
-        assert Role._meta.get_field("user").verbose_name == "User"
+        assert Role._meta.get_field("users").verbose_name == "Users"
         assert Role._meta.get_field("name").verbose_name == "Name"
         assert Role._meta.get_field("description").verbose_name == "Description"
 
