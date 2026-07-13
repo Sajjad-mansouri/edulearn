@@ -2,11 +2,13 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
+from django.db import transaction
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from accounts.models import Role
 from accounts.tasks import send_verification_email
+from profiles.models import Profile
 
 User = get_user_model()
 
@@ -37,3 +39,17 @@ def send_registration_email(user, request, role_name):
         send_verification_email.delay(**email_context)
     else:
         send_verification_email(**email_context)
+
+
+@transaction.atomic
+def confirm_registration(user):
+    """
+    Activate a user account and ensure the user profile exists.
+
+    This operation is idempotent.
+    """
+    if not user.is_active:
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+    Profile.objects.get_or_create(user=user)
+    return user
