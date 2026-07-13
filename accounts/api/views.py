@@ -8,8 +8,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import UserRegistrationSerializer
-from .services import confirm_registration, register_user
+from .serializers import LoginSerializer, UserRegistrationSerializer
+from .services import confirm_registration, perform_login, register_user
 
 User = get_user_model()
 
@@ -69,3 +69,15 @@ class RegisterConfirmApiView(APIView):
         ):
             user = None
         return user
+
+
+class LoginApiView(APIView):
+    permission_classes = [AllowAny]
+    throttle_scope = "login"
+
+    def post(self, request, *args, **kwargs):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        tokens = perform_login(serializer.validated_data, request)
+
+        return Response(tokens, status=status.HTTP_200_OK)

@@ -25,4 +25,5 @@ urlpatterns = [
         views.RegisterConfirmApiView.as_view(),
         name="register_confirm",
     ),
+    path("login/", views.LoginApiView.as_view(), name="login"),
 ]

@@ -29,3 +29,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         validate_password(password1)
         return attrs
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+
+class TokenSerializer(serializers.Serializer):
+    access_token = serializers.CharField()
+    refresh_token = serializers.CharField()
