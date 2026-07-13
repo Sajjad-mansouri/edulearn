@@ -5,9 +5,12 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from rest_framework.settings import api_settings
+from rest_framework.test import APIRequestFactory
 
 from accounts.api.services import (
     confirm_registration,
+    get_ident,
     register_user,
     send_registration_email,
 )
@@ -348,3 +351,73 @@ class TestConfirmRegistration:
         active_user.refresh_from_db()
 
         assert active_user.is_active is True
+
+
+class TestGetIdent:
+    """Tests for get_ident()."""
+
+    @pytest.fixture
+    def request_factory(self):
+        return APIRequestFactory()
+
+    def test_returns_remote_addr_when_no_forwarded_header(
+        self,
+        request_factory,
+    ):
+        request = request_factory.get("/")
+        request.META["REMOTE_ADDR"] = "192.168.1.10"
+
+        with patch.object(api_settings, "NUM_PROXIES", 1):
+            assert get_ident(request) == "192.168.1.10"
+
+    def test_returns_remote_addr_when_num_proxies_is_zero(
+        self,
+        request_factory,
+    ):
+        request = request_factory.get("/")
+        request.META["REMOTE_ADDR"] = "10.0.0.1"
+        request.META["HTTP_X_FORWARDED_FOR"] = "1.1.1.1, 2.2.2.2"
+
+        with patch.object(api_settings, "NUM_PROXIES", 0):
+            assert get_ident(request) == "10.0.0.1"
+
+    def test_returns_client_ip_from_forwarded_header(
+        self,
+        request_factory,
+    ):
+        request = request_factory.get("/")
+        request.META["REMOTE_ADDR"] = "10.0.0.1"
+        request.META["HTTP_X_FORWARDED_FOR"] = "1.1.1.1, 2.2.2.2"
+
+        with patch.object(api_settings, "NUM_PROXIES", 1):
+            assert get_ident(request) == "2.2.2.2"
+
+    def test_returns_correct_ip_when_multiple_proxies_exist(
+        self,
+        request_factory,
+    ):
+        request = request_factory.get("/")
+        request.META["HTTP_X_FORWARDED_FOR"] = "1.1.1.1, 2.2.2.2, 3.3.3.3"
+
+        with patch.object(api_settings, "NUM_PROXIES", 2):
+            assert get_ident(request) == "2.2.2.2"
+
+    def test_returns_forwarded_header_without_spaces_when_num_proxies_is_none(
+        self,
+        request_factory,
+    ):
+        request = request_factory.get("/")
+        request.META["HTTP_X_FORWARDED_FOR"] = "1.1.1.1, 2.2.2.2"
+
+        with patch.object(api_settings, "NUM_PROXIES", None):
+            assert get_ident(request) == "1.1.1.1,2.2.2.2"
+
+    def test_returns_remote_addr_when_forwarded_header_missing_and_num_proxies_is_none(
+        self,
+        request_factory,
+    ):
+        request = request_factory.get("/")
+        request.META["REMOTE_ADDR"] = "127.0.0.1"
+
+        with patch.object(api_settings, "NUM_PROXIES", None):
+            assert get_ident(request) == "127.0.0.1"
