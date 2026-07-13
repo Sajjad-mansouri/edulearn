@@ -1,13 +1,14 @@
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.settings import api_settings
 from rest_framework.test import APIRequestFactory
+from rest_framework_simplejwt.exceptions import TokenError
 
 from accounts.api.services import (
     confirm_registration,
@@ -16,6 +17,7 @@ from accounts.api.services import (
     get_client_device,
     get_ident,
     get_location,
+    logout_user,
     perform_login,
     register_user,
     send_registration_email,
@@ -723,3 +725,53 @@ class TestCreateUserSession:
         assert session.ip_address == "127.0.0.1"
         assert session.device == "Other"
         assert session.user_agent == ""
+
+
+class TestLogoutUser:
+    """Tests for logout_user()."""
+
+    @patch("accounts.api.services.RefreshToken")
+    def test_blacklists_refresh_token(
+        self,
+        mock_refresh_token,
+    ):
+        refresh_token = "refresh-token"
+
+        token = MagicMock()
+        mock_refresh_token.return_value = token
+
+        logout_user(refresh_token)
+
+        mock_refresh_token.assert_called_once_with(refresh_token)
+        token.blacklist.assert_called_once_with()
+
+    @patch("accounts.api.services.RefreshToken")
+    def test_raises_validation_error_for_invalid_refresh_token(
+        self,
+        mock_refresh_token,
+    ):
+        refresh_token = "invalid-refresh-token"
+
+        mock_refresh_token.side_effect = TokenError("Invalid token")
+
+        with pytest.raises(ValidationError) as exc_info:
+            logout_user(refresh_token)
+
+        assert exc_info.value.detail == {"refresh": "Invalid refresh token."}
+
+        mock_refresh_token.assert_called_once_with(refresh_token)
+
+    @patch("accounts.api.services.RefreshToken")
+    def test_preserves_original_exception_as_cause(
+        self,
+        mock_refresh_token,
+    ):
+        refresh_token = "invalid-refresh-token"
+
+        original_error = TokenError("Invalid token")
+        mock_refresh_token.side_effect = original_error
+
+        with pytest.raises(ValidationError) as exc_info:
+            logout_user(refresh_token)
+
+        assert exc_info.value.__cause__ is original_error
