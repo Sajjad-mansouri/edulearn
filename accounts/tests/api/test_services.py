@@ -5,12 +5,16 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.settings import api_settings
 from rest_framework.test import APIRequestFactory
 
 from accounts.api.services import (
     confirm_registration,
+    get_client_device,
     get_ident,
+    get_location,
+    perform_login,
     register_user,
     send_registration_email,
 )
@@ -421,3 +425,175 @@ class TestGetIdent:
 
         with patch.object(api_settings, "NUM_PROXIES", None):
             assert get_ident(request) == "127.0.0.1"
+
+
+class TestGetClientDevice:
+    """Tests for get_client_device()."""
+
+    @patch("accounts.api.services.parse")
+    def test_returns_operating_system_family(self, mock_parse):
+        request = Mock()
+        request.META = {"HTTP_USER_AGENT": ("Mozilla/5.0 (X11; Linux x86_64)")}
+
+        mock_parse.return_value.os.family = "Linux"
+
+        assert get_client_device(request) == "Linux"
+
+        mock_parse.assert_called_once_with("Mozilla/5.0 (X11; Linux x86_64)")
+
+    @patch("accounts.api.services.parse")
+    def test_returns_other_operating_system(self, mock_parse):
+        request = Mock()
+        request.META = {"HTTP_USER_AGENT": "Some Agent"}
+
+        mock_parse.return_value.os.family = "Windows"
+
+        assert get_client_device(request) == "Windows"
+
+    @patch("accounts.api.services.parse")
+    def test_returns_other_when_user_agent_missing(self, mock_parse):
+        request = Mock()
+        request.META = {}
+
+        mock_parse.return_value.os.family = "Other"
+
+        assert get_client_device(request) == "Other"
+
+        mock_parse.assert_called_once_with("")
+
+
+class TestGetLocation:
+    """Tests for get_location()."""
+
+    @patch("accounts.api.services.GeoIP2")
+    def test_returns_country_information(self, mock_geoip):
+        mock_geoip.return_value.country.return_value = {"country_name": "Germany"}
+
+        result = get_location("8.8.8.8")
+
+        assert result == {"country_name": "Germany"}
+
+        mock_geoip.return_value.country.assert_called_once_with("8.8.8.8")
+
+    @patch("accounts.api.services.GeoIP2")
+    def test_returns_empty_string_when_lookup_fails(
+        self,
+        mock_geoip,
+    ):
+        mock_geoip.return_value.country.side_effect = Exception
+
+        assert get_location("8.8.8.8") == ""
+
+
+@pytest.mark.django_db
+class TestPerformLogin:
+    """Tests for perform_login()."""
+
+    @patch("accounts.api.services.create_user_session")
+    @patch("accounts.api.services.create_loging_history")
+    @patch("accounts.api.services.RefreshToken")
+    @patch("accounts.api.services.authenticate")
+    def test_returns_tokens_after_successful_login(
+        self,
+        mock_authenticate,
+        mock_refresh_token,
+        mock_create_history,
+        mock_create_session,
+    ):
+        user = UserFactory()
+
+        request = Mock()
+
+        validated_data = {
+            "username": user.username,
+            "password": "secure_pass_1234",
+        }
+
+        mock_authenticate.return_value = user
+
+        refresh = Mock()
+        refresh.access_token = "access-token"
+
+        mock_refresh_token.for_user.return_value = refresh
+        refresh.__str__ = Mock(return_value="refresh-token")
+
+        tokens = perform_login(
+            validated_data=validated_data,
+            request=request,
+        )
+
+        assert tokens == {
+            "access": "access-token",
+            "refresh": "refresh-token",
+        }
+
+        mock_authenticate.assert_called_once_with(
+            request=request,
+            username=user.username,
+            password="secure_pass_1234",
+        )
+
+        mock_create_history.assert_called_once_with(
+            request,
+            user,
+            True,
+        )
+
+        mock_create_session.assert_called_once_with(
+            request,
+            user,
+        )
+
+    @patch("accounts.api.services.create_loging_history")
+    @patch("accounts.api.services.authenticate")
+    def test_logs_failed_login_for_existing_user(
+        self,
+        mock_authenticate,
+        mock_create_history,
+    ):
+        user = UserFactory(password="secure_pass_1234")
+
+        request = Mock()
+
+        validated_data = {
+            "username": user.username,
+            "password": "wrong-password",
+        }
+
+        mock_authenticate.return_value = None
+
+        with pytest.raises(AuthenticationFailed):
+            perform_login(
+                validated_data,
+                request,
+            )
+
+        mock_create_history.assert_called_once_with(
+            request,
+            user,
+            False,
+        )
+
+    @patch("accounts.api.services.create_loging_history")
+    @patch("accounts.api.services.authenticate")
+    def test_does_not_create_history_when_user_does_not_exist(
+        self,
+        mock_authenticate,
+        mock_create_history,
+    ):
+        request = Mock()
+
+        validated_data = {
+            "username": "unknown_user",
+            "password": "secret",
+        }
+
+        mock_authenticate.return_value = None
+
+        with pytest.raises(AuthenticationFailed):
+            perform_login(
+                validated_data,
+                request,
+            )
+
+        mock_create_history.assert_not_called()
