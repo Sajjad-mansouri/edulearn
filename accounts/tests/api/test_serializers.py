@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from django.contrib.auth.password_validation import ValidationError
 
-from accounts.api.serializers import UserRegistrationSerializer
+from accounts.api.serializers import LoginSerializer, UserRegistrationSerializer
 
 
 @pytest.mark.django_db
@@ -61,3 +61,72 @@ class TestUserRegistrationSerializer:
 
         assert serializer.is_valid() is False
         assert serializer.errors == {"non_field_errors": ["Password is too weak."]}
+
+
+class TestLoginSerializer:
+    """Tests for LoginSerializer."""
+
+    @pytest.fixture
+    def valid_data(self):
+        return {
+            "username": "test_user",
+            "password": "secure_pass_1234",
+        }
+
+    def test_serializer_is_valid_with_valid_data(self, valid_data):
+        serializer = LoginSerializer(data=valid_data)
+
+        assert serializer.is_valid()
+        assert serializer.validated_data == valid_data
+
+    @pytest.mark.parametrize(
+        "payload,field",
+        [
+            (
+                {
+                    "password": "secure_pass_1234",
+                },
+                "username",
+            ),
+            (
+                {
+                    "username": "test_user",
+                },
+                "password",
+            ),
+            (
+                {},
+                "username",
+            ),
+            (
+                {},
+                "password",
+            ),
+        ],
+    )
+    def test_required_fields(self, payload, field):
+        serializer = LoginSerializer(data=payload)
+
+        assert not serializer.is_valid()
+        assert field in serializer.errors
+
+    def test_password_field_is_write_only(self):
+        serializer = LoginSerializer()
+
+        assert serializer.fields["password"].write_only is True
+
+    def test_username_field_is_not_write_only(self):
+        serializer = LoginSerializer()
+
+        assert serializer.fields["username"].write_only is False
+
+    def test_rejects_unknown_fields(self, valid_data):
+        serializer = LoginSerializer(
+            data={
+                **valid_data,
+                "unexpected_field": "value",
+            }
+        )
+
+        assert serializer.is_valid()
+        assert "unexpected_field" not in serializer.errors
