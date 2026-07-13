@@ -6,9 +6,14 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from accounts.api.services import register_user, send_registration_email
+from accounts.api.services import (
+    confirm_registration,
+    register_user,
+    send_registration_email,
+)
 from accounts.models import Role
 from accounts.tests.factories import UserFactory
+from profiles.models import Profile
 
 User = get_user_model()
 
@@ -281,3 +286,65 @@ class TestSendRegistrationEmail:
             force_bytes(user._meta.pk.value_to_string(user))
         )
         assert context["token"] == default_token_generator.make_token(user)
+
+
+@pytest.mark.django_db
+class TestConfirmRegistration:
+    """Tests for confirm_registration service."""
+
+    @pytest.fixture
+    def inactive_user(self):
+        return UserFactory(is_active=False)
+
+    @pytest.fixture
+    def active_user(self):
+        return UserFactory(is_active=True)
+
+    def test_activates_inactive_user(self, inactive_user):
+        """An inactive user is activated."""
+        confirm_registration(inactive_user)
+
+        inactive_user.refresh_from_db()
+
+        assert inactive_user.is_active is True
+
+    def test_creates_profile_when_missing(self, inactive_user):
+        """A profile is created if the user does not already have one."""
+        assert not Profile.objects.filter(user=inactive_user).exists()
+
+        confirm_registration(inactive_user)
+
+        assert Profile.objects.filter(user=inactive_user).exists()
+
+    def test_does_not_create_duplicate_profile(self, active_user):
+        """Existing profiles are reused."""
+        profile = Profile.objects.create(user=active_user)
+
+        confirm_registration(active_user)
+
+        assert Profile.objects.count() == 1
+        assert Profile.objects.get(user=active_user) == profile
+
+    def test_returns_user_instance(self, inactive_user):
+        """The activated user is returned."""
+        returned_user = confirm_registration(inactive_user)
+
+        assert returned_user == inactive_user
+
+    def test_is_idempotent(self, inactive_user):
+        """Calling the service multiple times produces the same result."""
+        confirm_registration(inactive_user)
+        confirm_registration(inactive_user)
+
+        inactive_user.refresh_from_db()
+
+        assert inactive_user.is_active is True
+        assert Profile.objects.filter(user=inactive_user).count() == 1
+
+    def test_keeps_active_user_active(self, active_user):
+        """An already active user remains active."""
+        confirm_registration(active_user)
+
+        active_user.refresh_from_db()
+
+        assert active_user.is_active is True
