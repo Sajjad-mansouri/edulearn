@@ -8,6 +8,7 @@ from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from accounts.api.views import LoginApiView
 from accounts.tests.factories import UserFactory
 
 
@@ -290,3 +291,111 @@ class TestRegisterConfirmApiView:
         mock_confirm_registration.assert_called_once_with(
             inactive_user,
         )
+
+
+@pytest.mark.django_db
+class TestLoginApiView:
+    """Tests for LoginApiView."""
+
+    @pytest.fixture
+    def api_client(self):
+        return APIClient()
+
+    @pytest.fixture
+    def url(self):
+        return reverse("accounts:login")
+
+    @pytest.fixture
+    def payload(self):
+        return {
+            "username": "test_user",
+            "password": "secure_pass_1234",
+        }
+
+    @patch("accounts.api.views.perform_login")
+    def test_returns_tokens_for_valid_credentials(
+        self,
+        mock_perform_login,
+        api_client,
+        url,
+        payload,
+    ):
+        """A successful login returns the generated JWT tokens."""
+        tokens = {
+            "access": "access-token",
+            "refresh": "refresh-token",
+        }
+        mock_perform_login.return_value = tokens
+
+        response = api_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == tokens
+
+        mock_perform_login.assert_called_once()
+
+    @patch("accounts.api.views.perform_login")
+    def test_passes_validated_data_to_service(
+        self,
+        mock_perform_login,
+        api_client,
+        url,
+        payload,
+    ):
+        """The validated credentials are passed to the login service."""
+        mock_perform_login.return_value = {
+            "access": "access-token",
+            "refresh": "refresh-token",
+        }
+
+        response = api_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+
+        args, kwargs = mock_perform_login.call_args
+
+        assert args[0] == payload
+        assert args[1].__class__.__name__ == "Request"
+
+    @pytest.mark.parametrize(
+        "payload,field",
+        [
+            (
+                {
+                    "password": "secure_pass_1234",
+                },
+                "username",
+            ),
+            (
+                {
+                    "username": "test_user",
+                },
+                "password",
+            ),
+            (
+                {},
+                "username",
+            ),
+            (
+                {},
+                "password",
+            ),
+        ],
+    )
+    @patch("accounts.api.views.perform_login")
+    @patch.object(LoginApiView, "throttle_classes", [])
+    def test_returns_bad_request_for_invalid_payload(
+        self,
+        mock_perform_login,
+        api_client,
+        url,
+        payload,
+        field,
+    ):
+        """Invalid request data returns HTTP 400."""
+        response = api_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert field in response.json()
+
+        mock_perform_login.assert_not_called()
