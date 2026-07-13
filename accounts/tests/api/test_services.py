@@ -11,6 +11,8 @@ from rest_framework.test import APIRequestFactory
 
 from accounts.api.services import (
     confirm_registration,
+    create_loging_history,
+    create_user_session,
     get_client_device,
     get_ident,
     get_location,
@@ -18,7 +20,7 @@ from accounts.api.services import (
     register_user,
     send_registration_email,
 )
-from accounts.models import Role
+from accounts.models import LoginHistory, Role, UserSession
 from accounts.tests.factories import UserFactory
 from profiles.models import Profile
 
@@ -597,3 +599,127 @@ class TestPerformLogin:
             )
 
         mock_create_history.assert_not_called()
+
+
+@pytest.mark.django_db
+class TestCreateLoginHistory:
+    """Tests for create_loging_history()."""
+
+    @patch("accounts.api.services.get_location")
+    @patch("accounts.api.services.get_ident")
+    def test_creates_successful_login_history(
+        self,
+        mock_get_ident,
+        mock_get_location,
+    ):
+        user = UserFactory()
+        request_obj = Mock()
+
+        mock_get_ident.return_value = "192.168.1.10"
+        mock_get_location.return_value = "Germany"
+
+        create_loging_history(
+            request=request_obj,
+            user=user,
+            is_successful=True,
+        )
+
+        mock_get_ident.assert_called_once_with(request_obj)
+        mock_get_location.assert_called_once_with("192.168.1.10")
+
+        login_history = LoginHistory.objects.get()
+
+        assert login_history.user == user
+        assert login_history.ip_address == "192.168.1.10"
+        assert login_history.location == "Germany"
+        assert login_history.is_successful is True
+
+    @patch("accounts.api.services.get_location")
+    @patch("accounts.api.services.get_ident")
+    def test_creates_failed_login_history(
+        self,
+        mock_get_ident,
+        mock_get_location,
+    ):
+        user = UserFactory()
+        request_obj = Mock()
+
+        mock_get_ident.return_value = "10.0.0.1"
+        mock_get_location.return_value = ""
+
+        create_loging_history(
+            request=request_obj,
+            user=user,
+            is_successful=False,
+        )
+
+        login_history = LoginHistory.objects.get()
+
+        assert login_history.user == user
+        assert login_history.ip_address == "10.0.0.1"
+        assert login_history.location == ""
+        assert login_history.is_successful is False
+
+
+@pytest.mark.django_db
+class TestCreateUserSession:
+    """Tests for create_user_session()."""
+
+    @patch("accounts.api.services.get_client_device")
+    @patch("accounts.api.services.get_ident")
+    def test_creates_user_session(
+        self,
+        mock_get_ident,
+        mock_get_client_device,
+    ):
+        user = UserFactory()
+
+        request_obj = Mock()
+        request_obj.META = {
+            "HTTP_USER_AGENT": "Mozilla/5.0",
+        }
+
+        mock_get_ident.return_value = "203.0.113.5"
+        mock_get_client_device.return_value = "Linux"
+
+        create_user_session(
+            request=request_obj,
+            user=user,
+        )
+
+        mock_get_ident.assert_called_once_with(request_obj)
+        mock_get_client_device.assert_called_once_with(request_obj)
+
+        session = UserSession.objects.get()
+
+        assert session.user == user
+        assert session.ip_address == "203.0.113.5"
+        assert session.device == "Linux"
+        assert session.user_agent == "Mozilla/5.0"
+
+    @patch("accounts.api.services.get_client_device")
+    @patch("accounts.api.services.get_ident")
+    def test_creates_user_session_with_empty_user_agent(
+        self,
+        mock_get_ident,
+        mock_get_client_device,
+    ):
+        user = UserFactory()
+
+        request_obj = Mock()
+        request_obj.META = {}
+
+        mock_get_ident.return_value = "127.0.0.1"
+        mock_get_client_device.return_value = "Other"
+
+        create_user_session(
+            request=request_obj,
+            user=user,
+        )
+
+        session = UserSession.objects.get()
+
+        assert session.user == user
+        assert session.ip_address == "127.0.0.1"
+        assert session.device == "Other"
+        assert session.user_agent == ""
