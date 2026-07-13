@@ -3,7 +3,11 @@ from unittest.mock import patch
 import pytest
 from django.contrib.auth.password_validation import ValidationError
 
-from accounts.api.serializers import LoginSerializer, UserRegistrationSerializer
+from accounts.api.serializers import (
+    LoginSerializer,
+    LogoutSerializer,
+    UserRegistrationSerializer,
+)
 
 
 @pytest.mark.django_db
@@ -130,3 +134,37 @@ class TestLoginSerializer:
 
         assert serializer.is_valid()
         assert "unexpected_field" not in serializer.errors
+
+
+class TestLogoutSerializer:
+    """Tests for LogoutSerializer."""
+
+    @pytest.fixture
+    def valid_data(self):
+        return {
+            "refresh": "refresh-token",
+        }
+
+    def test_serializer_is_valid_with_valid_data(self, valid_data):
+        serializer = LogoutSerializer(data=valid_data)
+
+        assert serializer.is_valid()
+        assert serializer.validated_data == valid_data
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {},
+            {"refresh": ""},
+        ],
+    )
+    def test_refresh_field_is_required(self, payload):
+        serializer = LogoutSerializer(data=payload)
+
+        assert not serializer.is_valid()
+        assert "refresh" in serializer.errors
+
+    def test_refresh_field_is_not_write_only(self):
+        serializer = LogoutSerializer()
+
+        assert serializer.fields["refresh"].write_only is False
