@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
 from accounts.api.views import LoginApiView
@@ -399,3 +400,117 @@ class TestLoginApiView:
         assert field in response.json()
 
         mock_perform_login.assert_not_called()
+
+
+@pytest.mark.django_db
+class TestLogoutApiView:
+    """Tests for LogoutApiView."""
+
+    @pytest.fixture
+    def api_client(self):
+        return APIClient()
+
+    @pytest.fixture
+    def user(self):
+        return UserFactory()
+
+    @pytest.fixture
+    def authenticated_client(self, api_client, user):
+        api_client.force_authenticate(user=user)
+        return api_client
+
+    @pytest.fixture
+    def url(self):
+        return reverse("accounts:logout")
+
+    @pytest.fixture
+    def valid_payload(self):
+        return {
+            "refresh": "refresh-token",
+        }
+
+    @patch("accounts.api.views.logout_user")
+    def test_logout_returns_success_response(
+        self,
+        mock_logout_user,
+        authenticated_client,
+        url,
+        valid_payload,
+    ):
+        response = authenticated_client.post(
+            url,
+            valid_payload,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {
+            "detail": "Successfully logged out.",
+        }
+
+        mock_logout_user.assert_called_once_with("refresh-token")
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {},
+            {"refresh": ""},
+        ],
+    )
+    @patch("accounts.api.views.logout_user")
+    def test_returns_bad_request_for_invalid_payload(
+        self,
+        mock_logout_user,
+        authenticated_client,
+        url,
+        payload,
+    ):
+        response = authenticated_client.post(
+            url,
+            payload,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "refresh" in response.json()
+
+        mock_logout_user.assert_not_called()
+
+    @patch("accounts.api.views.logout_user")
+    def test_returns_bad_request_when_service_raises_validation_error(
+        self,
+        mock_logout_user,
+        authenticated_client,
+        url,
+    ):
+        mock_logout_user.side_effect = ValidationError(
+            {"refresh": "Invalid refresh token."}
+        )
+
+        response = authenticated_client.post(
+            url,
+            {"refresh": "invalid-token"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        assert response.json() == {
+            "refresh": "Invalid refresh token.",
+        }
+
+        mock_logout_user.assert_called_once_with("invalid-token")
+
+    def test_requires_authentication(
+        self,
+        api_client,
+        url,
+        valid_payload,
+    ):
+        response = api_client.post(
+            url,
+            valid_payload,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
