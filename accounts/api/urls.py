@@ -26,4 +26,5 @@ urlpatterns = [
         name="register_confirm",
     ),
     path("login/", views.LoginApiView.as_view(), name="login"),
+    path("logout/", views.LogoutApiView.as_view(), name="logout"),
 ]

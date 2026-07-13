@@ -6,8 +6,9 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.db import transaction
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.settings import api_settings
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from user_agents import parse
 
@@ -139,3 +140,10 @@ def perform_login(validated_data, request) -> dict:
     data = {"access": str(refresh.access_token), "refresh": str(refresh)}
 
     return data
+
+
+def logout_user(refresh_token: str) -> None:
+    try:
+        RefreshToken(refresh_token).blacklist()
+    except TokenError as err:
+        raise ValidationError({"refresh": "Invalid refresh token."}) from err

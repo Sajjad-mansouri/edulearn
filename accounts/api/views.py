@@ -8,8 +8,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import LoginSerializer, UserRegistrationSerializer
-from .services import confirm_registration, perform_login, register_user
+from .serializers import LoginSerializer, LogoutSerializer, UserRegistrationSerializer
+from .services import confirm_registration, logout_user, perform_login, register_user
 
 User = get_user_model()
 
@@ -81,3 +81,15 @@ class LoginApiView(APIView):
         tokens = perform_login(serializer.validated_data, request)
 
         return Response(tokens, status=status.HTTP_200_OK)
+
+
+class LogoutApiView(APIView):
+    def post(self, request, *args, **kwargs):
+        """Logout may be done via POST."""
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        logout_user(serializer.validated_data["refresh"])
+        return Response(
+            {"detail": "Successfully logged out."},
+            status=status.HTTP_200_OK,
+        )
