@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import (
 
 from . import views
 
-app_name = "accounts"
+app_name = "accounts-api"
 urlpatterns = [
     # jwt
     path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

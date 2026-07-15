@@ -1,0 +1,50 @@
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In | Your LMS</title>
+  <link rel="stylesheet" type="text/css" href="{%static 'css/accounts/login_style.css'%}">
+  <link rel="icon" type="image/png" href="{%static 'images/logo/logo.png' %}">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <img src="{%static 'images/logo/logo.png'%}" alt="Logo" class="logo" onerror="this.style.display='none'">
+      <h1>Welcome Back</h1>
+      <p>Sign in to your account</p>
+
+      <form id="loginForm" novalidate>
+        <!-- User icon added purely via CSS class -->
+        <div class="input-group user-icon">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" placeholder="Enter your username" required autofocus>
+        </div>
+
+        <!-- Password icon added via CSS, toggle is a button -->
+        <div class="input-group password-icon">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          <button type="button" class="password-toggle" id="togglePassword">Show</button>
+        </div>
+
+        <div class="remember-row">
+          <a href="#" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn" id="loginButton">
+          <span class="btn-text">Sign In</span>
+          <span class="spinner"></span>
+        </button>
+
+        <div class="error-message" id="errorMessage"></div>
+      </form>
+    </div>
+  </div>
+<script src="{%static 'js/auth/auth.js'%}"></script>
+<script src="{%static 'js/accounts/login_script.js'%}"></script>
+
+
+</body>
+</html>

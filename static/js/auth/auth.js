@@ -20,7 +20,7 @@ class Auth {
     logoutPath = '/logout/',
     storage = localStorage,
     onLogout = () => {},
-    fetch = window.fetch,
+
   } = {}) {
     if (!baseURL) {
       throw new Error('Auth: baseURL is required');
@@ -34,7 +34,7 @@ class Auth {
 
     this.storage = storage;
     this.onLogout = onLogout;
-    this.fetch = fetch;
+
 
     // Tokens (access token remains in memory only, never persisted)
     this.accessToken = null;
@@ -249,7 +249,7 @@ class Auth {
       finalHeaders.set('Authorization', `Bearer ${this.accessToken}`);
     }
 
-    return this.fetch(url, {
+    return fetch(url, {
       method,
       headers: finalHeaders,
       body,
