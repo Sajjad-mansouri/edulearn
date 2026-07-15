@@ -1,0 +1,81 @@
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account | Your LMS</title>
+  <link rel="icon" type="image/png" href="{%static 'images/logo/logo.png' %}">
+  <link rel="stylesheet" type="text/css" href="{%static 'css/accounts/register_student_style.css'%}">
+
+</head>
+<body>
+  <div class="register-container">
+    <!-- Registration Form Card -->
+    <div class="register-card" id="registerCard">
+      <img src="{%static 'images/logo/logo.png'%}" alt="Logo" class="logo" onerror="this.style.display='none'">
+      <h1>Create an Account</h1>
+      <p>Join the learning community</p>
+
+      <form id="registerForm" novalidate>
+        <div class="input-group icon-user">
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" name="first_name"  required autofocus>
+        </div>
+
+        <div class="input-group icon-user">
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" name="last_name"  required>
+        </div>
+
+        <div class="input-group icon-email">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="youremail@example.com" required>
+        </div>
+
+        <div class="input-group icon-user">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" placeholder="Choose a username" required>
+        </div>
+
+        <div class="input-group icon-lock">
+          <label for="password1">Password</label>
+          <input type="password" id="password1" name="password1" placeholder="Create a password" required>
+          <button type="button" class="password-toggle" data-target="password1">Show</button>
+        </div>
+
+        <div class="input-group icon-lock">
+          <label for="password2">Confirm Password</label>
+          <input type="password" id="password2" name="password2" placeholder="Confirm your password" required>
+          <button type="button" class="password-toggle" data-target="password2">Show</button>
+        </div>
+
+        <button type="submit" class="btn" id="registerButton">
+          <span class="btn-text">Create Account</span>
+          <span class="spinner"></span>
+        </button>
+
+        <div class="error-message" id="errorMessage"></div>
+      </form>
+
+      <div class="form-footer">
+        Already have an account? <a href="{%url 'accounts:login'%}">Sign In</a>
+      </div>
+    </div>
+
+    <!-- Success Message Card (hidden initially) -->
+    <div class="register-card hidden" id="successCard">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">✉️</div>
+      <h1 style="margin-bottom: 0.5rem;">Check Your Email</h1>
+      <p style="color: #718096; margin-bottom: 1.5rem;">
+        A confirmation email has been sent to your address.<br>
+        Please click the link inside to activate your account.
+      </p>
+      <a href="/login/" class="btn btn-outline" style="text-decoration: none;">Go to Login</a>
+    </div>
+  </div>
+<script src="{%static 'js/auth/auth.js'%}"></script>
+<script src="{%static 'js/accounts/register_student_script.js'%}"></script>
+
+</body>
+</html>
