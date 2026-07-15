@@ -14,7 +14,6 @@ from user_agents import parse
 
 from accounts.models import LoginHistory, Role, UserSession
 from accounts.tasks import send_verification_email
-from profiles.models import Profile
 
 User = get_user_model()
 
@@ -45,20 +44,6 @@ def send_registration_email(user, request, role_name):
         send_verification_email.delay(**email_context)
     else:
         send_verification_email(**email_context)
-
-
-@transaction.atomic
-def confirm_registration(user):
-    """
-    Activate a user account and ensure the user profile exists.
-
-    This operation is idempotent.
-    """
-    if not user.is_active:
-        user.is_active = True
-        user.save(update_fields=["is_active"])
-    Profile.objects.get_or_create(user=user)
-    return user
 
 
 def get_ident(request):

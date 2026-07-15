@@ -1,10 +1,7 @@
 from unittest.mock import ANY, patch
 
 import pytest
-from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
@@ -23,7 +20,7 @@ class TestRegisterApiView:
 
     @pytest.fixture
     def url(self):
-        return reverse("accounts:register")
+        return reverse("accounts-api:register")
 
     @pytest.fixture
     def valid_payload(self):
@@ -123,7 +120,7 @@ class TestRegisterInstructorApiView:
 
     @pytest.fixture
     def url(self):
-        return reverse("accounts:register_instructor")
+        return reverse("accounts-api:register_instructor")
 
     @pytest.fixture
     def valid_payload(self):
@@ -189,112 +186,6 @@ class TestRegisterInstructorApiView:
 
 
 @pytest.mark.django_db
-class TestRegisterConfirmApiView:
-    """Tests for RegisterConfirmApiView."""
-
-    @pytest.fixture
-    def api_client(self):
-        return APIClient()
-
-    @pytest.fixture
-    def inactive_user(self):
-        return UserFactory(is_active=False)
-
-    @pytest.fixture
-    def valid_uid(self, inactive_user):
-        return urlsafe_base64_encode(force_bytes(inactive_user.pk))
-
-    @pytest.fixture
-    def valid_token(self, inactive_user):
-        return default_token_generator.make_token(inactive_user)
-
-    @pytest.fixture
-    def url(self, valid_uid, valid_token):
-        return reverse(
-            "accounts:register_confirm",
-            kwargs={
-                "uidb64": valid_uid,
-                "token": valid_token,
-            },
-        )
-
-    @patch("accounts.api.views.confirm_registration")
-    def test_confirm_registration_for_valid_link(
-        self,
-        mock_confirm_registration,
-        api_client,
-        url,
-        inactive_user,
-    ):
-        """A valid confirmation link activates the registration flow."""
-        response = api_client.get(url)
-
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {"detail": "Email verified successfully."}
-
-        mock_confirm_registration.assert_called_once_with(
-            inactive_user,
-        )
-
-    def test_returns_bad_request_for_invalid_uid(
-        self,
-        api_client,
-        valid_token,
-    ):
-        """An invalid uid returns HTTP 400."""
-        url = reverse(
-            "accounts:register_confirm",
-            kwargs={
-                "uidb64": "invalid-uid",
-                "token": valid_token,
-            },
-        )
-
-        response = api_client.get(url)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.json() == {"detail": "Invalid confirmation link."}
-
-    @patch("accounts.api.views.confirm_registration")
-    def test_returns_bad_request_for_invalid_token(
-        self,
-        mock_confirm_registration,
-        api_client,
-        valid_uid,
-    ):
-        """An invalid token returns HTTP 400."""
-        url = reverse(
-            "accounts:register_confirm",
-            kwargs={
-                "uidb64": valid_uid,
-                "token": "invalid-token",
-            },
-        )
-
-        response = api_client.get(url)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.json() == {"detail": "Invalid confirmation link."}
-
-        mock_confirm_registration.assert_not_called()
-
-    @patch("accounts.api.views.confirm_registration")
-    def test_confirm_registration_is_called_once(
-        self,
-        mock_confirm_registration,
-        api_client,
-        url,
-        inactive_user,
-    ):
-        """The confirmation service is invoked exactly once."""
-        api_client.get(url)
-
-        mock_confirm_registration.assert_called_once_with(
-            inactive_user,
-        )
-
-
-@pytest.mark.django_db
 class TestLoginApiView:
     """Tests for LoginApiView."""
 
@@ -304,7 +195,7 @@ class TestLoginApiView:
 
     @pytest.fixture
     def url(self):
-        return reverse("accounts:login")
+        return reverse("accounts-api:login")
 
     @pytest.fixture
     def payload(self):
@@ -421,7 +312,7 @@ class TestLogoutApiView:
 
     @pytest.fixture
     def url(self):
-        return reverse("accounts:logout")
+        return reverse("accounts-api:logout")
 
     @pytest.fixture
     def valid_payload(self):

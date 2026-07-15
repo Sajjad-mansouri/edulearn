@@ -10,4 +10,9 @@ urlpatterns = [
         views.RegisterStudentView.as_view(),
         name="register_student",
     ),
+    path(
+        "register/<uidb64>/<token>/",
+        views.RegisterConfirmView.as_view(),
+        name="register_confirm",
+    ),
 ]

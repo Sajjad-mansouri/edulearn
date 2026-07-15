@@ -7,7 +7,7 @@ Thank you for creating an account at {{ site_name }}.
 
 {% translate "To activate your account, please verify your email address by clicking the link below:" %}
 
-{{ protocol }}://{{ domain }}{% url 'accounts-api:register_confirm' uidb64=uid token=token %}
+{{ protocol }}://{{ domain }}{% url 'accounts:register_confirm' uidb64=uid token=token %}
 
 {% blocktranslate %}
 If you didn't create this account, you can safely ignore this email.

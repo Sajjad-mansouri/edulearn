@@ -20,11 +20,6 @@ urlpatterns = [
         views.RegisterInstructorApiView.as_view(),
         name="register_instructor",
     ),
-    path(
-        "register/<uidb64>/<token>/",
-        views.RegisterConfirmApiView.as_view(),
-        name="register_confirm",
-    ),
     path("login/", views.LoginApiView.as_view(), name="login"),
     path("logout/", views.LogoutApiView.as_view(), name="logout"),
 ]

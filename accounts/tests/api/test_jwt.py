@@ -6,7 +6,7 @@ from django.urls import reverse
 
 @pytest.mark.django_db
 class TestTokenObtainPair:
-    endpoint = reverse("accounts:token_obtain_pair")
+    endpoint = reverse("accounts-api:token_obtain_pair")
 
     def test_returns_access_and_refresh_tokens(
         self,
@@ -60,8 +60,8 @@ class TestTokenObtainPair:
 
 @pytest.mark.django_db
 class TestTokenRefresh:
-    obtain_url = reverse("accounts:token_obtain_pair")
-    refresh_url = reverse("accounts:token_refresh")
+    obtain_url = reverse("accounts-api:token_obtain_pair")
+    refresh_url = reverse("accounts-api:token_refresh")
 
     def test_returns_new_access_token(
         self,
@@ -102,8 +102,8 @@ class TestTokenRefresh:
 
 @pytest.mark.django_db
 class TestTokenVerify:
-    obtain_url = reverse("accounts:token_obtain_pair")
-    verify_url = reverse("accounts:token_verify")
+    obtain_url = reverse("accounts-api:token_obtain_pair")
+    verify_url = reverse("accounts-api:token_verify")
 
     def test_verifies_valid_access_token(
         self,

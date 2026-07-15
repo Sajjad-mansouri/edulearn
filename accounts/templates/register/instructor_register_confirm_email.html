@@ -180,7 +180,7 @@
                                 {% endblocktranslate %}
                             </p>
                             <div style="text-align:center; margin:36px 0 32px;">
-                                <a href="{{ protocol }}://{{ domain }}{% url 'accounts-api:register_confirm' uidb64=uid token=token %}" class="button" title="{% translate 'Verify Email Address' %}">
+                                <a href="{{ protocol }}://{{ domain }}{% url 'accounts:register_confirm' uidb64=uid token=token %}" class="button" title="{% translate 'Verify Email Address' %}">
                                     {% translate "Confirm My Email" %}
                                 </a>
                             </div>
@@ -192,7 +192,7 @@
                                     {% translate "Copy and paste this link into your browser:" %}
                                 </p>
                                 <p style="margin:0; font-size:13px; font-family: Consolas, Monaco, 'Courier New', monospace; word-break:break-all; color:#d9773a;">
-                                    {{ protocol }}://{{ domain }}{% url 'accounts-api:register_confirm' uidb64=uid token=token %}
+                                    {{ protocol }}://{{ domain }}{% url 'accounts:register_confirm' uidb64=uid token=token %}
                                 </p>
                             </div>
                             <hr style="margin:36px 0; border:none; border-top:1px solid #ececec;">
