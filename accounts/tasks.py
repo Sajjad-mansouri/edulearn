@@ -13,33 +13,23 @@ from django.template import loader
     retry_jitter=True,
     max_retries=5,
 )
-def send_verification_email(email, protocol, domain, site_name, uid, token, role_name):
-    context = {
-        "email": email,
-        "protocol": protocol,
-        "domain": domain,
-        "site_name": site_name,
-        "uid": uid,
-        "token": token,
-    }
-    template_map = {
-        "student": "student_register_confirm_email",
-        "teacher": "instructor_register_confirm_email",
-    }
+def send_email(
+    *,
+    recipient,
+    subject,
+    text_template,
+    html_template,
+    context,
+):
+    text_content = loader.render_to_string(text_template, context)
+    html_content = loader.render_to_string(html_template, context)
 
-    if role_name not in template_map:
-        raise ValueError(f"Unsupported role: {role_name}")
-    template_name = template_map[role_name]
-
-    text_content = loader.render_to_string(f"register/{template_name}.txt", context)
-    html_content = loader.render_to_string(f"register/{template_name}.html", context)
-
-    email = EmailMultiAlternatives(
-        subject="Verify your email address",
+    message = EmailMultiAlternatives(
+        subject=subject,
         body=text_content,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[email],
+        to=[recipient],
     )
 
-    email.attach_alternative(html_content, "text/html")
-    email.send(fail_silently=False)
+    message.attach_alternative(html_content, "text/html")
+    message.send(fail_silently=False)

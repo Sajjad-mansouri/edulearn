@@ -13,9 +13,46 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from user_agents import parse
 
 from accounts.models import LoginHistory, Role, UserSession
-from accounts.tasks import send_verification_email
+
+from ..tasks import send_email
 
 User = get_user_model()
+
+
+def send_registration_email(user, request, role_name):
+    protocol = "https" if request.is_secure() else "http"
+    current_site = get_current_site(request)
+    user_pk_bytes = force_bytes(User._meta.pk.value_to_string(user))
+    template_map = {
+        "student": "student_register_confirm_email",
+        "teacher": "instructor_register_confirm_email",
+    }
+
+    if role_name not in template_map:
+        raise ValueError(f"Unsupported role: {role_name}")
+    template_name = template_map[role_name]
+    text_template = f"register/{template_name}.txt"
+    html_template = f"register/{template_name}.html"
+
+    context = {
+        "email": user.email,
+        "protocol": protocol,
+        "domain": current_site.domain,
+        "site_name": current_site.name,
+        "uid": urlsafe_base64_encode(user_pk_bytes),
+        "token": default_token_generator.make_token(user),
+    }
+    email_kwargs = {
+        "recipient": user.email,
+        "subject": "Verify your email address",
+        "text_template": text_template,
+        "html_template": html_template,
+        "context": context,
+    }
+    if settings.USE_CELERY:
+        send_email.delay(**email_kwargs)
+    else:
+        send_email(**email_kwargs)
 
 
 def register_user(data, role_name, request):
@@ -25,25 +62,6 @@ def register_user(data, role_name, request):
     role, _ = Role.objects.get_or_create(name=role_name)
     role.users.add(user)
     send_registration_email(user=user, request=request, role_name=role_name)
-
-
-def send_registration_email(user, request, role_name):
-    protocol = "https" if request.is_secure() else "http"
-    current_site = get_current_site(request)
-    user_pk_bytes = force_bytes(User._meta.pk.value_to_string(user))
-    email_context = {
-        "email": user.email,
-        "protocol": protocol,
-        "domain": current_site.domain,
-        "site_name": current_site.name,
-        "uid": urlsafe_base64_encode(user_pk_bytes),
-        "token": default_token_generator.make_token(user),
-        "role_name": role_name,
-    }
-    if settings.USE_CELERY:
-        send_verification_email.delay(**email_context)
-    else:
-        send_verification_email(**email_context)
 
 
 def get_ident(request):
