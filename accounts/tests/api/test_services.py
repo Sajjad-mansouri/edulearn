@@ -165,10 +165,10 @@ class TestSendRegistrationEmail:
         return site
 
     @patch("accounts.api.services.get_current_site")
-    @patch("accounts.api.services.send_verification_email")
+    @patch("accounts.api.services.send_email")
     def test_calls_celery_task_when_enabled(
         self,
-        mock_send_verification_email,
+        mock_send_email,
         mock_get_current_site,
         user,
         mock_request,
@@ -186,26 +186,31 @@ class TestSendRegistrationEmail:
         )
 
         expected_context = {
-            "email": user.email,
-            "protocol": "http",
-            "domain": current_site.domain,
-            "site_name": current_site.name,
-            "uid": urlsafe_base64_encode(
-                force_bytes(user._meta.pk.value_to_string(user))
-            ),
-            "token": default_token_generator.make_token(user),
-            "role_name": "student",
+            "recipient": user.email,
+            "subject": "Verify your email address",
+            "text_template": "register/student_register_confirm_email.txt",
+            "html_template": "register/student_register_confirm_email.html",
+            "context": {
+                "email": user.email,
+                "protocol": "http",
+                "domain": current_site.domain,
+                "site_name": current_site.name,
+                "uid": urlsafe_base64_encode(
+                    force_bytes(user._meta.pk.value_to_string(user))
+                ),
+                "token": default_token_generator.make_token(user),
+            },
         }
 
-        mock_send_verification_email.delay.assert_called_once_with(**expected_context)
+        mock_send_email.delay.assert_called_once_with(**expected_context)
 
-        mock_send_verification_email.assert_not_called()
+        mock_send_email.assert_not_called()
 
     @patch("accounts.api.services.get_current_site")
-    @patch("accounts.api.services.send_verification_email")
+    @patch("accounts.api.services.send_email")
     def test_calls_task_directly_when_celery_is_disabled(
         self,
-        mock_send_verification_email,
+        mock_send_email,
         mock_get_current_site,
         user,
         mock_request,
@@ -223,26 +228,31 @@ class TestSendRegistrationEmail:
         )
 
         expected_context = {
-            "email": user.email,
-            "protocol": "http",
-            "domain": current_site.domain,
-            "site_name": current_site.name,
-            "uid": urlsafe_base64_encode(
-                force_bytes(user._meta.pk.value_to_string(user))
-            ),
-            "token": default_token_generator.make_token(user),
-            "role_name": "student",
+            "recipient": user.email,
+            "subject": "Verify your email address",
+            "text_template": "register/student_register_confirm_email.txt",
+            "html_template": "register/student_register_confirm_email.html",
+            "context": {
+                "email": user.email,
+                "protocol": "http",
+                "domain": current_site.domain,
+                "site_name": current_site.name,
+                "uid": urlsafe_base64_encode(
+                    force_bytes(user._meta.pk.value_to_string(user))
+                ),
+                "token": default_token_generator.make_token(user),
+            },
         }
 
-        mock_send_verification_email.assert_called_once_with(**expected_context)
+        mock_send_email.assert_called_once_with(**expected_context)
 
-        assert not mock_send_verification_email.delay.called
+        assert not mock_send_email.delay.called
 
     @patch("accounts.api.services.get_current_site")
-    @patch("accounts.api.services.send_verification_email")
+    @patch("accounts.api.services.send_email")
     def test_uses_https_for_secure_requests(
         self,
-        mock_send_verification_email,
+        mock_send_email,
         mock_get_current_site,
         user,
         mock_request,
@@ -260,15 +270,15 @@ class TestSendRegistrationEmail:
             role_name="teacher",
         )
 
-        context = mock_send_verification_email.call_args.kwargs
-
+        kwargs = mock_send_email.call_args.kwargs
+        context = kwargs["context"]
         assert context["protocol"] == "https"
 
     @patch("accounts.api.services.get_current_site")
-    @patch("accounts.api.services.send_verification_email")
+    @patch("accounts.api.services.send_email")
     def test_builds_expected_email_context(
         self,
-        mock_send_verification_email,
+        mock_send_email,
         mock_get_current_site,
         user,
         mock_request,
@@ -285,12 +295,11 @@ class TestSendRegistrationEmail:
             role_name="student",
         )
 
-        context = mock_send_verification_email.call_args.kwargs
-
+        kwargs = mock_send_email.call_args.kwargs
+        context = kwargs["context"]
         assert context["email"] == user.email
         assert context["domain"] == current_site.domain
         assert context["site_name"] == current_site.name
-        assert context["role_name"] == "student"
         assert context["uid"] == urlsafe_base64_encode(
             force_bytes(user._meta.pk.value_to_string(user))
         )
