@@ -405,3 +405,80 @@ class TestLogoutApiView:
         )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+class TestPasswordResetApiView:
+    """Tests for PasswordResetApiView."""
+
+    @pytest.fixture
+    def client(self):
+        return APIClient()
+
+    @pytest.fixture
+    def url(self):
+        return reverse("accounts-api:password_reset")
+
+    @patch("accounts.api.views.send_password_reset_email")
+    def test_sends_password_reset_email(
+        self,
+        mock_send_password_reset_email,
+        client,
+        url,
+    ):
+        payload = {
+            "email": "test_user@example.com",
+        }
+
+        response = client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == {
+            "detail": (
+                "If an account with that email exists, "
+                "a password reset link has been sent."
+            )
+        }
+
+        mock_send_password_reset_email.assert_called_once()
+
+        _, kwargs = mock_send_password_reset_email.call_args
+        assert kwargs["email"] == payload["email"]
+        assert kwargs["request"] is not None
+
+    @pytest.mark.parametrize(
+        "payload,error_field",
+        [
+            ({}, "email"),
+            ({"email": ""}, "email"),
+            ({"email": "invalid-email"}, "email"),
+        ],
+    )
+    def test_returns_bad_request_for_invalid_payload(
+        self,
+        client,
+        url,
+        payload,
+        error_field,
+    ):
+        response = client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert error_field in response.data
+
+    @patch("accounts.api.views.send_password_reset_email")
+    def test_does_not_call_service_when_serializer_is_invalid(
+        self,
+        mock_send_password_reset_email,
+        client,
+        url,
+    ):
+        response = client.post(
+            url,
+            {},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        mock_send_password_reset_email.assert_not_called()
