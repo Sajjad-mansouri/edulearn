@@ -15,4 +15,10 @@ urlpatterns = [
         views.RegisterConfirmView.as_view(),
         name="register_confirm",
     ),
+    path("password_reset/", views.PasswordResetView.as_view(), name="password_reset"),
+    path(
+        "reset/<uidb64>/<token>/",
+        views.PasswordResetConfirmView.as_view(),
+        name="password_reset_confirm",
+    ),
 ]

@@ -111,3 +111,11 @@ class RegisterConfirmView(TemplateView):
                 }
             )
         return context
+
+
+class PasswordResetView(TemplateView):
+    template_name = "accounts/password_reset_form.html"
+
+
+class PasswordResetConfirmView(TemplateView):
+    pass

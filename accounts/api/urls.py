@@ -22,4 +22,7 @@ urlpatterns = [
     ),
     path("login/", views.LoginApiView.as_view(), name="login"),
     path("logout/", views.LogoutApiView.as_view(), name="logout"),
+    path(
+        "password_reset/", views.PasswordResetApiView.as_view(), name="password_reset"
+    ),
 ]

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.forms import _unicode_ci_compare
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.sites.shortcuts import get_current_site
@@ -150,3 +151,57 @@ def logout_user(refresh_token: str) -> None:
         RefreshToken(refresh_token).blacklist()
     except TokenError as err:
         raise ValidationError({"refresh": "Invalid refresh token."}) from err
+
+
+def get_users(email):
+    """Given an email, return matching user(s) who should receive a reset.
+
+    This allows subclasses to more easily customize the default policies
+    that prevent inactive users and users with unusable passwords from
+    resetting their password.
+    """
+
+    active_users = User._default_manager.filter(
+        **{
+            "email__iexact": email,
+            "is_active": True,
+        }
+    )
+    print(User.objects.all().values_list("email"))
+    return (
+        u
+        for u in active_users
+        if u.has_usable_password() and _unicode_ci_compare(email, u.email)
+    )
+
+
+def send_password_reset_email(request, email) -> None:
+    """
+    Generate a one-use only link for resetting password and send it to the
+    user.
+    """
+    protocol = "https" if request.is_secure() else "http"
+    current_site = get_current_site(request)
+    for user in get_users(email):
+        user_pk_bytes = force_bytes(User._meta.pk.value_to_string(user))
+        context = {
+            "email": user.email,
+            "protocol": protocol,
+            "domain": current_site.domain,
+            "site_name": current_site.name,
+            "uid": urlsafe_base64_encode(user_pk_bytes),
+            "token": default_token_generator.make_token(user),
+        }
+        text_template = "register/password_reset_confirm_email.txt"
+        html_template = "register/password_reset_confirm_email.html"
+        email_kwargs = {
+            "recipient": user.email,
+            "subject": f"Password reset on {current_site.name}",
+            "text_template": text_template,
+            "html_template": html_template,
+            "context": context,
+        }
+        if settings.USE_CELERY:
+            send_email.delay(**email_kwargs)
+        else:
+            send_email(**email_kwargs)
