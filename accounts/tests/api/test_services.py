@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.models import Site
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
@@ -19,6 +20,7 @@ from accounts.api.services import (
     logout_user,
     perform_login,
     register_user,
+    send_password_reset_email,
     send_registration_email,
 )
 from accounts.models import LoginHistory, Role, UserSession
@@ -720,3 +722,100 @@ class TestLogoutUser:
             logout_user(refresh_token)
 
         assert exc_info.value.__cause__ is original_error
+
+
+@pytest.mark.django_db
+class TestSendPasswordResetEmail:
+    """Tests for send_password_reset_email."""
+
+    @pytest.fixture
+    def mock_request(self):
+        request = MagicMock()
+        request.is_secure.return_value = False
+        return request
+
+    @pytest.fixture
+    def current_site(self):
+        return Site(
+            domain="example.com",
+            name="SM-LMS",
+        )
+
+    @patch("accounts.api.services.get_current_site")
+    @patch("accounts.api.services.send_email.delay")
+    def test_sends_email_via_celery(
+        self,
+        mock_send_email,
+        mock_get_current_site,
+        settings,
+        mock_request,
+        current_site,
+    ):
+        settings.USE_CELERY = True
+
+        user = UserFactory(email="test_user@example.com")
+        mock_get_current_site.return_value = current_site
+
+        send_password_reset_email(
+            request=mock_request,
+            email=user.email,
+        )
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        mock_send_email.assert_called_once_with(
+            recipient=user.email,
+            subject="Password reset on SM-LMS",
+            text_template="register/password_reset_confirm_email.txt",
+            html_template="register/password_reset_confirm_email.html",
+            context={
+                "email": user.email,
+                "protocol": "http",
+                "domain": "example.com",
+                "site_name": "SM-LMS",
+                "uid": uid,
+                "token": default_token_generator.make_token(user),
+            },
+        )
+
+    @patch("accounts.api.services.get_current_site")
+    @patch("accounts.api.services.send_email")
+    def test_sends_email_synchronously(
+        self,
+        mock_send_email,
+        mock_get_current_site,
+        settings,
+        mock_request,
+        current_site,
+    ):
+        settings.USE_CELERY = False
+
+        user = UserFactory(email="test_user@example.com")
+        mock_get_current_site.return_value = current_site
+
+        send_password_reset_email(
+            request=mock_request,
+            email=user.email,
+        )
+
+        assert mock_send_email.call_count == 1
+
+    @patch("accounts.api.services.get_current_site")
+    @patch("accounts.api.services.send_email.delay")
+    def test_does_not_send_email_when_user_does_not_exist(
+        self,
+        mock_send_email,
+        mock_get_current_site,
+        settings,
+        mock_request,
+        current_site,
+    ):
+        settings.USE_CELERY = True
+        mock_get_current_site.return_value = current_site
+
+        send_password_reset_email(
+            request=mock_request,
+            email="missing@example.com",
+        )
+
+        mock_send_email.assert_not_called()
