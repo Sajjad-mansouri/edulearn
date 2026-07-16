@@ -1,9 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import (
+    PasswordResetConfirmView as DjangoPasswordResetConfirmView,
+)
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import transaction
 from django.http import HttpResponseRedirect
+from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.http import urlsafe_base64_decode
 from django.utils.translation import gettext_lazy as _
@@ -117,5 +121,10 @@ class PasswordResetView(TemplateView):
     template_name = "accounts/password_reset_form.html"
 
 
-class PasswordResetConfirmView(TemplateView):
-    pass
+class PasswordResetConfirmView(DjangoPasswordResetConfirmView):
+    template_name = "accounts/password_reset_confirm.html"
+    success_url = reverse_lazy("accounts:password_reset_complete")
+
+
+class PasswordResetCompleteView(TemplateView):
+    template_name = "accounts/password_reset_complete.html"
