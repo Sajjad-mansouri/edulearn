@@ -11,6 +11,11 @@ class Profile(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="profile", verbose_name=_("User")
     )
+    cover = models.ImageField(
+        _("Cover"),
+        upload_to="covers/",
+        blank=True,
+    )
     avatar = models.ImageField(
         _("Avatar"),
         upload_to="avatars/",
@@ -147,6 +152,7 @@ class Education(models.Model):
     institution = models.CharField(_("Institution"), max_length=255)
     degree = models.CharField(_("Degree"), max_length=255)
     field_of_study = models.CharField(_("Field Of Study"), max_length=255)
+    description = models.TextField(_("Description"), blank=True)
 
     start_year = models.PositiveSmallIntegerField(
         _("Start Year"), null=True, blank=True
@@ -201,6 +207,8 @@ class Experience(models.Model):
         _("Position"),
         max_length=255,
     )
+    location = models.CharField(_("Location"), max_length=250, blank=True)
+    description = models.TextField(_("Description"), blank=True)
 
     start_date = models.DateField(
         _("Start Date"),
@@ -297,3 +305,25 @@ class SocialLink(models.Model):
 
     def __str__(self):
         return f"{self.platform} ({self.profile.user.username})"
+
+
+class Language(models.Model):
+    PROFICIENCIES = [
+        ("native", "Native"),
+        ("c2", "Proficient"),
+        ("c1", "Advanced"),
+        ("B2", "Upper Intermediate"),
+        ("B1", "Intermediate"),
+        ("A2", "Elementary"),
+        ("A1", "Beginner"),
+    ]
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="languages",
+        verbose_name=_("Profile"),
+    )
+    language = models.TextField(_("Language"), max_length=250)
+    proficiency = models.CharField(
+        _("Proficiency"), choices=PROFICIENCIES, max_length=6
+    )
