@@ -11,6 +11,7 @@ from profiles.models import (
     Education,
     Experience,
     InstructorProfile,
+    Language,
     Profile,
     Skill,
     SocialLink,
@@ -82,6 +83,7 @@ class TestProfileModel:
         assert profile.company == ""
         assert profile.job_title == ""
         assert profile.avatar.name == ""
+        assert profile.cover.name == ""
         assert profile.date_of_birth is None
 
     def test_created_at_is_set_on_creation(self, profile):
@@ -370,6 +372,7 @@ class TestEducationModel:
             institution="MIT",
             degree="Bachelor",
             field_of_study="Computer Science",
+            description="Focused on deep learning and NLP.",
             start_year=2018,
             end_year=2022,
         )
@@ -377,6 +380,7 @@ class TestEducationModel:
         assert education.profile == profile
         assert education.institution == "MIT"
         assert education.degree == "Bachelor"
+        assert education.description == "Focused on deep learning and NLP."
         assert education.field_of_study == "Computer Science"
         assert education.start_year == 2018
         assert education.end_year == 2022
@@ -406,6 +410,7 @@ class TestEducationModel:
             profile=profile,
             institution="MIT",
             degree="Bachelor",
+            description="Focused on deep learning and NLP.",
             field_of_study="Computer Science",
             start_year=2022,
             end_year=None,
@@ -419,6 +424,7 @@ class TestEducationModel:
             profile=profile,
             institution="MIT",
             degree="Bachelor",
+            description="Focused on deep learning and NLP.",
             field_of_study="Computer Science",
             start_year=None,
             end_year=2022,
@@ -454,6 +460,7 @@ class TestEducationModel:
                 profile=profile,
                 institution="MIT",
                 degree="Bachelor",
+                description="Focused on deep learning and NLP.",
                 field_of_study="Computer Science",
                 start_year=2023,
                 end_year=2022,
@@ -484,14 +491,18 @@ class TestExperienceModel:
         experience = Experience.objects.create(
             profile=profile,
             company="test_company",
+            location="San Francisco, US",
             position="Backend Developer",
+            description="Leading data analytics team.",
             start_date=date(2022, 1, 1),
             end_date=date(2024, 1, 1),
         )
 
         assert experience.profile == profile
         assert experience.company == "test_company"
+        assert experience.location == "San Francisco, US"
         assert experience.position == "Backend Developer"
+        assert experience.description == "Leading data analytics team."
         assert experience.start_date == date(2022, 1, 1)
         assert experience.end_date == date(2024, 1, 1)
         assert experience.is_current is False
@@ -559,7 +570,9 @@ class TestExperienceModel:
             Experience.objects.create(
                 profile=profile,
                 company="test_company",
+                location="San Francisco, US",
                 position="Backend Developer",
+                description="Leading data analytics team.",
                 start_date=date(2024, 1, 1),
                 end_date=date(2023, 1, 1),
             )
@@ -573,7 +586,9 @@ class TestExperienceModel:
             Experience.objects.create(
                 profile=profile,
                 company="test_company",
+                location="San Francisco, US",
                 position="Backend Developer",
+                description="Leading data analytics team.",
                 start_date=date(2022, 1, 1),
                 end_date=date(2024, 1, 1),
                 is_current=True,
@@ -675,3 +690,74 @@ class TestSocialLinkModel:
         )
 
         assert SocialLink.objects.filter(platform="GitHub").count() == 2
+
+
+@pytest.mark.django_db
+class TestLanguageModel:
+    """Tests for the Language model."""
+
+    def test_creates_language(self):
+        """A language can be created for a profile."""
+        profile = ProfileFactory()
+
+        language = Language.objects.create(
+            profile=profile,
+            language="English",
+            proficiency="c1",
+        )
+
+        assert language.pk is not None
+        assert language.profile == profile
+        assert language.language == "English"
+        assert language.proficiency == "c1"
+
+    def test_profile_languages_related_name(self):
+        """Languages are accessible through the profile related name."""
+        profile = ProfileFactory()
+
+        language = Language.objects.create(
+            profile=profile,
+            language="English",
+            proficiency="native",
+        )
+
+        assert profile.languages.count() == 1
+        assert profile.languages.first() == language
+
+    def test_deletes_languages_when_profile_is_deleted(self):
+        """Deleting a profile deletes its languages."""
+        profile = ProfileFactory()
+
+        language = Language.objects.create(
+            profile=profile,
+            language="English",
+            proficiency="b2",
+        )
+
+        profile.delete()
+
+        assert not Language.objects.filter(pk=language.pk).exists()
+
+    @pytest.mark.parametrize(
+        "proficiency",
+        [
+            "native",
+            "c2",
+            "c1",
+            "B2",
+            "B1",
+            "A2",
+            "A1",
+        ],
+    )
+    def test_accepts_valid_proficiency_values(self, proficiency):
+        """All defined proficiency values can be stored."""
+        profile = ProfileFactory()
+
+        language = Language.objects.create(
+            profile=profile,
+            language="English",
+            proficiency=proficiency,
+        )
+
+        assert language.proficiency == proficiency
