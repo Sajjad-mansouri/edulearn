@@ -145,7 +145,7 @@ class Education(models.Model):
     profile = models.ForeignKey(
         Profile,
         on_delete=models.CASCADE,
-        related_name="education",
+        related_name="educations",
         verbose_name=_("Profile"),
     )
 
