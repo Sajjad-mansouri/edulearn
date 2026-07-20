@@ -7,6 +7,7 @@ from profiles.models import (
     Education,
     Experience,
     InstructorProfile,
+    Language,
     Profile,
     Skill,
     SocialLink,
@@ -69,11 +70,12 @@ class EducationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Education
 
-    profile = factory.SubFactory(Profile)
+    profile = factory.SubFactory(ProfileFactory)
 
     institution = "University of Oxford"
     degree = "Master of Science"
     field_of_study = "Computer Science"
+    description = "Master's degree"
 
     start_year = 2020
     end_year = 2022
@@ -83,9 +85,11 @@ class ExperienceFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Experience
 
-    profile = factory.SubFactory(Profile)
+    profile = factory.SubFactory(ProfileFactory)
 
     company = "test_company"
+    position = "Backend Developer"
+    location = "San Francisco, US"
     position = "Backend Developer"
     start_date = date(2022, 1, 1)
     end_date = date(2024, 1, 1)
@@ -96,9 +100,20 @@ class SocialLinkFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = SocialLink
 
-    profile = factory.SubFactory(Profile)
+    profile = factory.SubFactory(ProfileFactory)
 
     platform = "GitHub"
     url = "https://github.com/test_user"
     visibility = SocialLink.Visibility.PUBLIC
     display_order = 0
+
+
+class LanguageFactory(factory.django.DjangoModelFactory):
+    """Factory for creating Language instances."""
+
+    class Meta:
+        model = Language
+
+    profile = factory.SubFactory(ProfileFactory)
+    language = factory.Faker("language_name")
+    proficiency = "native"
