@@ -1,0 +1,118 @@
+ {%extends 'profiles/student/base_account.html'%}
+
+ {%block main_content%}
+        <main class="content-main" id="contentMain">
+            <header class="page-header">
+                <h1 class="page-header-title">Profile</h1>
+                <p class="page-header-desc">Manage your public profile and personal information</p>
+            </header>
+
+            <!-- Profile Layout -->
+            <div class="profile-layout">
+
+                <!-- ==================== LEFT: EDITOR ==================== -->
+                <div class="profile-editor">
+
+                    <!-- Cover & Avatar -->
+                    <section class="profile-section cover-avatar-section" id="coverAvatarSection">
+                        <div class="cover-image-wrapper" id="coverWrapper">
+                            <img src="" alt="Cover" class="cover-image" id="coverImage">
+                            <div class="cover-overlay">
+                                <button class="cover-upload-btn" id="coverUploadBtn"><i class="fas fa-camera"></i> Change Cover</button>
+                            </div>
+                            <input type="file" id="coverFileInput" accept="image/*" style="display:none;">
+                        </div>
+                        <div class="avatar-row">
+                            <div class="avatar-wrapper" id="avatarWrapper">
+                                <img src="" alt="Avatar" class="profile-avatar" id="profileAvatar">
+                                <button class="avatar-upload-btn" id="avatarUploadBtn"><i class="fas fa-camera"></i></button>
+                            </div>
+                            <input type="file" id="avatarFileInput" accept="image/*" style="display:none;">
+                            <div class="avatar-info">
+                                <h2 class="profile-display-name" id="displayName"></h2>
+                                <p class="profile-email" id="displayEmail"></p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Basic Information -->
+                    <section class="profile-section">
+                        <h3 class="section-title"><i class="fas fa-info-circle"></i> Basic Information</h3>
+                        <div class="form-grid">
+                            <div class="form-group"><label>First Name</label><input type="text" id="firstName" class="form-input" placeholder="First name"></div>
+                            <div class="form-group"><label>Last Name</label><input type="text" id="lastName" class="form-input" placeholder="Last name"></div>
+                            <div class="form-group full-width"><label>Headline</label><input type="text" id="headline" class="form-input" placeholder="e.g. Data Scientist at TechCorp" maxlength="120"></div>
+                            <div class="form-group full-width"><label>Biography</label><textarea id="bio" class="form-input form-textarea" rows="4" placeholder="Tell us about yourself..." maxlength="2000"></textarea><span class="char-count" id="bioCount">0/2000</span></div>
+                            <div class="form-group full-width"><label>Website</label><input type="url" id="website" class="form-input" placeholder="https://yourwebsite.com"></div>
+                        </div>
+                        <button class="save-section-btn" id="saveBasicInfo"><i class="fas fa-check"></i> Save Changes</button>
+                    </section>
+
+                    <!-- Skills -->
+                    <section class="profile-section" id="skillsSection">
+                        <h3 class="section-title"><i class="fas fa-tags"></i> Skills</h3>
+                        <div class="skills-container" id="skillsContainer"></div>
+                        <div class="add-skill-row">
+                            <input type="text" id="skillInput" class="form-input" placeholder="Add a skill...">
+                            <button class="add-item-btn" id="addSkillBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                    </section>
+
+                    <!-- Education -->
+                    <section class="profile-section" id="educationSection">
+                        <div class="section-header-row">
+                            <h3 class="section-title"><i class="fas fa-graduation-cap"></i> Education</h3>
+                            <button class="add-item-btn" id="addEducationBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div class="items-list" id="educationList"></div>
+                    </section>
+
+                    <!-- Experience -->
+                    <section class="profile-section" id="experienceSection">
+                        <div class="section-header-row">
+                            <h3 class="section-title"><i class="fas fa-briefcase"></i> Experience</h3>
+                            <button class="add-item-btn" id="addExperienceBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div class="items-list" id="experienceList"></div>
+                    </section>
+
+                    <!-- Social Links -->
+                    <section class="profile-section" id="socialSection">
+                        <div class="section-header-row">
+                            <h3 class="section-title"><i class="fas fa-globe"></i> Social Links</h3>
+                            <button class="add-item-btn" id="addSocialBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div class="items-list" id="socialList"></div>
+                    </section>
+
+                    <!-- Languages -->
+                    <section class="profile-section" id="languagesSection">
+                        <div class="section-header-row">
+                            <h3 class="section-title"><i class="fas fa-language"></i> Languages</h3>
+                            <button class="add-item-btn" id="addLanguageBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div class="items-list" id="languagesList"></div>
+                    </section>
+                </div>
+
+                <!-- ==================== RIGHT: PREVIEW ==================== -->
+                <div class="profile-preview desktop-only" id="profilePreview">
+                    <h3 class="preview-title"><i class="fas fa-eye"></i> Public Preview</h3>
+                    <div class="preview-card">
+                        <div class="preview-cover" id="previewCover"></div>
+                        <div class="preview-body">
+                            <img src="" alt="" class="preview-avatar" id="previewAvatar">
+                            <h3 class="preview-name" id="previewName"></h3>
+                            <p class="preview-headline" id="previewHeadline"></p>
+                            <p class="preview-bio" id="previewBio"></p>
+                            <div class="preview-skills" id="previewSkills"></div>
+                            <div class="preview-section"><h4>🎓 Education</h4><div id="previewEducation"></div></div>
+                            <div class="preview-section"><h4>💼 Experience</h4><div id="previewExperience"></div></div>
+                            <div class="preview-section"><h4>🌐 Links</h4><div id="previewLinks"></div></div>
+                            <div class="preview-section"><h4>🌍 Languages</h4><div id="previewLanguages"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+{%endblock%}

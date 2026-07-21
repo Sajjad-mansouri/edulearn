@@ -9,6 +9,7 @@ class EducationSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "institution",
+            "degree",
             "field_of_study",
             "description",
             "start_year",

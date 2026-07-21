@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.forms import _unicode_ci_compare
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.gis.geoip2 import GeoIP2
@@ -138,6 +138,7 @@ def perform_login(validated_data, request) -> dict:
         raise AuthenticationFailed("Invalid username or password.")
 
     refresh = RefreshToken.for_user(user)
+    login(request, user)
     create_loging_history(request, user, True)
     create_user_session(request, user)
 
@@ -167,7 +168,7 @@ def get_users(email):
             "is_active": True,
         }
     )
-    print(User.objects.all().values_list("email"))
+
     return (
         u
         for u in active_users

@@ -1,0 +1,199 @@
+/* ============================================ */
+/* SIDEBAR                                       */
+/* ============================================ */
+.app-sidebar {
+    position: fixed;
+    top: var(--topnav-height);
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    background: #FFFFFF;
+    border-right: 1px solid var(--color-gray-200);
+    z-index: var(--z-sidebar);
+    transition: width var(--transition-base), transform var(--transition-base);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+}
+
+.sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Sidebar Group */
+.sidebar-group {
+    margin-bottom: 20px;
+}
+
+.sidebar-group-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 14px 6px;
+    margin-bottom: 4px;
+}
+
+.coming-soon-tag {
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    background: var(--color-primary-100);
+    color: var(--color-primary-700);
+    border-radius: var(--radius-full);
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* Sidebar Links */
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    color: var(--color-gray-600);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar-link i {
+    width: 20px;
+    text-align: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.sidebar-link-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-link:hover {
+    background: var(--color-gray-100);
+    color: var(--color-gray-900);
+}
+
+.sidebar-link.active {
+    background: var(--color-primary-50);
+    color: var(--color-primary-700);
+    font-weight: 600;
+}
+
+.sidebar-link.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.sidebar-link.logout-link {
+    color: var(--color-danger);
+}
+
+.sidebar-link.logout-link:hover {
+    background: var(--color-danger-bg);
+}
+
+/* ============================================ */
+/* SIDEBAR RESPONSIVE                            */
+/* ============================================ */
+
+/* Tablet: Collapsed icons-only */
+@media (max-width: 1199px) {
+    .app-sidebar {
+        width: var(--sidebar-collapsed-width);
+    }
+
+    .sidebar-nav {
+        padding: 20px 8px;
+        align-items: center;
+    }
+
+    .sidebar-group-label,
+    .sidebar-link-text,
+    .coming-soon-tag {
+        display: none;
+    }
+
+    .sidebar-link {
+        justify-content: center;
+        padding: 12px;
+        gap: 0;
+    }
+
+    .sidebar-link i {
+        font-size: 1.2rem;
+    }
+
+    .sidebar-group {
+        margin-bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* Mobile: Slide-out drawer */
+@media (max-width: 767px) {
+    .app-sidebar {
+        width: var(--sidebar-width);
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-xl);
+        z-index: calc(var(--z-sidebar) + 50);
+    }
+
+    .app-sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+        display: block;
+        opacity: 0;
+        transition: opacity var(--transition-base);
+    }
+
+
+
+    .sidebar-nav {
+        padding: 20px 12px;
+        align-items: stretch;
+    }
+
+    .sidebar-group-label,
+    .sidebar-link-text,
+    .coming-soon-tag {
+        display: inline;
+    }
+
+    .sidebar-link {
+        justify-content: flex-start;
+        padding: 10px 14px;
+        gap: 12px;
+    }
+
+    .sidebar-link i {
+        font-size: 1.05rem;
+    }
+
+    .sidebar-group {
+        margin-bottom: 20px;
+        align-items: stretch;
+    }
+}

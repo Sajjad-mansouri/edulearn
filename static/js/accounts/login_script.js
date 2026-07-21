@@ -50,7 +50,7 @@
       setLoading(true);
 
       const auth = new Auth({
-        baseURL: window.location.origin + '/api/v1/accounts',
+        baseURL: window.location.origin + '/api/v1/account/auth',
         loginPath: '/login/',
       });
 
@@ -58,7 +58,7 @@
         const result = await auth.login(username, password);
 
         if (result.success) {
-          window.location.href = '/';   // Change to your dashboard URL
+          window.location.href = window.location.origin + '/account/profile';   // Change to your dashboard URL
         } else {
           showError(result.error || 'Invalid username or password.');
         }

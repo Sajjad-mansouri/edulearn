@@ -112,7 +112,12 @@ class Auth {
       contentType,
       ...rest
     } = options;
-
+    if (!this.accessToken && this.refreshToken) {
+        const refreshed = await this._refreshAccessToken();
+        if (!refreshed) {
+            throw new Error("Session expired");
+        }
+    }
     // If a relative path is given, prepend baseURL
     const fullURL = url.startsWith('http') ? url : `${this.baseURL}${url}`;
 
@@ -127,23 +132,28 @@ class Auth {
     });
 
     // If 401 and we have a refresh token, try to refresh and retry once
-    if (response.status === 401 && this.refreshToken) {
-      const refreshed = await this._refreshAccessToken();
 
-      if (refreshed) {
-        // Retry with the new access token (preserve original extra headers)
-        const retryHeaders = this._buildHeaders(extraHeaders, contentType);
-        response = await this._request(method, fullURL, {
-          body,
-          headers: retryHeaders,
-          ...rest,
-        });
-      } else {
-        // Refresh failed – user is now logged out (onLogout already called)
-        throw new Error('Session expired');
-      }
+    if (response.status === 401) {
+        if (!this.refreshToken) {
+            this._clearTokens();
+            this.onLogout();
+            throw new Error("Not authenticated");
+        }
+
+        const refreshed = await this._refreshAccessToken();
+
+        if (refreshed) {
+            const retryHeaders = this._buildHeaders(extraHeaders, contentType);
+            response = await this._request(method, fullURL, {
+                body,
+                headers: retryHeaders,
+                ...rest,
+            });
+        } else {
+
+            throw new Error("Session expired");
+        }
     }
-
     return response;
   }
 
@@ -197,6 +207,7 @@ class Auth {
   /** @private */
   async _performRefresh() {
     try {
+
       const response = await this._request('POST', this.refreshURL, {
         body: JSON.stringify({ refresh: this.refreshToken }),
         // Do not attach the (possibly expired) access token
