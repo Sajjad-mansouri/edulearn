@@ -119,17 +119,17 @@ class Skill(models.Model):
     slug = models.SlugField(_("Slug"), unique=True, max_length=120)
     description = models.TextField(_("Description"), blank=True)
 
-    profiles = models.ManyToManyField(
+    profile = models.ForeignKey(
         Profile,
+        on_delete=models.CASCADE,
         related_name="skills",
-        verbose_name=_("Profiles"),
-        blank=True,
+        verbose_name=_("Profile"),
     )
 
     class Meta:
         ordering = ["name"]
         indexes = [
-            models.Index(fields=["name"]),
+            models.Index(fields=["name", "profile"]),
         ]
 
     def __str__(self):

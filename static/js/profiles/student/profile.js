@@ -1,8 +1,7 @@
 // ============================================
 // PROFILE PAGE CONTROLLER
 // ============================================
-const baseUrl = window.location.origin
-
+const baseUrl = window.location.origin;
 
 function mapProfile(data) {
   return {
@@ -13,27 +12,27 @@ function mapProfile(data) {
     headline: data.headline,
     bio: data.bio || data.biography || "",
     website: data.website,
-    avatar_url: data.avatar || data.avatar || "",
-    cover_url: data.cover || "",
-    skills: (data.skills || []).map(item => item.name),
+    avatar_url: data.avatar || data.avatar_url || "",
+    cover_url: data.cover || data.cover_url || "",
+    skills: (data.skills || []).map(item => typeof item === 'string' ? item : item.name),
 
-    education: (data.educations || []).map(item => ({
+    education: (data.educations || data.education || []).map(item => ({
       id: item.id,
-      school: item.institution,
+      school: item.institution || item.school,
       degree: item.degree,
-      field: item.field_of_study,
-      startDate: item.start_year,
-      endDate: item.end_year,
+      field: item.field_of_study || item.field,
+      startDate: item.start_year || item.startDate || item.start_date,
+      endDate: item.end_year || item.endDate || item.end_date,
       description: item.description
     })),
 
-    experience: (data.experiences || []).map(item => ({
+    experience: (data.experiences || data.experience || []).map(item => ({
       id: item.id,
-      title: item.position,
+      title: item.position || item.title,
       company: item.company,
       location: item.location,
-      startDate: item.start_date,
-      endDate: item.end_date,
+      startDate: item.start_date || item.startDate,
+      endDate: item.end_date || item.endDate,
       description: item.description
     })),
 
@@ -45,13 +44,14 @@ function mapProfile(data) {
 
     languages: (data.languages || []).map(item => ({
       id: item.id,
-      language: item.language || item.lang,
-      proficiency: item.proficiency
+      language: item.language || item.lang || item.name,
+      proficiency: item.proficiency || item.level
     })),
 
     learning_goals: data.learning_goals || []
   };
 }
+
 class ProfilePage {
     constructor() {
         this.profile = {};
@@ -67,7 +67,6 @@ class ProfilePage {
     }
 
     bindEvents() {
-
         // Cover & Avatar upload
         document.getElementById('coverUploadBtn')?.addEventListener('click', () => document.getElementById('coverFileInput')?.click());
         document.getElementById('coverFileInput')?.addEventListener('change', (e) => this.uploadCover(e.target.files[0]));
@@ -101,20 +100,14 @@ class ProfilePage {
     // DATA LOADING
     // ============================================
     async loadProfile() {
-    // ==========================================
-    // REAL API CALL
-    // ==========================================
-
-    try {
-        const response = await auth.authenticatedRequest(window.location.origin + "/api/v1/account/profile/");
-        const data = await response.json()
-        this.profile = mapProfile(data)
-        this.renderAll();
-    } catch (error) {
-        console.error('Failed to load profile:', error);
-    }
-
-    this.renderAll();
+        try {
+            const response = await auth.authenticatedRequest(baseUrl + "/api/v1/account/profile/");
+            const data = await response.json();
+            this.profile = mapProfile(data);
+            this.renderAll();
+        } catch (error) {
+            console.error('Failed to load profile:', error);
+        }
     }
 
     // ============================================
@@ -165,22 +158,70 @@ class ProfilePage {
         });
     }
 
-    addSkill() {
+    async addSkill() {
         const input = document.getElementById('skillInput');
         const skill = input.value.trim();
         if (!skill) return;
         if ((this.profile.skills || []).includes(skill)) { this.showToast('Skill already exists'); return; }
         if ((this.profile.skills || []).length >= 50) { this.showToast('Maximum 50 skills'); return; }
-        this.profile.skills = [...(this.profile.skills || []), skill];
-        input.value = '';
-        this.renderSkills();
-        this.updatePreview();
+
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + "/api/v1/account/skills/",
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ name: skill })
+                }
+            );
+            if (response.ok) {
+                const data = await response.json();
+
+                this.profile.skills.push(data.name);
+                input.value = '';
+                this.renderSkills();
+                this.updatePreview();
+                this.showToast('Skill added');
+            } else {
+                this.showToast('Failed to add skill');
+            }
+        } catch (error) {
+            console.error('Failed to add skill:', error);
+            // Fallback: add locally
+            this.profile.skills = [...(this.profile.skills || []), skill];
+            input.value = '';
+            this.renderSkills();
+            this.updatePreview();
+        }
     }
 
-    removeSkill(index) {
-        this.profile.skills.splice(index, 1);
-        this.renderSkills();
-        this.updatePreview();
+    async removeSkill(index) {
+        const skillName = this.profile.skills[index];
+        if (!skillName) return;
+
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + "/api/v1/account/skills/delete/",
+                {
+                    method: 'DELETE',
+                    body: JSON.stringify({ name: skillName })
+                }
+            );
+            if (response.ok) {
+
+                this.profile.skills = this.profile.skills.filter(item => item !== skillName)
+                this.renderSkills();
+                this.updatePreview();
+                this.showToast('Skill removed');
+            } else {
+                this.showToast('Failed to remove skill');
+            }
+        } catch (error) {
+            console.error('Failed to remove skill:', error);
+            // Fallback: remove locally
+            this.profile.skills.splice(index, 1);
+            this.renderSkills();
+            this.updatePreview();
+        }
     }
 
     // ============================================
@@ -221,11 +262,45 @@ class ProfilePage {
         });
     }
 
-    deleteItem(type, id) {
-        this.profile[type] = (this.profile[type] || []).filter(i => i.id !== id);
-        this.renderList(type, this.profile[type], type === 'education' ? 'school' : 'company', type === 'education' ? 'degree' : 'title');
-        this.updatePreview();
-        this.showToast('Item deleted');
+    async deleteItem(type, id) {
+        const endpointMap = {
+            'education': '/api/v1/account/profile/education/',
+            'experience': '/api/v1/account/profile/experience/',
+            'social_links': '/api/v1/account/profile/social-links/',
+            'languages': '/api/v1/account/profile/languages/'
+        };
+
+        const url = baseUrl + (endpointMap[type] || `/api/v1/account/profile/${type}/`) + id + '/';
+
+        try {
+            const response = await auth.authenticatedRequest(url, { method: 'DELETE' });
+            if (response.ok) {
+                this.profile[type] = (this.profile[type] || []).filter(i => i.id !== id);
+                if (type === 'education' || type === 'experience') {
+                    this.renderList(type, this.profile[type], type === 'education' ? 'school' : 'company', type === 'education' ? 'degree' : 'title');
+                } else if (type === 'social_links') {
+                    this.renderSocialLinks(this.profile.social_links);
+                } else if (type === 'languages') {
+                    this.renderLanguages(this.profile.languages);
+                }
+                this.updatePreview();
+                this.showToast('Item deleted');
+            } else {
+                this.showToast('Failed to delete item');
+            }
+        } catch (error) {
+            console.error('Failed to delete item:', error);
+            // Fallback: delete locally
+            this.profile[type] = (this.profile[type] || []).filter(i => i.id !== id);
+            if (type === 'education' || type === 'experience') {
+                this.renderList(type, this.profile[type], type === 'education' ? 'school' : 'company', type === 'education' ? 'degree' : 'title');
+            } else if (type === 'social_links') {
+                this.renderSocialLinks(this.profile.social_links);
+            } else if (type === 'languages') {
+                this.renderLanguages(this.profile.languages);
+            }
+            this.updatePreview();
+        }
     }
 
     // ============================================
@@ -273,17 +348,21 @@ class ProfilePage {
     }
 
     bindItemActions(type) {
-        const container = document.getElementById(type === 'social' ? 'socialList' : 'languagesList');
+        const containerId = type === 'social' ? 'socialList' : 'languagesList';
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
         container.querySelectorAll('.item-action-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const action = btn.dataset.action;
                 const id = parseInt(btn.dataset.id);
+                const dataKey = type === 'social' ? 'social_links' : 'languages';
                 if (action === 'edit') {
-                    const items = this.profile[type === 'social' ? 'social_links' : 'languages'] || [];
+                    const items = this.profile[dataKey] || [];
                     const item = items.find(i => i.id === id);
                     this.openModal(type, item);
                 } else if (action === 'delete') {
-                    this.deleteItem(type === 'social' ? 'social_links' : 'languages', id);
+                    this.deleteItem(dataKey, id);
                 }
             });
         });
@@ -340,12 +419,92 @@ class ProfilePage {
         this.currentEditId = null;
     }
 
-    saveModalItem() {
+    async saveModalItem() {
         const type = this.currentModalType;
+        let item = {};
+        let url = '';
+        let method = 'POST';
+
         if (type === 'education' || type === 'experience') {
             const isEdu = type === 'education';
-            const item = {
-                id: this.currentEditId || Date.now(),
+            item = {
+                [isEdu ? 'institution' : 'company']: document.getElementById('modalField1').value.trim(),
+                [isEdu ? 'degree' : 'position']: document.getElementById('modalField2').value.trim(),
+                [isEdu ? 'field_of_study' : 'location']: document.getElementById('modalField3').value.trim(),
+                start_date: document.getElementById('modalStartDate').value || null,
+                end_date: document.getElementById('modalCurrently')?.checked ? null : (document.getElementById('modalEndDate').value || null),
+                description: document.getElementById('modalDesc').value.trim()
+            };
+
+            if (!item[isEdu ? 'institution' : 'company'] || !item[isEdu ? 'degree' : 'position']) {
+                this.showToast('Please fill required fields');
+                return;
+            }
+
+            const endpointType = type === 'education' ? 'education' : 'experience';
+            url = baseUrl + `/api/v1/account/profile/${endpointType}/`;
+            if (this.currentEditId) {
+                url += this.currentEditId + '/';
+                method = 'PATCH';
+            }
+        } else if (type === 'social') {
+            item = {
+                platform: document.getElementById('modalPlatform').value,
+                url: document.getElementById('modalUrl').value.trim()
+            };
+            if (!item.url) { this.showToast('Please enter a URL'); return; }
+
+            url = baseUrl + '/api/v1/account/profile/social-links/';
+            if (this.currentEditId) {
+                url += this.currentEditId + '/';
+                method = 'PATCH';
+            }
+        } else if (type === 'language') {
+            item = {
+                language: document.getElementById('modalLanguage').value.trim(),
+                proficiency: document.getElementById('modalProficiency').value
+            };
+            if (!item.language) { this.showToast('Please enter a language'); return; }
+
+            url = baseUrl + '/api/v1/account/profile/languages/';
+            if (this.currentEditId) {
+                url += this.currentEditId + '/';
+                method = 'PATCH';
+            }
+        }
+
+        try {
+            const response = await auth.authenticatedRequest(url, {
+                method: method,
+                body: JSON.stringify(item)
+            });
+
+            if (response.ok) {
+                // Reload profile to get fresh data from server
+                await this.loadProfile();
+                this.closeModal();
+                this.showToast('Saved successfully');
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                this.showToast(errorData.message || errorData.detail || 'Failed to save');
+            }
+        } catch (error) {
+            console.error('Failed to save:', error);
+            // Fallback: save locally without API
+            this.saveModalItemLocally(type);
+            this.updatePreview();
+            this.closeModal();
+            this.showToast('Saved locally (offline)');
+        }
+    }
+
+    saveModalItemLocally(type) {
+        let item = { id: this.currentEditId || Date.now() };
+
+        if (type === 'education' || type === 'experience') {
+            const isEdu = type === 'education';
+            item = {
+                ...item,
                 [isEdu ? 'school' : 'company']: document.getElementById('modalField1').value.trim(),
                 [isEdu ? 'degree' : 'title']: document.getElementById('modalField2').value.trim(),
                 [isEdu ? 'field' : 'location']: document.getElementById('modalField3').value.trim(),
@@ -353,7 +512,7 @@ class ProfilePage {
                 endDate: document.getElementById('modalCurrently')?.checked ? null : document.getElementById('modalEndDate').value,
                 description: document.getElementById('modalDesc').value.trim()
             };
-            if (!item[isEdu ? 'school' : 'company'] || !item[isEdu ? 'degree' : 'title']) { this.showToast('Please fill required fields'); return; }
+
             if (this.currentEditId) {
                 const idx = this.profile[type].findIndex(i => i.id === this.currentEditId);
                 if (idx >= 0) this.profile[type][idx] = item;
@@ -362,8 +521,11 @@ class ProfilePage {
             }
             this.renderList(type, this.profile[type], isEdu ? 'school' : 'company', isEdu ? 'degree' : 'title');
         } else if (type === 'social') {
-            const item = { id: this.currentEditId || Date.now(), platform: document.getElementById('modalPlatform').value, url: document.getElementById('modalUrl').value.trim() };
-            if (!item.url) { this.showToast('Please enter a URL'); return; }
+            item = {
+                ...item,
+                platform: document.getElementById('modalPlatform').value,
+                url: document.getElementById('modalUrl').value.trim()
+            };
             if (this.currentEditId) {
                 const idx = this.profile.social_links.findIndex(i => i.id === this.currentEditId);
                 if (idx >= 0) this.profile.social_links[idx] = item;
@@ -372,8 +534,11 @@ class ProfilePage {
             }
             this.renderSocialLinks(this.profile.social_links);
         } else if (type === 'language') {
-            const item = { id: this.currentEditId || Date.now(), language: document.getElementById('modalLanguage').value.trim(), proficiency: document.getElementById('modalProficiency').value };
-            if (!item.language) { this.showToast('Please enter a language'); return; }
+            item = {
+                ...item,
+                language: document.getElementById('modalLanguage').value.trim(),
+                proficiency: document.getElementById('modalProficiency').value
+            };
             if (this.currentEditId) {
                 const idx = this.profile.languages.findIndex(i => i.id === this.currentEditId);
                 if (idx >= 0) this.profile.languages[idx] = item;
@@ -382,71 +547,123 @@ class ProfilePage {
             }
             this.renderLanguages(this.profile.languages);
         }
-// ==========================================
-    // REAL API CALL (Education example)
-    // ==========================================
-    // try {
-    //     if (this.currentEditId) {
-    //         await ApiService.updateEducation(this.currentEditId, item);
-    //     } else {
-    //         await ApiService.addEducation(item);
-    //     }
-    // } catch (error) {
-    //     this.showToast('Failed to save education');
-    //     return;
-    // }
-        this.updatePreview();
-        this.closeModal();
-        this.showToast('Saved successfully');
     }
 
     // ============================================
     // BASIC INFO SAVE
     // ============================================
-    saveBasicInfo() {
+    async saveBasicInfo() {
         this.profile.first_name = document.getElementById('firstName').value.trim();
         this.profile.last_name = document.getElementById('lastName').value.trim();
         this.profile.headline = document.getElementById('headline').value.trim();
         this.profile.bio = document.getElementById('bio').value.trim();
         this.profile.website = document.getElementById('website').value.trim();
 
-// REAL API CALL
-    // ==========================================
-    // try {
-    //     await ApiService.updateProfile({
-    //         first_name: this.profile.first_name,
-    //         last_name: this.profile.last_name,
-    //         headline: this.profile.headline,
-    //         bio: this.profile.bio,
-    //         website: this.profile.website,
-    //     });
-    // } catch (error) {
-    //     this.showToast('Failed to update profile');
-    //     return;
-    // }
+        const body = JSON.stringify({
+            first_name: this.profile.first_name,
+            last_name: this.profile.last_name,
+            headline: this.profile.headline,
+            bio: this.profile.bio,
+            website: this.profile.website,
+        });
 
-        document.getElementById('displayName').textContent = `${this.profile.first_name} ${this.profile.last_name}`;
-        this.updatePreview();
-        this.showToast('Profile updated successfully');
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + "/api/v1/account/profile/",
+                {
+                    method: 'PATCH',
+                    body: body
+                }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                this.profile = mapProfile(data);
+                document.getElementById('displayName').textContent = `${this.profile.first_name} ${this.profile.last_name}`;
+                this.updatePreview();
+                this.showToast('Profile updated successfully');
+            } else {
+                this.showToast('Failed to update profile');
+            }
+        } catch (error) {
+            console.error('Failed to save basic info:', error);
+            document.getElementById('displayName').textContent = `${this.profile.first_name} ${this.profile.last_name}`;
+            this.updatePreview();
+            this.showToast('Profile updated locally');
+        }
     }
 
     // ============================================
     // UPLOADS
     // ============================================
-    uploadAvatar(file) {
+    async uploadAvatar(file) {
         if (!file) return;
-        const url = URL.createObjectURL(file);
-        document.getElementById('profileAvatar').src = url;
-        document.getElementById('previewAvatar').src = url;
-        this.showToast('Avatar updated');
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + "/api/v1/account/profile/avatar/",
+                {
+                    method: 'POST',
+                    body: formData
+                    // Note: Do NOT set Content-Type header for FormData
+                }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                const avatarUrl = data.avatar_url || data.avatar;
+                document.getElementById('profileAvatar').src = avatarUrl;
+                document.getElementById('previewAvatar').src = avatarUrl;
+                this.profile.avatar_url = avatarUrl;
+                this.showToast('Avatar updated');
+            } else {
+                this.showToast('Failed to upload avatar');
+            }
+        } catch (error) {
+            console.error('Failed to upload avatar:', error);
+            // Fallback: show locally
+            const url = URL.createObjectURL(file);
+            document.getElementById('profileAvatar').src = url;
+            document.getElementById('previewAvatar').src = url;
+            this.showToast('Avatar preview (upload failed)');
+        }
     }
 
-    uploadCover(file) {
+    async uploadCover(file) {
         if (!file) return;
-        const url = URL.createObjectURL(file);
-        document.getElementById('coverImage').src = url;
-        document.getElementById('previewCover').style.backgroundImage = `url(${url})`;
-        this.showToast('Cover image updated');
+
+        const formData = new FormData();
+        formData.append('cover', file);
+
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + "/api/v1/account/profile/cover/",
+                {
+                    method: 'POST',
+                    body: formData
+                }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                const coverUrl = data.cover_url || data.cover;
+                document.getElementById('coverImage').src = coverUrl;
+                document.getElementById('previewCover').style.backgroundImage = `url(${coverUrl})`;
+                this.profile.cover_url = coverUrl;
+                this.showToast('Cover image updated');
+            } else {
+                this.showToast('Failed to upload cover');
+            }
+        } catch (error) {
+            console.error('Failed to upload cover:', error);
+            const url = URL.createObjectURL(file);
+            document.getElementById('coverImage').src = url;
+            document.getElementById('previewCover').style.backgroundImage = `url(${url})`;
+            this.showToast('Cover preview (upload failed)');
+        }
     }
 
     // ============================================
@@ -470,17 +687,38 @@ class ProfilePage {
     // UTILITIES
     // ============================================
     formatDateRange(start, end) {
-        const fmt = (d) => d ? new Date(d + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Present';
-        return `${fmt(start)} - ${end ? fmt(end) : 'Present'}`;
+        const fmt = (d) => {
+            if (!d) return 'Present';
+            const dateStr = String(d);
+            // Handle both "YYYY-MM" and "YYYY-MM-DD" formats
+            const parts = dateStr.split('-');
+            const year = parts[0];
+            const month = parts[1] ? new Date(parseInt(year), parseInt(parts[1]) - 1).toLocaleDateString('en-US', { month: 'short' }) : '';
+            return month ? `${month} ${year}` : year;
+        };
+        const endFormatted = end ? fmt(end) : 'Present';
+        return `${fmt(start)} - ${endFormatted}`;
     }
 
-    hideLoader() { document.getElementById('loadingOverlay')?.classList.add('hidden'); }
+    hideLoader() {
+        const loader = document.getElementById('loadingOverlay');
+        if (loader) loader.classList.add('hidden');
+    }
 
     showToast(msg) {
-        const t = document.createElement('div'); t.className = 'toast-popup'; t.textContent = msg;
+        const t = document.createElement('div');
+        t.className = 'toast-popup';
+        t.textContent = msg;
         document.getElementById('toastContainer').appendChild(t);
-        requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateY(0)'; });
-        setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(10px)'; setTimeout(() => t.remove(), 300); }, 3000);
+        requestAnimationFrame(() => {
+            t.style.opacity = '1';
+            t.style.transform = 'translateY(0)';
+        });
+        setTimeout(() => {
+            t.style.opacity = '0';
+            t.style.transform = 'translateY(10px)';
+            setTimeout(() => t.remove(), 300);
+        }, 3000);
     }
 }
 
