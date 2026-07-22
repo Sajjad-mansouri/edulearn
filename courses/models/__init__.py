@@ -1,5 +1,11 @@
 from .category import Category
-from .course import Course, LearningOutcome, Prerequisite, TargetAudience
+from .course import (
+    Course,
+    CourseCollaborator,
+    LearningOutcome,
+    Prerequisite,
+    TargetAudience,
+)
 from .tag import Tag
 
 __all__ = [
@@ -9,4 +15,5 @@ __all__ = [
     "LearningOutcome",
     "Prerequisite",
     "TargetAudience",
+    "CourseCollaborator",
 ]
