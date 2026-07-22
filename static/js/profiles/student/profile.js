@@ -563,13 +563,13 @@ class ProfilePage {
             first_name: this.profile.first_name,
             last_name: this.profile.last_name,
             headline: this.profile.headline,
-            bio: this.profile.bio,
+            biography: this.profile.bio,
             website: this.profile.website,
         });
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/profile/",
+                baseUrl + "/api/v1/account/basic-info/update/",
                 {
                     method: 'PATCH',
                     body: body

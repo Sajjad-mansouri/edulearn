@@ -44,3 +44,10 @@ class SkillViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, GenericVie
         skill.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserInfoUpadteApiView(generics.UpdateAPIView):
+    serializer_class = ProfileSerializer
+
+    def get_object(self):
+        return self.request.user.profile
