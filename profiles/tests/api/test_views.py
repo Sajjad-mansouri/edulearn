@@ -262,3 +262,129 @@ class TestSkillViewSet:
         )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+class TestUserInfoUpdateApiView:
+    """Tests for UserInfoUpdateApiView."""
+
+    @pytest.fixture
+    def api_client(self):
+        return APIClient()
+
+    @pytest.fixture
+    def url(self):
+        return reverse("profile-api:update_user")
+
+    def test_updates_authenticated_user_profile(
+        self,
+        api_client,
+        url,
+    ):
+        """Authenticated users can update their own profile."""
+        profile = ProfileFactory(
+            biography="Old biography",
+            headline="Old headline",
+            company="Old Company",
+        )
+
+        api_client.force_authenticate(user=profile.user)
+
+        payload = {
+            "first_name": "Test",
+            "last_name": "User",
+            "biography": "Updated biography",
+            "headline": "Backend Developer",
+            "company": "Test Company",
+        }
+
+        response = api_client.patch(
+            url,
+            payload,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        profile.refresh_from_db()
+        profile.user.refresh_from_db()
+
+        assert profile.user.first_name == "Test"
+        assert profile.user.last_name == "User"
+        assert profile.biography == "Updated biography"
+        assert profile.headline == "Backend Developer"
+        assert profile.company == "Test Company"
+
+    def test_partial_update_only_updates_supplied_fields(
+        self,
+        api_client,
+        url,
+    ):
+        """PATCH updates only the provided fields."""
+        profile = ProfileFactory(
+            biography="Original biography",
+            headline="Original headline",
+        )
+
+        original_first_name = profile.user.first_name
+
+        api_client.force_authenticate(user=profile.user)
+
+        response = api_client.patch(
+            url,
+            {
+                "headline": "Updated headline",
+            },
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        profile.refresh_from_db()
+        profile.user.refresh_from_db()
+
+        assert profile.headline == "Updated headline"
+        assert profile.biography == "Original biography"
+        assert profile.user.first_name == original_first_name
+
+    def test_email_cannot_be_updated(
+        self,
+        api_client,
+        url,
+    ):
+        """Email is read-only."""
+        profile = ProfileFactory()
+
+        original_email = profile.user.email
+
+        api_client.force_authenticate(user=profile.user)
+
+        response = api_client.patch(
+            url,
+            {
+                "email": "new@example.com",
+            },
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        profile.user.refresh_from_db()
+
+        assert profile.user.email == original_email
+
+    def test_requires_authentication(
+        self,
+        api_client,
+        url,
+    ):
+        """Anonymous users cannot update profile information."""
+        response = api_client.patch(
+            url,
+            {
+                "headline": "Backend Developer",
+            },
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
