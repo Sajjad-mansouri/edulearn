@@ -1,6 +1,7 @@
 import factory
 
-from courses.models import Category, Tag
+from accounts.tests.factories import UserFactory
+from courses.models import Category, Course, Tag
 
 
 class CategoryFactory(factory.django.DjangoModelFactory):
@@ -21,3 +22,31 @@ class TagFactory(factory.django.DjangoModelFactory):
 
     name = factory.Sequence(lambda n: f"Tag {n}")
     slug = factory.Sequence(lambda n: f"tag-{n}")
+
+
+class CourseFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Course
+        skip_postgeneration_save = True
+
+    owner = factory.SubFactory(UserFactory)
+    category = factory.SubFactory(CategoryFactory)
+
+    title = factory.Sequence(lambda n: f"Course {n}")
+    slug = factory.Sequence(lambda n: f"course-{n}")
+    subtitle = factory.Faker("sentence")
+    description = factory.Faker("paragraph")
+
+    language = "English"
+    level = Course.Level.ALL_LEVELS
+    status = Course.Status.DRAFT
+    visibility = Course.Visibility.PUBLIC
+    version = "1.0.0"
+
+    @factory.post_generation
+    def instructors(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for instructor in extracted:
+                self.instructors.add(instructor)

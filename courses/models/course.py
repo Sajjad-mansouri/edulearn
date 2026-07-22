@@ -1,0 +1,167 @@
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
+
+from .category import Category
+from .tag import Tag
+
+
+class Course(models.Model):
+    class Level(models.TextChoices):
+        BEGINNER = "beginner", _("Beginner")
+        INTERMEDIATE = "intermediate", _("Intermediate")
+        ADVANCED = "advanced", _("Advanced")
+        ALL_LEVELS = "all_levels", _("All Levels")
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", _("Draft")
+        READY_FOR_REVIEW = "ready_for_review", _("Ready for Review")
+        UNDER_REVIEW = "under_review", _("Under Review")
+        PUBLISHED = "published", _("Published")
+        UPDATED = "updated", _("Updated")
+        ARCHIVED = "archived", _("Archived")
+
+    class Visibility(models.TextChoices):
+        PUBLIC = "public", _("Public")
+        PRIVATE = "private", _("Private")
+        UNLISTED = "unlisted", _("Unlisted")
+
+    title = models.CharField(
+        _("Title"),
+        max_length=255,
+    )
+
+    subtitle = models.CharField(
+        _("Subtitle"),
+        max_length=255,
+        blank=True,
+    )
+
+    slug = models.SlugField(
+        _("Slug"),
+        max_length=280,
+        unique=True,
+    )
+
+    description = models.TextField(
+        _("Description"),
+    )
+
+    thumbnail = models.ImageField(
+        _("Thumbnail"),
+        upload_to="courses/thumbnails/",
+        blank=True,
+    )
+
+    promotional_video = models.URLField(
+        _("Promotional Video"),
+        blank=True,
+    )
+
+    language = models.CharField(
+        _("Language"),
+        max_length=50,
+        default="English",
+    )
+
+    level = models.CharField(
+        _("Level"),
+        max_length=20,
+        choices=Level.choices,
+        default=Level.ALL_LEVELS,
+    )
+
+    status = models.CharField(
+        _("Status"),
+        max_length=30,
+        choices=Status.choices,
+        default=Status.DRAFT,
+    )
+
+    visibility = models.CharField(
+        _("Visibility"),
+        max_length=20,
+        choices=Visibility.choices,
+        default=Visibility.PUBLIC,
+    )
+
+    version = models.CharField(
+        _("Version"),
+        max_length=20,
+        default="1.0.0",
+    )
+
+    published_at = models.DateTimeField(
+        _("Published At"),
+        null=True,
+        blank=True,
+    )
+
+    last_updated = models.DateTimeField(
+        _("Last Updated"),
+        auto_now=True,
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="owned_courses",
+        verbose_name=_("Owner"),
+    )
+
+    instructors = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="teaching_courses",
+        verbose_name=_("Instructors"),
+    )
+
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,
+        related_name="courses",
+        verbose_name=_("Category"),
+    )
+
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name="courses",
+        verbose_name=_("Tags"),
+    )
+
+    class Meta:
+        ordering = (
+            "-published_at",
+            "title",
+        )
+
+        indexes = [
+            models.Index(fields=["slug"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["category"]),
+            models.Index(fields=["language"]),
+            models.Index(fields=["published_at"]),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    def clean(self):
+        super().clean()
+
+        if not self.title.strip():
+            raise ValidationError(
+                {
+                    "title": _("Title is required."),
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+
+        self.full_clean()
+
+        super().save(*args, **kwargs)
