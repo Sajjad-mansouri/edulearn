@@ -233,3 +233,37 @@ class Prerequisite(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - {self.order}"
+
+
+class TargetAudience(models.Model):
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name="target_audiences",
+        verbose_name=_("Course"),
+    )
+
+    description = models.CharField(
+        _("Description"),
+        max_length=500,
+    )
+
+    order = models.PositiveSmallIntegerField(
+        _("Order"),
+        default=1,
+    )
+
+    class Meta:
+        ordering = ("course", "order")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["course", "order"],
+                name="unique_target_audience_order_per_course",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["course", "order"]),
+        ]
+
+    def __str__(self):
+        return f"{self.course.title} - {self.order}"
