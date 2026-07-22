@@ -1,6 +1,6 @@
 import factory
 
-from courses.models import Category
+from courses.models import Category, Tag
 
 
 class CategoryFactory(factory.django.DjangoModelFactory):
@@ -13,3 +13,11 @@ class CategoryFactory(factory.django.DjangoModelFactory):
     description = factory.Faker("sentence")
     display_order = factory.Sequence(lambda n: n)
     is_active = True
+
+
+class TagFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Tag
+
+    name = factory.Sequence(lambda n: f"Tag {n}")
+    slug = factory.Sequence(lambda n: f"tag-{n}")
