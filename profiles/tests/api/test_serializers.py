@@ -34,8 +34,8 @@ class TestEducationSerializer:
             field_of_study="Computer Science",
             degree="Master of Science",
             description="Master's degree",
-            start_year=2022,
-            end_year=2024,
+            start_date="2022-12-01",
+            end_date="2022-12-10",
         )
 
         serializer = EducationSerializer(education)
@@ -46,8 +46,8 @@ class TestEducationSerializer:
             "field_of_study": "Computer Science",
             "degree": "Master of Science",
             "description": "Master's degree",
-            "start_year": 2022,
-            "end_year": 2024,
+            "start_date": "2022-12-01",
+            "end_date": "2022-12-10",
         }
 
     def test_contains_expected_fields(self):
@@ -60,8 +60,8 @@ class TestEducationSerializer:
             "field_of_study",
             "degree",
             "description",
-            "start_year",
-            "end_year",
+            "start_date",
+            "end_date",
         }
 
 
@@ -277,8 +277,8 @@ class TestProfileSerializer:
                 "field_of_study": education.field_of_study,
                 "degree": education.degree,
                 "description": education.description,
-                "start_year": education.start_year,
-                "end_year": education.end_year,
+                "start_date": education.start_date,
+                "end_date": education.end_date,
             }
         ]
 

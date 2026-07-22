@@ -1,6 +1,7 @@
 from unittest.mock import ANY, patch
 
 import pytest
+from django.contrib.sites.models import Site
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -13,6 +14,18 @@ from accounts.tests.factories import UserFactory
 @pytest.mark.django_db
 class TestRegisterApiView:
     """Tests for RegisterApiView."""
+
+    @pytest.fixture(autouse=True)
+    def site(settings):
+        settings.SITE_ID = 1
+
+        Site.objects.update_or_create(
+            id=1,
+            defaults={
+                "domain": "testserver",
+                "name": "Test Site",
+            },
+        )
 
     @pytest.fixture
     def api_client(self):
@@ -113,6 +126,18 @@ class TestRegisterApiView:
 @pytest.mark.django_db
 class TestRegisterInstructorApiView:
     """Tests for RegisterInstructorApiView."""
+
+    @pytest.fixture(autouse=True)
+    def site(settings):
+        settings.SITE_ID = 1
+
+        Site.objects.update_or_create(
+            id=1,
+            defaults={
+                "domain": "testserver",
+                "name": "Test Site",
+            },
+        )
 
     @pytest.fixture
     def api_client(self):

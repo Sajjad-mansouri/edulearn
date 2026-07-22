@@ -33,6 +33,18 @@ User = get_user_model()
 class TestRegisterUser:
     """Tests for register_user service."""
 
+    @pytest.fixture(autouse=True)
+    def site(settings):
+        settings.SITE_ID = 1
+
+        Site.objects.update_or_create(
+            id=1,
+            defaults={
+                "domain": "testserver",
+                "name": "Test Site",
+            },
+        )
+
     @pytest.fixture
     def registration_data(self):
         return {
@@ -442,12 +454,14 @@ class TestPerformLogin:
 
     @patch("accounts.api.services.create_user_session")
     @patch("accounts.api.services.create_loging_history")
+    @patch("accounts.api.services.login")
     @patch("accounts.api.services.RefreshToken")
     @patch("accounts.api.services.authenticate")
     def test_returns_tokens_after_successful_login(
         self,
         mock_authenticate,
         mock_refresh_token,
+        mock_login,
         mock_create_history,
         mock_create_session,
     ):
@@ -483,7 +497,10 @@ class TestPerformLogin:
             username=user.username,
             password="secure_pass_1234",
         )
-
+        mock_login.assert_called_once_with(
+            request,
+            user,
+        )
         mock_create_history.assert_called_once_with(
             request,
             user,

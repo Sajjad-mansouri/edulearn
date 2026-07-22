@@ -176,12 +176,12 @@ class Education(models.Model):
         super().clean()
 
         if (
-            self.end_year is not None
-            and self.start_year is not None
-            and self.end_year < self.start_year
+            self.end_date is not None
+            and self.start_date is not None
+            and self.end_date < self.start_date
         ):
             raise ValidationError(
-                {"end_year": ("End year must be greater than or equal to start year.")}
+                {"end_date": ("End date must be greater than or equal to start date.")}
             )
 
     def __str__(self):

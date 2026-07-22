@@ -253,91 +253,106 @@ class TestStudentProfileModel:
 
 @pytest.mark.django_db
 class TestSkillModel:
+    """Tests for the Skill model."""
+
     @pytest.fixture
     def profile(self):
         return ProfileFactory()
 
     @pytest.fixture
-    def skill(self):
-        return SkillFactory()
+    def skill(self, profile):
+        return SkillFactory(profile=profile)
 
-    def test_create_skill(self):
+    def test_create_skill(self, profile):
         """A skill can be created."""
         skill = Skill.objects.create(
+            profile=profile,
             name="Python",
             slug="python",
             description="Programming language",
         )
 
+        assert skill.profile == profile
         assert skill.name == "Python"
         assert skill.slug == "python"
         assert skill.description == "Programming language"
 
     def test_string_representation(self, skill):
-        """The string representation should return the skill name."""
+        """The string representation returns the skill name."""
         assert str(skill) == skill.name
 
-    def test_description_is_optional(self):
-        """A skill can be created without a description."""
+    def test_description_is_optional(self, profile):
+        """A skill may be created without a description."""
         skill = Skill.objects.create(
+            profile=profile,
             name="Django",
             slug="django",
         )
 
         assert skill.description == ""
 
-    def test_slug_must_be_unique(self):
+    def test_slug_must_be_unique(self, profile):
         """Two skills cannot share the same slug."""
-        SkillFactory(slug="python")
+        SkillFactory(
+            profile=profile,
+            slug="python",
+        )
 
         with pytest.raises(IntegrityError):
-            SkillFactory(slug="python")
+            SkillFactory(
+                profile=profile,
+                slug="python",
+            )
 
     def test_profile_can_have_multiple_skills(self, profile):
-        """A profile can have multiple skills."""
-        python = SkillFactory(name="Python", slug="python")
-        django = SkillFactory(name="Django", slug="django")
+        """A profile can own multiple skills."""
+        python = SkillFactory(
+            profile=profile,
+            name="Python",
+            slug="python",
+        )
+        django = SkillFactory(
+            profile=profile,
+            name="Django",
+            slug="django",
+        )
 
-        profile.skills.add(python, django)
-
+        assert profile.skills.count() == 2
         assert set(profile.skills.all()) == {python, django}
 
-    def test_skill_can_belong_to_multiple_profiles(self):
-        """A skill can be shared by multiple profiles."""
-        skill = SkillFactory()
-
-        profile1 = ProfileFactory()
-        profile2 = ProfileFactory()
-
-        skill.profiles.add(profile1, profile2)
-
-        assert set(skill.profiles.all()) == {profile1, profile2}
-
-    def test_profile_can_access_its_skills(self, profile):
-        """A profile should access its skills through the reverse relation."""
-        skill = SkillFactory()
-
-        profile.skills.add(skill)
+    def test_profile_returns_related_skills(self, profile):
+        """A profile exposes its related skills."""
+        skill = SkillFactory(profile=profile)
 
         assert skill in profile.skills.all()
 
-    def test_skill_can_access_assigned_profiles(self, skill):
-        """A skill should access its assigned profiles."""
-        profile = ProfileFactory()
+    def test_skill_belongs_to_profile(self, profile):
+        """A skill belongs to exactly one profile."""
+        skill = SkillFactory(profile=profile)
 
-        skill.profiles.add(profile)
+        assert skill.profile == profile
 
-        assert profile in skill.profiles.all()
+    def test_deleting_profile_deletes_related_skills(self, profile):
+        """Deleting a profile cascades to its skills."""
+        skill = SkillFactory(profile=profile)
 
-    def test_generates_slug_when_slug_is_not_provided(self):
+        profile.delete()
+
+        assert not Skill.objects.filter(pk=skill.pk).exists()
+
+    def test_generates_slug_when_slug_is_not_provided(self, profile):
+        """Slug is automatically generated from the name."""
         skill = Skill.objects.create(
+            profile=profile,
             name="Machine Learning",
         )
 
         assert skill.slug == "machine-learning"
 
-    def test_does_not_override_existing_slug(self):
+    def test_does_not_override_existing_slug(self, profile):
+        """An explicitly provided slug is preserved."""
         skill = Skill.objects.create(
+            profile=profile,
             name="Machine Learning",
             slug="ml",
         )
@@ -345,14 +360,14 @@ class TestSkillModel:
         assert skill.slug == "ml"
 
     def test_slug_does_not_change_when_name_is_updated(self, skill):
-        slug = skill.slug
+        """Updating the name does not modify an existing slug."""
+        original_slug = skill.slug
+
         skill.name = "Advanced Python"
-
         skill.save()
-
         skill.refresh_from_db()
 
-        assert skill.slug == slug
+        assert skill.slug == original_slug
 
 
 @pytest.mark.django_db
@@ -373,8 +388,8 @@ class TestEducationModel:
             degree="Bachelor",
             field_of_study="Computer Science",
             description="Focused on deep learning and NLP.",
-            start_year=2018,
-            end_year=2022,
+            start_date="2020-12-01",
+            end_date="2020-12-12",
         )
 
         assert education.profile == profile
@@ -382,8 +397,8 @@ class TestEducationModel:
         assert education.degree == "Bachelor"
         assert education.description == "Focused on deep learning and NLP."
         assert education.field_of_study == "Computer Science"
-        assert education.start_year == 2018
-        assert education.end_year == 2022
+        assert education.start_date == "2020-12-01"
+        assert education.end_date == "2020-12-12"
 
     def test_string_representation(self, education):
         """Returns a human-readable representation."""
@@ -396,15 +411,15 @@ class TestEducationModel:
         """A profile should access its education records through the reverse relation."""
         education = EducationFactory(profile=profile)
 
-        assert education in profile.education.all()
+        assert education in profile.educations.all()
 
     def test_multiple_education_records_can_belong_to_profile(self, profile):
         """A profile can have multiple education records."""
         EducationFactory.create_batch(3, profile=profile)
 
-        assert profile.education.count() == 3
+        assert profile.educations.count() == 3
 
-    def test_end_year_can_be_blank(self, profile):
+    def test_end_date_can_be_blank(self, profile):
         """An education record may represent ongoing studies."""
         education = Education.objects.create(
             profile=profile,
@@ -412,13 +427,13 @@ class TestEducationModel:
             degree="Bachelor",
             description="Focused on deep learning and NLP.",
             field_of_study="Computer Science",
-            start_year=2022,
-            end_year=None,
+            start_date="2020-12-01",
+            end_date=None,
         )
 
-        assert education.end_year is None
+        assert education.end_date is None
 
-    def test_start_year_can_be_blank(self, profile):
+    def test_start_date_can_be_blank(self, profile):
         """An education record may omit the start year."""
         education = Education.objects.create(
             profile=profile,
@@ -426,32 +441,32 @@ class TestEducationModel:
             degree="Bachelor",
             description="Focused on deep learning and NLP.",
             field_of_study="Computer Science",
-            start_year=None,
-            end_year=2022,
+            start_date=None,
+            end_date="2020-12-12",
         )
 
-        assert education.start_year is None
+        assert education.start_date is None
 
-    def test_clean_allows_equal_start_and_end_year(self, education):
+    def test_clean_allows_equal_start_and_end_date(self, education):
         """The same start and end year is valid."""
-        education.start_year = 2022
-        education.end_year = 2022
+        education.start_date = "2020-12-01"
+        education.end_date = "2020-12-01"
 
         education.full_clean()
-        assert education.start_year == education.end_year
+        assert education.start_date == education.end_date
 
-    def test_clean_raises_validation_error_when_end_year_before_start_year(
+    def test_clean_raises_validation_error_when_end_date_before_start_date(
         self,
         education,
     ):
         """End year cannot be earlier than start year."""
-        education.start_year = 2023
-        education.end_year = 2022
+        education.start_date = "2020-12-12"
+        education.end_date = "2020-12-01"
 
         with pytest.raises(ValidationError) as exc_info:
             education.full_clean()
 
-        assert "end_year" in exc_info.value.message_dict
+        assert "end_date" in exc_info.value.message_dict
 
     def test_database_constraint_prevents_invalid_years(self, profile):
         """The database should reject records with an invalid year range."""
@@ -462,8 +477,8 @@ class TestEducationModel:
                 degree="Bachelor",
                 description="Focused on deep learning and NLP.",
                 field_of_study="Computer Science",
-                start_year=2023,
-                end_year=2022,
+                start_date="2020-12-12",
+                end_date="2020-12-01",
             )
 
     def test_deleting_profile_deletes_education_records(self):

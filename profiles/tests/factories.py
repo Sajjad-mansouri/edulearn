@@ -79,8 +79,8 @@ class EducationFactory(factory.django.DjangoModelFactory):
     field_of_study = "Computer Science"
     description = "Master's degree"
 
-    start_year = 2020
-    end_year = 2022
+    start_date = "2022-12-01"
+    end_date = "2022-12-10"
 
 
 class ExperienceFactory(factory.django.DjangoModelFactory):
