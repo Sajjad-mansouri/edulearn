@@ -154,10 +154,8 @@ class Education(models.Model):
     field_of_study = models.CharField(_("Field Of Study"), max_length=255)
     description = models.TextField(_("Description"), blank=True)
 
-    start_year = models.PositiveSmallIntegerField(
-        _("Start Year"), null=True, blank=True
-    )
-    end_year = models.PositiveSmallIntegerField(
+    start_date = models.DateField(_("Start Date"), blank=True, null=True)
+    end_date = models.DateField(
         _("End Year"),
         null=True,
         blank=True,
@@ -165,12 +163,12 @@ class Education(models.Model):
     )
 
     class Meta:
-        ordering = ["-start_year", "-end_year", "institution"]
+        ordering = ["-start_date", "-end_date", "institution"]
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(end_year__isnull=True)
-                | models.Q(end_year__gte=models.F("start_year")),
-                name="education_end_year_gte_start_year",
+                condition=models.Q(end_date__isnull=True)
+                | models.Q(end_date__gte=models.F("start_date")),
+                name="education_end_date_gte_start_date",
             )
         ]
 
@@ -210,9 +208,7 @@ class Experience(models.Model):
     location = models.CharField(_("Location"), max_length=250, blank=True)
     description = models.TextField(_("Description"), blank=True)
 
-    start_date = models.DateField(
-        _("Start Date"),
-    )
+    start_date = models.DateField(_("Start Date"), blank=True, null=True)
 
     end_date = models.DateField(
         _("End Date"),
@@ -309,9 +305,9 @@ class SocialLink(models.Model):
 
 class Language(models.Model):
     PROFICIENCIES = [
-        ("native", "Native"),
-        ("c2", "Proficient"),
-        ("c1", "Advanced"),
+        ("Native", "Native"),
+        ("C2", "Proficient"),
+        ("C1", "Advanced"),
         ("B2", "Upper Intermediate"),
         ("B1", "Intermediate"),
         ("A2", "Elementary"),

@@ -12,6 +12,6 @@ class EducationSerializer(serializers.ModelSerializer):
             "degree",
             "field_of_study",
             "description",
-            "start_year",
-            "end_year",
+            "start_date",
+            "end_date",
         )

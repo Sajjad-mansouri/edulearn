@@ -4,7 +4,15 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from .serializers import ProfileSerializer, SkillSerializer, TopNavUserSerializer
+from .serializers import (
+    EducationSerializer,
+    ExperienceSerializer,
+    LanguageSerializer,
+    ProfileSerializer,
+    SkillSerializer,
+    SocialLinkSerializer,
+    TopNavUserSerializer,
+)
 
 
 class ProfileApiView(generics.RetrieveAPIView):
@@ -25,7 +33,6 @@ class SkillViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, GenericVie
     serializer_class = SkillSerializer
 
     def get_queryset(self):
-        print("get_queryset")
         return self.request.user.profile.skills.all()
 
     def perform_create(self, serializer):
@@ -51,3 +58,63 @@ class UserInfoUpadteApiView(generics.UpdateAPIView):
 
     def get_object(self):
         return self.request.user.profile
+
+
+class ProfileEducationViewSet(
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericViewSet,
+):
+    serializer_class = EducationSerializer
+
+    def get_queryset(self):
+        return self.request.user.profile.educations.all()
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.request.user.profile)
+
+
+class ProfileExperienceViewSet(
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericViewSet,
+):
+    serializer_class = ExperienceSerializer
+
+    def get_queryset(self):
+        return self.request.user.profile.experiences.all()
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.request.user.profile)
+
+
+class ProfileSocialLinkViewSet(
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericViewSet,
+):
+    serializer_class = SocialLinkSerializer
+
+    def get_queryset(self):
+        return self.request.user.profile.social_links.all()
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.request.user.profile)
+
+
+class ProfileLanguageViewSet(
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericViewSet,
+):
+    serializer_class = LanguageSerializer
+
+    def get_queryset(self):
+        return self.request.user.profile.languages.all()
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.request.user.profile)

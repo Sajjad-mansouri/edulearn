@@ -12,7 +12,7 @@ function mapProfile(data) {
     headline: data.headline,
     bio: data.bio || data.biography || "",
     website: data.website,
-    avatar_url: data.avatar_url || "",
+    avatar_url: data.avatar || "",
     cover_url: data.cover || data.cover_url || "",
     skills: (data.skills || []).map(item => typeof item === 'string' ? item : item.name),
 
@@ -21,8 +21,8 @@ function mapProfile(data) {
       school: item.institution || item.school,
       degree: item.degree,
       field: item.field_of_study || item.field,
-      startDate: item.start_year || item.startDate || item.start_date,
-      endDate: item.end_year || item.endDate || item.end_date,
+      startDate: item.start_date,
+      endDate: item.end_date,
       description: item.description
     })),
 
@@ -103,7 +103,6 @@ class ProfilePage {
         try {
             const response = await auth.authenticatedRequest(baseUrl + "/api/v1/account/profile/");
             const data = await response.json();
-            console.log(data)
             this.profile = mapProfile(data);
             this.renderAll();
         } catch (error) {
@@ -265,10 +264,10 @@ class ProfilePage {
 
     async deleteItem(type, id) {
         const endpointMap = {
-            'education': '/api/v1/account/profile/education/',
-            'experience': '/api/v1/account/profile/experience/',
-            'social_links': '/api/v1/account/profile/social-links/',
-            'languages': '/api/v1/account/profile/languages/'
+            'education': '/api/v1/account/educations/',
+            'experience': '/api/v1/account/experiences/',
+            'social_links': '/api/v1/account/social-links/',
+            'languages': '/api/v1/account/languages/'
         };
 
         const url = baseUrl + (endpointMap[type] || `/api/v1/account/profile/${type}/`) + id + '/';
@@ -387,10 +386,10 @@ class ProfilePage {
             body.innerHTML = `
                 <div class="form-group"><label>${isEdu ? 'School' : 'Company'} *</label><input type="text" id="modalField1" class="form-input" value="${data?.[isEdu ? 'school' : 'company'] || ''}"></div>
                 <div class="form-group"><label>${isEdu ? 'Degree' : 'Title'} *</label><input type="text" id="modalField2" class="form-input" value="${data?.[isEdu ? 'degree' : 'title'] || ''}"></div>
-                ${isEdu ? '<div class="form-group"><label>Field of Study</label><input type="text" id="modalField3" class="form-input" value="' + (data?.field || '') + '"></div>' : '<div class="form-group"><label>Location</label><input type="text" id="modalField3" class="form-input" value="' + (data?.location || '') + '"></div>'}
+                ${isEdu ? '<div class="form-group"><label>Field of Study *</label><input type="text" id="modalField3" class="form-input" value="' + (data?.field || '') + '"></div>' : '<div class="form-group"><label>Location</label><input type="text" id="modalField3" class="form-input" value="' + (data?.location || '') + '"></div>'}
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div class="form-group"><label>Start Date</label><input type="month" id="modalStartDate" class="form-input" value="${data?.startDate || ''}"></div>
-                    <div class="form-group"><label>End Date</label><input type="month" id="modalEndDate" class="form-input" value="${data?.endDate || ''}"></div>
+                    <div class="form-group"><label>Start Date</label><input type="month" id="modalStartDate" placeholder="2020-12-01" class="form-input" value="${data?.startDate || ''}"></div>
+                    <div class="form-group"><label>End Date</label><input type="month" id="modalEndDate" class="form-input" placeholder="2020-12-02" value="${data?.endDate || ''}"></div>
                 </div>
                 <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;"><input type="checkbox" id="modalCurrently" ${data && !data.endDate ? 'checked' : ''}> Currently ${isEdu ? 'studying' : 'working'} here</label>
                 <div class="form-group"><label>Description</label><textarea id="modalDesc" class="form-input form-textarea" rows="3">${data?.description || ''}</textarea></div>
@@ -407,7 +406,7 @@ class ProfilePage {
         } else if (type === 'language') {
             body.innerHTML = `
                 <div class="form-group"><label>Language</label><input type="text" id="modalLanguage" class="form-input" value="${data?.language || ''}" placeholder="e.g. French"></div>
-                <div class="form-group"><label>Proficiency</label><select id="modalProficiency" class="form-input"><option value="Native" ${data?.proficiency === 'Native' ? 'selected' : ''}>Native</option><option value="C2" ${data?.proficiency === 'C2' ? 'selected' : ''}>C2 - Proficient</option><option value="C1" ${data?.proficiency === 'C1' ? 'selected' : ''}>C1 - Advanced</option><option value="B2" ${data?.proficiency === 'B2' ? 'selected' : ''}>B2 - Upper Intermediate</option><option value="B1" ${data?.proficiency === 'B1' ? 'selected' : ''}>B1 - Intermediate</option><option value="A2" ${data?.proficiency === 'A2' ? 'selected' : ''}>A2 - Elementary</option><option value="A1" ${data?.proficiency === 'A1' ? 'selected' : ''}>A1 - Beginner</option></select></div>
+                <div class="form-group"><label>Proficiency</label><select id="modalProficiency" class="form-input"><option value="na" ${data?.proficiency === 'Native' ? 'selected' : ''}>Native</option><option value="C2" ${data?.proficiency === 'C2' ? 'selected' : ''}>C2 - Proficient</option><option value="C1" ${data?.proficiency === 'C1' ? 'selected' : ''}>C1 - Advanced</option><option value="B2" ${data?.proficiency === 'B2' ? 'selected' : ''}>B2 - Upper Intermediate</option><option value="B1" ${data?.proficiency === 'B1' ? 'selected' : ''}>B1 - Intermediate</option><option value="A2" ${data?.proficiency === 'A2' ? 'selected' : ''}>A2 - Elementary</option><option value="A1" ${data?.proficiency === 'A1' ? 'selected' : ''}>A1 - Beginner</option></select></div>
             `;
         }
 
@@ -437,13 +436,13 @@ class ProfilePage {
                 description: document.getElementById('modalDesc').value.trim()
             };
 
-            if (!item[isEdu ? 'institution' : 'company'] || !item[isEdu ? 'degree' : 'position']) {
+            if (!item[isEdu ? 'institution' : 'company'] || !item[isEdu ? 'degree' : 'position'] || !item[isEdu?"field_of_study":"position"]) {
                 this.showToast('Please fill required fields');
                 return;
             }
 
-            const endpointType = type === 'education' ? 'education' : 'experience';
-            url = baseUrl + `/api/v1/account/profile/${endpointType}/`;
+            const endpointType = type === 'education' ? 'educations' : 'experiences';
+            url = baseUrl + `/api/v1/account/${endpointType}/`;
             if (this.currentEditId) {
                 url += this.currentEditId + '/';
                 method = 'PATCH';
@@ -455,7 +454,7 @@ class ProfilePage {
             };
             if (!item.url) { this.showToast('Please enter a URL'); return; }
 
-            url = baseUrl + '/api/v1/account/profile/social-links/';
+            url = baseUrl + '/api/v1/account/social-links/';
             if (this.currentEditId) {
                 url += this.currentEditId + '/';
                 method = 'PATCH';
@@ -467,7 +466,7 @@ class ProfilePage {
             };
             if (!item.language) { this.showToast('Please enter a language'); return; }
 
-            url = baseUrl + '/api/v1/account/profile/languages/';
+            url = baseUrl + '/api/v1/account/languages/';
             if (this.currentEditId) {
                 url += this.currentEditId + '/';
                 method = 'PATCH';
