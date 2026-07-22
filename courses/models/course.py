@@ -165,3 +165,37 @@ class Course(models.Model):
         self.full_clean()
 
         super().save(*args, **kwargs)
+
+
+class LearningOutcome(models.Model):
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name="learning_outcomes",
+        verbose_name=_("Course"),
+    )
+
+    order = models.PositiveSmallIntegerField(
+        _("Order"),
+        default=1,
+    )
+
+    description = models.CharField(
+        _("Description"),
+        max_length=500,
+    )
+
+    class Meta:
+        ordering = ("course", "order")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["course", "order"],
+                name="unique_learning_outcome_order_per_course",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["course", "order"]),
+        ]
+
+    def __str__(self):
+        return f"{self.course.title} - {self.order}"
