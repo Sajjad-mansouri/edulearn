@@ -1,7 +1,7 @@
 import factory
 
 from accounts.tests.factories import UserFactory
-from courses.models import Category, Course, Tag
+from courses.models import Category, Course, LearningOutcome, Tag
 
 
 class CategoryFactory(factory.django.DjangoModelFactory):
@@ -50,3 +50,12 @@ class CourseFactory(factory.django.DjangoModelFactory):
         if extracted:
             for instructor in extracted:
                 self.instructors.add(instructor)
+
+
+class LearningOutcomeFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LearningOutcome
+
+    course = factory.SubFactory(CourseFactory)
+    order = factory.Sequence(lambda n: n + 1)
+    description = factory.Faker("sentence")

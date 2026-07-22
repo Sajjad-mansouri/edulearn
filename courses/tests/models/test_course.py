@@ -1,11 +1,13 @@
 import pytest
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 
 from accounts.tests.factories import UserFactory
-from courses.models import Course
+from courses.models import Course, LearningOutcome
 from courses.tests.factories import (
     CategoryFactory,
     CourseFactory,
+    LearningOutcomeFactory,
     TagFactory,
 )
 
@@ -221,3 +223,105 @@ class TestCourseModel:
         course.instructors.add(instructor)
 
         assert course in instructor.teaching_courses.all()
+
+
+@pytest.mark.django_db
+class TestLearningOutcomeModel:
+    """Tests for the LearningOutcome model."""
+
+    @pytest.fixture
+    def course(self):
+        return CourseFactory()
+
+    def test_create_learning_outcome(self, course):
+        """A learning outcome can be created."""
+        outcome = LearningOutcome.objects.create(
+            course=course,
+            order=1,
+            description="Understand Python fundamentals.",
+        )
+
+        assert outcome.course == course
+        assert outcome.order == 1
+        assert outcome.description == "Understand Python fundamentals."
+
+    def test_string_representation(self):
+        """The string representation includes the course title and order."""
+        outcome = LearningOutcomeFactory(order=2)
+
+        assert str(outcome) == f"{outcome.course.title} - 2"
+
+    def test_course_can_have_multiple_learning_outcomes(self, course):
+        """A course can have multiple learning outcomes."""
+        outcome1 = LearningOutcomeFactory(
+            course=course,
+            order=1,
+        )
+        outcome2 = LearningOutcomeFactory(
+            course=course,
+            order=2,
+        )
+
+        assert set(course.learning_outcomes.all()) == {
+            outcome1,
+            outcome2,
+        }
+
+    def test_learning_outcomes_are_ordered_by_order(self, course):
+        """Learning outcomes are returned in ascending order."""
+        LearningOutcomeFactory(course=course, order=3)
+        LearningOutcomeFactory(course=course, order=1)
+        LearningOutcomeFactory(course=course, order=2)
+
+        orders = list(
+            course.learning_outcomes.values_list(
+                "order",
+                flat=True,
+            )
+        )
+
+        assert orders == [1, 2, 3]
+
+    def test_order_must_be_unique_per_course(self, course):
+        """The same course cannot contain duplicate order values."""
+        LearningOutcomeFactory(
+            course=course,
+            order=1,
+        )
+
+        with pytest.raises(IntegrityError):
+            LearningOutcome.objects.create(
+                course=course,
+                order=1,
+                description="Duplicate order",
+            )
+
+    def test_same_order_can_be_used_for_different_courses(self):
+        """Different courses may reuse the same order value."""
+        course1 = CourseFactory()
+        course2 = CourseFactory()
+
+        outcome1 = LearningOutcomeFactory(
+            course=course1,
+            order=1,
+        )
+        outcome2 = LearningOutcomeFactory(
+            course=course2,
+            order=1,
+        )
+
+        assert outcome1.order == outcome2.order == 1
+
+    def test_deleting_course_deletes_learning_outcomes(self):
+        """Deleting a course cascades to its learning outcomes."""
+        course = CourseFactory()
+
+        outcome = LearningOutcomeFactory(
+            course=course,
+        )
+
+        course.delete()
+
+        assert not LearningOutcome.objects.filter(
+            pk=outcome.pk,
+        ).exists()
