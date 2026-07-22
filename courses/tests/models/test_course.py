@@ -3,9 +3,10 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from accounts.tests.factories import UserFactory
-from courses.models import Course, LearningOutcome, Prerequisite
+from courses.models import Course, CourseCollaborator, LearningOutcome, Prerequisite
 from courses.tests.factories import (
     CategoryFactory,
+    CourseCollaboratorFactory,
     CourseFactory,
     LearningOutcomeFactory,
     PrerequisiteFactory,
@@ -22,17 +23,12 @@ class TestCourseModel:
         return UserFactory()
 
     @pytest.fixture
-    def instructor(self):
-        return UserFactory()
-
-    @pytest.fixture
     def category(self):
         return CategoryFactory()
 
     def test_create_course(
         self,
         owner,
-        instructor,
         category,
     ):
         """A course can be created."""
@@ -45,7 +41,11 @@ class TestCourseModel:
             description="Course description",
         )
 
-        course.instructors.add(instructor)
+        collaborator = CourseCollaborator.objects.create(
+            course=course,
+            user=owner,
+            role=CourseCollaborator.Role.LEAD_INSTRUCTOR,
+        )
 
         assert course.owner == owner
         assert course.category == category
@@ -53,7 +53,10 @@ class TestCourseModel:
         assert course.subtitle == "Learn Python from scratch"
         assert course.slug == "python-fundamentals"
         assert course.description == "Course description"
-        assert instructor in course.instructors.all()
+
+        assert collaborator.course == course
+        assert collaborator.user == owner
+        assert collaborator.role == CourseCollaborator.Role.LEAD_INSTRUCTOR
 
     def test_string_representation(self):
         """The string representation returns the course title."""
@@ -170,21 +173,34 @@ class TestCourseModel:
             tag2,
         }
 
-    def test_can_assign_multiple_instructors(self):
-        """A course can have multiple instructors."""
-        course = CourseFactory()
+    def test_course_can_have_multiple_collaborators(self, owner, category):
+        """A course can have multiple collaborators."""
+        user1 = UserFactory()
+        user2 = UserFactory()
 
-        instructor1 = UserFactory()
-        instructor2 = UserFactory()
-
-        course.instructors.add(
-            instructor1,
-            instructor2,
+        course = Course.objects.create(
+            owner=owner,
+            category=category,
+            title="Python Fundamentals",
+            subtitle="Learn Python from scratch",
+            slug="python-fundamentals",
+            description="Course description",
+        )
+        collaborator1 = CourseCollaboratorFactory(
+            course=course,
+            user=user1,
+            role=CourseCollaborator.Role.LEAD_INSTRUCTOR,
         )
 
-        assert set(course.instructors.all()) == {
-            instructor1,
-            instructor2,
+        collaborator2 = CourseCollaboratorFactory(
+            course=course,
+            user=user2,
+            role=CourseCollaborator.Role.INSTRUCTOR,
+        )
+
+        assert set(course.course_collaborators.all()) == {
+            collaborator1,
+            collaborator2,
         }
 
     def test_category_can_access_courses(self):
@@ -216,14 +232,12 @@ class TestCourseModel:
 
         assert course in owner.owned_courses.all()
 
-    def test_instructor_can_access_teaching_courses(self):
-        """An instructor exposes teaching courses."""
-        instructor = UserFactory()
+    def test_owner_can_access_course_collaborations(self):
+        user = UserFactory()
 
-        course = CourseFactory()
-        course.instructors.add(instructor)
+        collaborator = CourseCollaboratorFactory(user=user)
 
-        assert course in instructor.teaching_courses.all()
+        assert collaborator in user.course_collaborations.all()
 
 
 @pytest.mark.django_db
@@ -427,4 +441,129 @@ class TestPrerequisiteModel:
 
         assert not Prerequisite.objects.filter(
             pk=prerequisite.pk,
+        ).exists()
+
+
+@pytest.mark.django_db
+class TestCourseCollaboratorModel:
+    """Tests for the CourseCollaborator model."""
+
+    @pytest.fixture
+    def course(self):
+        return CourseFactory()
+
+    @pytest.fixture
+    def user(self):
+        return UserFactory()
+
+    def test_create_course_collaborator(self, course, user):
+        """A collaborator can be assigned to a course."""
+        collaborator = CourseCollaborator.objects.create(
+            course=course,
+            user=user,
+            role=CourseCollaborator.Role.INSTRUCTOR,
+        )
+
+        assert collaborator.course == course
+        assert collaborator.user == user
+        assert collaborator.role == CourseCollaborator.Role.INSTRUCTOR
+
+    def test_string_representation(self):
+        """The string representation returns the user and role."""
+        collaborator = CourseCollaboratorFactory(
+            role=CourseCollaborator.Role.TEACHING_ASSISTANT,
+        )
+
+        assert (
+            str(collaborator)
+            == f"{collaborator.user} ({collaborator.get_role_display()})"
+        )
+
+    def test_same_user_cannot_be_added_twice_to_same_course(self, course, user):
+        """A user cannot collaborate on the same course twice."""
+        CourseCollaboratorFactory(
+            course=course,
+            user=user,
+        )
+
+        with pytest.raises(IntegrityError):
+            CourseCollaborator.objects.create(
+                course=course,
+                user=user,
+                role=CourseCollaborator.Role.TEACHING_ASSISTANT,
+            )
+
+    def test_same_user_can_collaborate_on_multiple_courses(self, user):
+        """A user may collaborate on different courses."""
+        course1 = CourseFactory()
+        course2 = CourseFactory()
+
+        collaborator1 = CourseCollaboratorFactory(
+            course=course1,
+            user=user,
+        )
+        collaborator2 = CourseCollaboratorFactory(
+            course=course2,
+            user=user,
+        )
+
+        assert collaborator1.user == collaborator2.user
+
+    def test_course_can_have_multiple_collaborators(self, course):
+        """A course may have multiple collaborators."""
+        collaborator1 = CourseCollaboratorFactory(
+            course=course,
+        )
+        collaborator2 = CourseCollaboratorFactory(
+            course=course,
+            user=UserFactory(),
+        )
+
+        assert set(course.course_collaborators.all()) == {
+            collaborator1,
+            collaborator2,
+        }
+
+    def test_user_can_access_course_collaborations(self, user):
+        """A user exposes their course collaborations."""
+        collaborator = CourseCollaboratorFactory(
+            user=user,
+        )
+
+        assert collaborator in user.course_collaborations.all()
+
+    def test_course_can_access_collaborators(self, course):
+        """A course exposes its collaborators."""
+        collaborator = CourseCollaboratorFactory(
+            course=course,
+        )
+
+        assert collaborator in course.course_collaborators.all()
+
+    def test_deleting_course_deletes_collaborators(self):
+        """Deleting a course cascades to collaborators."""
+        course = CourseFactory()
+
+        collaborator = CourseCollaboratorFactory(
+            course=course,
+        )
+
+        course.delete()
+
+        assert not CourseCollaborator.objects.filter(
+            pk=collaborator.pk,
+        ).exists()
+
+    def test_deleting_user_deletes_collaborations(self):
+        """Deleting a user cascades to course collaborations."""
+        user = UserFactory()
+
+        collaborator = CourseCollaboratorFactory(
+            user=user,
+        )
+
+        user.delete()
+
+        assert not CourseCollaborator.objects.filter(
+            pk=collaborator.pk,
         ).exists()

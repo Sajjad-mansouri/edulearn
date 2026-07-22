@@ -1,7 +1,14 @@
 import factory
 
 from accounts.tests.factories import UserFactory
-from courses.models import Category, Course, LearningOutcome, Prerequisite, Tag
+from courses.models import (
+    Category,
+    Course,
+    CourseCollaborator,
+    LearningOutcome,
+    Prerequisite,
+    Tag,
+)
 
 
 class CategoryFactory(factory.django.DjangoModelFactory):
@@ -68,3 +75,12 @@ class PrerequisiteFactory(factory.django.DjangoModelFactory):
     course = factory.SubFactory(CourseFactory)
     order = factory.Sequence(lambda n: n + 1)
     description = factory.Faker("sentence")
+
+
+class CourseCollaboratorFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = CourseCollaborator
+
+    course = factory.SubFactory(CourseFactory)
+    user = factory.SubFactory(UserFactory)
+    role = CourseCollaborator.Role.INSTRUCTOR
