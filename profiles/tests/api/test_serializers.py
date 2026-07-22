@@ -1,6 +1,7 @@
 import pytest
 from rest_framework.test import APIRequestFactory
 
+from accounts.tests.factories import UserFactory
 from profiles.api.serializers import (
     EducationSerializer,
     ExperienceSerializer,
@@ -8,10 +9,12 @@ from profiles.api.serializers import (
     ProfileSerializer,
     SkillSerializer,
     SocialLinkSerializer,
+    TopNavUserSerializer,
 )
 from profiles.tests.factories import (
     EducationFactory,
     ExperienceFactory,
+    InstructorProfileFactory,
     LanguageFactory,
     ProfileFactory,
     SkillFactory,
@@ -366,4 +369,117 @@ class TestProfileSerializer:
             "experiences",
             "social_links",
             "languages",
+        }
+
+
+@pytest.mark.django_db
+class TestTopNavUserSerializer:
+    """Tests for TopNavUserSerializer."""
+
+    def test_serializes_user(self):
+        """Serializer returns the expected user data."""
+        user = UserFactory(
+            username="johndoe",
+            first_name="John",
+            last_name="Doe",
+            email="john@example.com",
+        )
+
+        ProfileFactory(user=user)
+
+        serializer = TopNavUserSerializer(user)
+
+        assert serializer.data == {
+            "id": user.id,
+            "first_name": "John",
+            "last_name": "Doe",
+            "full_name": "John Doe",
+            "email": "john@example.com",
+            "avatar_url": None,
+            "role": "student",
+        }
+
+    def test_uses_username_when_full_name_is_empty(self):
+        """Username is returned when the user has no first/last name."""
+        user = UserFactory(
+            username="johndoe",
+            first_name="",
+            last_name="",
+        )
+
+        ProfileFactory(user=user)
+
+        serializer = TopNavUserSerializer(user)
+
+        assert serializer.data["full_name"] == "johndoe"
+
+    def test_returns_relative_avatar_url_without_request(self):
+        """Relative avatar URL is returned when no request is provided."""
+        user = UserFactory()
+        profile = ProfileFactory(
+            user=user,
+            avatar=image_file("avatar.jpg"),
+        )
+
+        serializer = TopNavUserSerializer(user)
+
+        assert serializer.data["avatar_url"] == profile.avatar.url
+
+    def test_returns_absolute_avatar_url_with_request(self):
+        """Absolute avatar URL is returned when request exists."""
+        user = UserFactory()
+        profile = ProfileFactory(
+            user=user,
+            avatar=image_file("avatar.jpg"),
+        )
+
+        request = APIRequestFactory().get("/")
+
+        serializer = TopNavUserSerializer(
+            user,
+            context={"request": request},
+        )
+
+        assert serializer.data["avatar_url"] == request.build_absolute_uri(
+            profile.avatar.url
+        )
+
+    def test_returns_none_when_avatar_is_missing(self):
+        """None is returned when the profile has no avatar."""
+        user = UserFactory()
+        ProfileFactory(user=user)
+
+        serializer = TopNavUserSerializer(user)
+
+        assert serializer.data["avatar_url"] is None
+
+    def test_returns_student_role(self):
+        """Users without an instructor profile are students."""
+        user = UserFactory()
+        ProfileFactory(user=user)
+
+        serializer = TopNavUserSerializer(user)
+
+        assert serializer.data["role"] == "student"
+
+    def test_returns_instructor_role(self):
+        """Users with an instructor profile are instructors."""
+        user = UserFactory()
+        profile = ProfileFactory(user=user)
+        InstructorProfileFactory(profile=profile)
+        serializer = TopNavUserSerializer(user)
+        assert serializer.data["role"] == "instructor"
+
+    def test_contains_expected_fields(self):
+        """Serializer exposes the expected fields."""
+        serializer = TopNavUserSerializer()
+
+        assert set(serializer.fields.keys()) == {
+            "id",
+            "first_name",
+            "last_name",
+            "full_name",
+            "email",
+            "avatar_url",
+            "role",
         }

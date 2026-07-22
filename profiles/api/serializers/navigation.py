@@ -44,6 +44,9 @@ class TopNavUserSerializer(serializers.ModelSerializer):
 
     def get_role(self, obj):
         # Determine user role
-        if hasattr(obj, "instructor_profile") and obj.instructor_profile:
+        if (
+            hasattr(obj.profile, "instructor_profile")
+            and obj.profile.instructor_profile
+        ):
             return "instructor"
         return "student"
