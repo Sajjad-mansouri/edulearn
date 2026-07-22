@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     # created app
     "accounts",
     "profiles",
+    "courses",
     # third party
     "rest_framework",
     "rest_framework_simplejwt",

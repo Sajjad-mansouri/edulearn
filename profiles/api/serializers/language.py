@@ -11,3 +11,8 @@ class LanguageSerializer(serializers.ModelSerializer):
             "language",
             "proficiency",
         )
+
+    def is_valid(self, *, raise_exception=False):
+        super().is_valid(raise_exception=False)
+        print(self._errors)
+        return bool(self._errors)

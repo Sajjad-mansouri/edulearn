@@ -4,7 +4,15 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from profiles.api.serializers import ProfileSerializer, TopNavUserSerializer
-from profiles.tests.factories import ProfileFactory, SkillFactory
+from profiles.models import Education, Experience, Language, SocialLink
+from profiles.tests.factories import (
+    EducationFactory,
+    ExperienceFactory,
+    LanguageFactory,
+    ProfileFactory,
+    SkillFactory,
+    SocialLinkFactory,
+)
 from profiles.tests.utils import image_file
 
 
@@ -468,3 +476,712 @@ class TestUserInfoUpdateApiView:
 
         assert profile.avatar.name.endswith("avatar.jpg")
         assert profile.cover.name.endswith("cover.jpg")
+
+
+@pytest.mark.django_db
+class TestProfileEducationViewSet:
+    """Tests for ProfileEducationViewSet."""
+
+    @pytest.fixture
+    def api_client(self):
+        return APIClient()
+
+    @pytest.fixture
+    def profile(self):
+        return ProfileFactory()
+
+    @pytest.fixture
+    def create_url(self):
+        return reverse("profile-api:education-list")
+
+    @pytest.fixture
+    def education(self, profile):
+        return EducationFactory(profile=profile)
+
+    def test_create_education(
+        self,
+        api_client,
+        profile,
+        create_url,
+    ):
+        """Authenticated users can add an education entry."""
+        api_client.force_authenticate(profile.user)
+
+        payload = {
+            "institution": "Test University",
+            "degree": "Bachelor",
+            "field_of_study": "Computer Science",
+            "description": "Test description",
+            "start_date": "2020-09-01",
+            "end_date": "2024-06-30",
+        }
+
+        response = api_client.post(create_url, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        education = Education.objects.get()
+
+        assert education.profile == profile
+        assert education.institution == payload["institution"]
+        assert education.degree == payload["degree"]
+        assert education.field_of_study == payload["field_of_study"]
+        assert education.description == payload["description"]
+
+    def test_update_education(
+        self,
+        api_client,
+        profile,
+        education,
+    ):
+        """Users can update their own education."""
+        api_client.force_authenticate(profile.user)
+
+        url = reverse(
+            "profile-api:education-detail",
+            kwargs={"pk": education.pk},
+        )
+
+        payload = {
+            "institution": "Updated University",
+            "degree": education.degree,
+            "field_of_study": education.field_of_study,
+            "description": "Updated description",
+            "start_date": str(education.start_date),
+            "end_date": (str(education.end_date) if education.end_date else None),
+        }
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        education.refresh_from_db()
+
+        assert education.institution == "Updated University"
+        assert education.description == "Updated description"
+
+    def test_delete_education(
+        self,
+        api_client,
+        profile,
+        education,
+    ):
+        """Users can delete their own education."""
+        api_client.force_authenticate(profile.user)
+
+        url = reverse(
+            "profile-api:education-detail",
+            kwargs={"pk": education.pk},
+        )
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        assert not Education.objects.filter(pk=education.pk).exists()
+
+    def test_cannot_access_other_users_education(
+        self,
+        api_client,
+    ):
+        """Users cannot update another user's education."""
+        owner = ProfileFactory()
+        other = ProfileFactory()
+
+        education = EducationFactory(profile=owner)
+
+        api_client.force_authenticate(other.user)
+
+        url = reverse(
+            "profile-api:education-detail",
+            kwargs={"pk": education.pk},
+        )
+
+        response = api_client.patch(
+            url,
+            {"institution": "Hacked"},
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_requires_authentication_for_create(
+        self,
+        api_client,
+        create_url,
+    ):
+        """Anonymous users cannot create education."""
+        response = api_client.post(
+            create_url,
+            {},
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_requires_authentication_for_update(
+        self,
+        api_client,
+        education,
+    ):
+        """Anonymous users cannot update education."""
+        url = reverse(
+            "profile-api:education-detail",
+            kwargs={"pk": education.pk},
+        )
+
+        response = api_client.patch(
+            url,
+            {},
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_requires_authentication_for_delete(
+        self,
+        api_client,
+        education,
+    ):
+        """Anonymous users cannot delete education."""
+        url = reverse(
+            "profile-api:education-detail",
+            kwargs={"pk": education.pk},
+        )
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+class TestProfileExperienceViewSet:
+    """Tests for ProfileExperienceViewSet."""
+
+    @pytest.fixture
+    def api_client(self):
+        return APIClient()
+
+    @pytest.fixture
+    def profile(self):
+        return ProfileFactory()
+
+    @pytest.fixture
+    def create_url(self):
+        return reverse("profile-api:experience-list")
+
+    @pytest.fixture
+    def experience(self, profile):
+        return ExperienceFactory(profile=profile)
+
+    def test_create_experience(
+        self,
+        api_client,
+        profile,
+        create_url,
+    ):
+        """Authenticated users can create an experience."""
+        api_client.force_authenticate(profile.user)
+
+        payload = {
+            "company": "Test Company",
+            "position": "Backend Developer",
+            "location": "Remote",
+            "description": "Working on Django APIs.",
+            "start_date": "2024-01-01",
+            "end_date": None,
+        }
+
+        response = api_client.post(create_url, payload, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        experience = Experience.objects.get(company="Test Company")
+
+        assert experience.profile == profile
+        assert experience.company == payload["company"]
+        assert experience.position == payload["position"]
+        assert experience.location == payload["location"]
+        assert experience.description == payload["description"]
+
+    def test_update_experience(
+        self,
+        api_client,
+        profile,
+        experience,
+    ):
+        """Users can update their own experience."""
+        api_client.force_authenticate(profile.user)
+
+        url = reverse(
+            "profile-api:experience-detail",
+            kwargs={"pk": experience.pk},
+        )
+
+        payload = {
+            "company": "Updated Company",
+            "position": experience.position,
+            "location": experience.location,
+            "description": "Updated description",
+            "start_date": str(experience.start_date),
+            "end_date": (str(experience.end_date) if experience.end_date else None),
+        }
+
+        response = api_client.patch(
+            url,
+            payload,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        experience.refresh_from_db()
+
+        assert experience.company == "Updated Company"
+        assert experience.description == "Updated description"
+
+    def test_delete_experience(
+        self,
+        api_client,
+        profile,
+        experience,
+    ):
+        """Users can delete their own experience."""
+        api_client.force_authenticate(profile.user)
+
+        url = reverse(
+            "profile-api:experience-detail",
+            kwargs={"pk": experience.pk},
+        )
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Experience.objects.filter(pk=experience.pk).exists()
+
+    def test_cannot_update_other_users_experience(
+        self,
+        api_client,
+    ):
+        """Users cannot update another user's experience."""
+        owner = ProfileFactory()
+        other = ProfileFactory()
+
+        experience = ExperienceFactory(profile=owner)
+
+        api_client.force_authenticate(other.user)
+
+        url = reverse(
+            "profile-api:experience-detail",
+            kwargs={"pk": experience.pk},
+        )
+
+        response = api_client.patch(
+            url,
+            {"company": "Hacked"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_requires_authentication_for_create(
+        self,
+        api_client,
+        create_url,
+    ):
+        """Anonymous users cannot create an experience."""
+        response = api_client.post(create_url, {}, format="json")
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_requires_authentication_for_update(
+        self,
+        api_client,
+        experience,
+    ):
+        """Anonymous users cannot update an experience."""
+        url = reverse(
+            "profile-api:experience-detail",
+            kwargs={"pk": experience.pk},
+        )
+
+        response = api_client.patch(
+            url,
+            {},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_requires_authentication_for_delete(
+        self,
+        api_client,
+        experience,
+    ):
+        """Anonymous users cannot delete an experience."""
+        url = reverse(
+            "profile-api:experience-detail",
+            kwargs={"pk": experience.pk},
+        )
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+class TestProfileSocialLinkViewSet:
+    """Tests for ProfileSocialLinkViewSet."""
+
+    @pytest.fixture
+    def api_client(self):
+        return APIClient()
+
+    @pytest.fixture
+    def profile(self):
+        return ProfileFactory()
+
+    @pytest.fixture
+    def create_url(self):
+        return reverse("profile-api:social_link-list")
+
+    @pytest.fixture
+    def social_link(self, profile):
+        return SocialLinkFactory(profile=profile)
+
+    def test_create_social_link(
+        self,
+        api_client,
+        profile,
+        create_url,
+    ):
+        """Authenticated users can create a social link."""
+        api_client.force_authenticate(profile.user)
+
+        payload = {
+            "platform": "github",
+            "url": "https://github.com/test_user",
+        }
+
+        response = api_client.post(
+            create_url,
+            payload,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        social_link = SocialLink.objects.get(
+            platform="github",
+        )
+
+        assert social_link.profile == profile
+        assert social_link.platform == payload["platform"]
+        assert social_link.url == payload["url"]
+
+    def test_update_social_link(
+        self,
+        api_client,
+        profile,
+        social_link,
+    ):
+        """Users can update their own social link."""
+        api_client.force_authenticate(profile.user)
+
+        url = reverse(
+            "profile-api:social_link-detail",
+            kwargs={"pk": social_link.pk},
+        )
+
+        payload = {
+            "platform": "linkedin",
+            "url": "https://linkedin.com/in/test_user",
+        }
+
+        response = api_client.patch(
+            url,
+            payload,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        social_link.refresh_from_db()
+
+        assert social_link.platform == payload["platform"]
+        assert social_link.url == payload["url"]
+
+    def test_delete_social_link(
+        self,
+        api_client,
+        profile,
+        social_link,
+    ):
+        """Users can delete their own social link."""
+        api_client.force_authenticate(profile.user)
+
+        url = reverse(
+            "profile-api:social_link-detail",
+            kwargs={"pk": social_link.pk},
+        )
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        assert not SocialLink.objects.filter(
+            pk=social_link.pk,
+        ).exists()
+
+    def test_cannot_update_other_users_social_link(
+        self,
+        api_client,
+    ):
+        """Users cannot update another user's social link."""
+        owner = ProfileFactory()
+        other = ProfileFactory()
+
+        social_link = SocialLinkFactory(
+            profile=owner,
+        )
+
+        api_client.force_authenticate(
+            other.user,
+        )
+
+        url = reverse(
+            "profile-api:social_link-detail",
+            kwargs={"pk": social_link.pk},
+        )
+
+        response = api_client.patch(
+            url,
+            {
+                "platform": "github",
+            },
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_requires_authentication_for_create(
+        self,
+        api_client,
+        create_url,
+    ):
+        """Anonymous users cannot create a social link."""
+        response = api_client.post(
+            create_url,
+            {},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_requires_authentication_for_update(
+        self,
+        api_client,
+        social_link,
+    ):
+        """Anonymous users cannot update a social link."""
+        url = reverse(
+            "profile-api:social_link-detail",
+            kwargs={"pk": social_link.pk},
+        )
+
+        response = api_client.patch(
+            url,
+            {},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_requires_authentication_for_delete(
+        self,
+        api_client,
+        social_link,
+    ):
+        """Anonymous users cannot delete a social link."""
+        url = reverse(
+            "profile-api:social_link-detail",
+            kwargs={"pk": social_link.pk},
+        )
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+class TestProfileLanguageViewSet:
+    """Tests for ProfileLanguageViewSet."""
+
+    @pytest.fixture
+    def api_client(self):
+        return APIClient()
+
+    @pytest.fixture
+    def profile(self):
+        return ProfileFactory()
+
+    @pytest.fixture
+    def create_url(self):
+        return reverse("profile-api:language-list")
+
+    @pytest.fixture
+    def language(self, profile):
+        return LanguageFactory(profile=profile)
+
+    def test_create_language(
+        self,
+        api_client,
+        profile,
+        create_url,
+    ):
+        """Authenticated users can add a language."""
+        api_client.force_authenticate(profile.user)
+
+        payload = {
+            "language": "English",
+            "proficiency": "Native",
+        }
+
+        response = api_client.post(
+            create_url,
+            payload,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        language = Language.objects.get(
+            language="English",
+        )
+
+        assert language.profile == profile
+        assert language.language == payload["language"]
+        assert language.proficiency == payload["proficiency"]
+
+    def test_update_language(
+        self,
+        api_client,
+        profile,
+        language,
+    ):
+        """Users can update their own language."""
+        api_client.force_authenticate(profile.user)
+
+        url = reverse(
+            "profile-api:language-detail",
+            kwargs={"pk": language.pk},
+        )
+
+        payload = {
+            "language": "Spanish",
+            "proficiency": "B2",
+        }
+
+        response = api_client.patch(
+            url,
+            payload,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        language.refresh_from_db()
+
+        assert language.language == payload["language"]
+        assert language.proficiency == payload["proficiency"]
+
+    def test_delete_language(
+        self,
+        api_client,
+        profile,
+        language,
+    ):
+        """Users can delete their own language."""
+        api_client.force_authenticate(profile.user)
+
+        url = reverse(
+            "profile-api:language-detail",
+            kwargs={"pk": language.pk},
+        )
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Language.objects.filter(pk=language.pk).exists()
+
+    def test_cannot_update_other_users_language(
+        self,
+        api_client,
+    ):
+        """Users cannot update another user's language."""
+        owner = ProfileFactory()
+        other = ProfileFactory()
+
+        language = LanguageFactory(profile=owner)
+
+        api_client.force_authenticate(other.user)
+
+        url = reverse(
+            "profile-api:language-detail",
+            kwargs={"pk": language.pk},
+        )
+
+        response = api_client.patch(
+            url,
+            {
+                "language": "German",
+            },
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_requires_authentication_for_create(
+        self,
+        api_client,
+        create_url,
+    ):
+        """Anonymous users cannot create a language."""
+        response = api_client.post(
+            create_url,
+            {},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_requires_authentication_for_update(
+        self,
+        api_client,
+        language,
+    ):
+        """Anonymous users cannot update a language."""
+        url = reverse(
+            "profile-api:language-detail",
+            kwargs={"pk": language.pk},
+        )
+
+        response = api_client.patch(
+            url,
+            {},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_requires_authentication_for_delete(
+        self,
+        api_client,
+        language,
+    ):
+        """Anonymous users cannot delete a language."""
+        url = reverse(
+            "profile-api:language-detail",
+            kwargs={"pk": language.pk},
+        )
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
