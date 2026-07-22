@@ -71,7 +71,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         user = instance.user
-        user_info = validated_data.pop("user", None)
+        user_info = validated_data.pop("user", {})
 
         for attr, val in user_info.items():
             setattr(user, attr, val)

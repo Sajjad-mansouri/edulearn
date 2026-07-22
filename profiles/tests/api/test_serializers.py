@@ -379,10 +379,10 @@ class TestTopNavUserSerializer:
     def test_serializes_user(self):
         """Serializer returns the expected user data."""
         user = UserFactory(
-            username="johndoe",
-            first_name="John",
-            last_name="Doe",
-            email="john@example.com",
+            username="test_user",
+            first_name="test_user",
+            last_name="test_last",
+            email="test_user@example.com",
         )
 
         ProfileFactory(user=user)
@@ -391,10 +391,10 @@ class TestTopNavUserSerializer:
 
         assert serializer.data == {
             "id": user.id,
-            "first_name": "John",
-            "last_name": "Doe",
-            "full_name": "John Doe",
-            "email": "john@example.com",
+            "first_name": "test_user",
+            "last_name": "test_user",
+            "full_name": "test_last",
+            "email": "test_user@example.com",
             "avatar_url": None,
             "role": "student",
         }
@@ -402,7 +402,7 @@ class TestTopNavUserSerializer:
     def test_uses_username_when_full_name_is_empty(self):
         """Username is returned when the user has no first/last name."""
         user = UserFactory(
-            username="johndoe",
+            username="test_user",
             first_name="",
             last_name="",
         )
@@ -411,7 +411,7 @@ class TestTopNavUserSerializer:
 
         serializer = TopNavUserSerializer(user)
 
-        assert serializer.data["full_name"] == "johndoe"
+        assert serializer.data["full_name"] == "test_user"
 
     def test_returns_relative_avatar_url_without_request(self):
         """Relative avatar URL is returned when no request is provided."""
@@ -483,3 +483,95 @@ class TestTopNavUserSerializer:
             "avatar_url",
             "role",
         }
+
+
+@pytest.mark.django_db
+class TestProfileSerializerUpdate:
+    """Tests for ProfileSerializer.update()."""
+
+    def test_updates_profile_and_user_fields(self):
+        """Serializer updates both the related User and Profile."""
+        profile = ProfileFactory(
+            biography="Old biography",
+            headline="Old headline",
+            company="Old Company",
+        )
+
+        serializer = ProfileSerializer(
+            instance=profile,
+            data={
+                "first_name": "Test",
+                "last_name": "User",
+                "biography": "Updated biography",
+                "headline": "Backend Developer",
+                "company": "Test Company",
+            },
+            partial=True,
+        )
+
+        assert serializer.is_valid(), serializer.errors
+
+        serializer.save()
+
+        profile.refresh_from_db()
+        profile.user.refresh_from_db()
+
+        assert profile.user.first_name == "Test"
+        assert profile.user.last_name == "User"
+
+        assert profile.biography == "Updated biography"
+        assert profile.headline == "Backend Developer"
+        assert profile.company == "Test Company"
+
+    def test_partial_update_preserves_unspecified_fields(self):
+        """Fields not included in the update remain unchanged."""
+        profile = ProfileFactory(
+            biography="Original biography",
+            headline="Original headline",
+        )
+
+        original_first_name = profile.user.first_name
+        original_last_name = profile.user.last_name
+
+        serializer = ProfileSerializer(
+            instance=profile,
+            data={
+                "headline": "Updated headline",
+            },
+            partial=True,
+        )
+
+        assert serializer.is_valid(), serializer.errors
+
+        serializer.save()
+
+        profile.refresh_from_db()
+        profile.user.refresh_from_db()
+
+        assert profile.headline == "Updated headline"
+        assert profile.biography == "Original biography"
+
+        assert profile.user.first_name == original_first_name
+        assert profile.user.last_name == original_last_name
+
+    def test_email_is_read_only(self):
+        """Email cannot be updated through the serializer."""
+        profile = ProfileFactory()
+
+        original_email = profile.user.email
+
+        serializer = ProfileSerializer(
+            instance=profile,
+            data={
+                "email": "new@example.com",
+            },
+            partial=True,
+        )
+
+        assert serializer.is_valid(), serializer.errors
+
+        serializer.save()
+
+        profile.user.refresh_from_db()
+
+        assert profile.user.email == original_email
