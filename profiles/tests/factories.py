@@ -61,6 +61,8 @@ class SkillFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Skill
 
+    profile = factory.SubFactory(ProfileFactory)
+
     name = factory.Sequence(lambda n: f"Skill {n}")
     slug = factory.Sequence(lambda n: f"skill-{n}")
     description = factory.Faker("sentence")

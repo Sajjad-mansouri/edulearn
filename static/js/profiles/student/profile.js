@@ -12,7 +12,7 @@ function mapProfile(data) {
     headline: data.headline,
     bio: data.bio || data.biography || "",
     website: data.website,
-    avatar_url: data.avatar || data.avatar_url || "",
+    avatar_url: data.avatar_url || "",
     cover_url: data.cover || data.cover_url || "",
     skills: (data.skills || []).map(item => typeof item === 'string' ? item : item.name),
 
@@ -103,6 +103,7 @@ class ProfilePage {
         try {
             const response = await auth.authenticatedRequest(baseUrl + "/api/v1/account/profile/");
             const data = await response.json();
+            console.log(data)
             this.profile = mapProfile(data);
             this.renderAll();
         } catch (error) {
@@ -604,9 +605,9 @@ class ProfilePage {
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/profile/avatar/",
+                baseUrl + "/api/v1/account/basic-info/update/",
                 {
-                    method: 'POST',
+                    method: 'PATCH',
                     body: formData
                     // Note: Do NOT set Content-Type header for FormData
                 }
@@ -640,9 +641,9 @@ class ProfilePage {
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/profile/cover/",
+                baseUrl + "/api/v1/account/basic-info/update/",
                 {
-                    method: 'POST',
+                    method: 'Patch',
                     body: formData
                 }
             );

@@ -32,6 +32,7 @@ class TestEducationSerializer:
         education = EducationFactory(
             institution="Massachusetts Institute of Technology",
             field_of_study="Computer Science",
+            degree="Master of Science",
             description="Master's degree",
             start_year=2022,
             end_year=2024,
@@ -43,6 +44,7 @@ class TestEducationSerializer:
             "id": education.id,
             "institution": "Massachusetts Institute of Technology",
             "field_of_study": "Computer Science",
+            "degree": "Master of Science",
             "description": "Master's degree",
             "start_year": 2022,
             "end_year": 2024,
@@ -56,6 +58,7 @@ class TestEducationSerializer:
             "id",
             "institution",
             "field_of_study",
+            "degree",
             "description",
             "start_year",
             "end_year",
@@ -212,18 +215,19 @@ class TestProfileSerializer:
 
         skill = SkillFactory(
             name="Python",
+            profile=profile,
             description="Programming language",
         )
-        profile.skills.add(skill)
 
         education = EducationFactory(
             profile=profile,
+            degree="Master of Science",
             institution="MIT",
         )
 
         experience = ExperienceFactory(
             profile=profile,
-            company="OpenAI",
+            company="test_company",
         )
 
         language = LanguageFactory(
@@ -271,6 +275,7 @@ class TestProfileSerializer:
                 "id": education.id,
                 "institution": education.institution,
                 "field_of_study": education.field_of_study,
+                "degree": education.degree,
                 "description": education.description,
                 "start_year": education.start_year,
                 "end_year": education.end_year,
@@ -348,7 +353,7 @@ class TestProfileSerializer:
     def test_contains_expected_fields(self):
         """Serializer exposes the expected public fields."""
         serializer = ProfileSerializer()
-
+        print(serializer.fields.keys())
         assert set(serializer.fields.keys()) == {
             "id",
             "first_name",
@@ -392,8 +397,8 @@ class TestTopNavUserSerializer:
         assert serializer.data == {
             "id": user.id,
             "first_name": "test_user",
-            "last_name": "test_user",
-            "full_name": "test_last",
+            "last_name": "test_last",
+            "full_name": "test_user test_last",
             "email": "test_user@example.com",
             "avatar_url": None,
             "role": "student",

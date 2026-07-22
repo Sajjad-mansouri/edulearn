@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 
 from profiles.api.serializers import ProfileSerializer, TopNavUserSerializer
 from profiles.tests.factories import ProfileFactory, SkillFactory
+from profiles.tests.utils import image_file
 
 
 @pytest.mark.django_db
@@ -388,3 +389,82 @@ class TestUserInfoUpdateApiView:
         )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_updates_avatar(
+        self,
+        api_client,
+        url,
+    ):
+        """Users can upload a new avatar."""
+        profile = ProfileFactory()
+
+        api_client.force_authenticate(user=profile.user)
+
+        response = api_client.patch(
+            url,
+            {
+                "avatar": image_file("avatar.jpg"),
+            },
+            format="multipart",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        profile.refresh_from_db()
+
+        assert profile.avatar
+        assert profile.avatar.name.endswith("avatar.jpg")
+
+    def test_updates_cover(
+        self,
+        api_client,
+        url,
+    ):
+        """Users can upload a new cover image."""
+        profile = ProfileFactory()
+
+        api_client.force_authenticate(user=profile.user)
+
+        response = api_client.patch(
+            url,
+            {
+                "cover": image_file("cover.jpg"),
+            },
+            format="multipart",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        profile.refresh_from_db()
+
+        assert profile.cover
+        assert profile.cover.name.endswith("cover.jpg")
+
+    def test_updates_avatar_and_cover_together(
+        self,
+        api_client,
+        url,
+    ):
+        """Users can upload avatar and cover in one request."""
+        profile = ProfileFactory()
+
+        api_client.force_authenticate(user=profile.user)
+
+        response = api_client.patch(
+            url,
+            {
+                "avatar": image_file("avatar.jpg"),
+                "cover": image_file("cover.jpg"),
+            },
+            format="multipart",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        profile.refresh_from_db()
+
+        assert profile.avatar
+        assert profile.cover
+
+        assert profile.avatar.name.endswith("avatar.jpg")
+        assert profile.cover.name.endswith("cover.jpg")

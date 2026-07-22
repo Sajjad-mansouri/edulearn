@@ -16,8 +16,6 @@ class ProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name")
     last_name = serializers.CharField(source="user.last_name")
     email = serializers.EmailField(source="user.email", read_only=True)
-    avatar = serializers.SerializerMethodField()
-    cover = serializers.SerializerMethodField()
 
     skills = SkillSerializer(many=True, read_only=True)
     educations = EducationSerializer(many=True, read_only=True)
@@ -32,8 +30,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "email",
-            "cover",
             "avatar",
+            "cover",
             "biography",
             "headline",
             "website",
@@ -48,26 +46,6 @@ class ProfileSerializer(serializers.ModelSerializer):
             "social_links",
             "languages",
         )
-
-    def get_avatar(self, obj):
-        if not obj.avatar:
-            return None
-
-        request = self.context.get("request")
-        if request is not None:
-            return request.build_absolute_uri(obj.avatar.url)
-
-        return obj.avatar.url
-
-    def get_cover(self, obj):
-        if not obj.cover:
-            return None
-
-        request = self.context.get("request")
-        if request is not None:
-            return request.build_absolute_uri(obj.cover.url)
-
-        return obj.cover.url
 
     def update(self, instance, validated_data):
         user = instance.user
