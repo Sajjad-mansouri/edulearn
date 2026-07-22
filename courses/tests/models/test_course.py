@@ -3,11 +3,12 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from accounts.tests.factories import UserFactory
-from courses.models import Course, LearningOutcome
+from courses.models import Course, LearningOutcome, Prerequisite
 from courses.tests.factories import (
     CategoryFactory,
     CourseFactory,
     LearningOutcomeFactory,
+    PrerequisiteFactory,
     TagFactory,
 )
 
@@ -324,4 +325,106 @@ class TestLearningOutcomeModel:
 
         assert not LearningOutcome.objects.filter(
             pk=outcome.pk,
+        ).exists()
+
+
+@pytest.mark.django_db
+class TestPrerequisiteModel:
+    """Tests for the Prerequisite model."""
+
+    @pytest.fixture
+    def course(self):
+        return CourseFactory()
+
+    def test_create_prerequisite(self, course):
+        """A prerequisite can be created."""
+        prerequisite = Prerequisite.objects.create(
+            course=course,
+            order=1,
+            description="Basic Python knowledge.",
+        )
+
+        assert prerequisite.course == course
+        assert prerequisite.order == 1
+        assert prerequisite.description == "Basic Python knowledge."
+
+    def test_string_representation(self):
+        """The string representation includes the course title and order."""
+        prerequisite = PrerequisiteFactory(order=2)
+
+        assert str(prerequisite) == f"{prerequisite.course.title} - 2"
+
+    def test_course_can_have_multiple_prerequisites(self, course):
+        """A course can have multiple prerequisites."""
+        prerequisite1 = PrerequisiteFactory(
+            course=course,
+            order=1,
+        )
+        prerequisite2 = PrerequisiteFactory(
+            course=course,
+            order=2,
+        )
+
+        assert set(course.prerequisites.all()) == {
+            prerequisite1,
+            prerequisite2,
+        }
+
+    def test_prerequisites_are_ordered_by_order(self, course):
+        """Prerequisites are returned in ascending order."""
+        PrerequisiteFactory(course=course, order=3)
+        PrerequisiteFactory(course=course, order=1)
+        PrerequisiteFactory(course=course, order=2)
+
+        orders = list(
+            course.prerequisites.values_list(
+                "order",
+                flat=True,
+            )
+        )
+
+        assert orders == [1, 2, 3]
+
+    def test_order_must_be_unique_per_course(self, course):
+        """The same course cannot contain duplicate order values."""
+        PrerequisiteFactory(
+            course=course,
+            order=1,
+        )
+
+        with pytest.raises(IntegrityError):
+            Prerequisite.objects.create(
+                course=course,
+                order=1,
+                description="Duplicate order",
+            )
+
+    def test_same_order_can_be_used_for_different_courses(self):
+        """Different courses may reuse the same order value."""
+        course1 = CourseFactory()
+        course2 = CourseFactory()
+
+        prerequisite1 = PrerequisiteFactory(
+            course=course1,
+            order=1,
+        )
+        prerequisite2 = PrerequisiteFactory(
+            course=course2,
+            order=1,
+        )
+
+        assert prerequisite1.order == prerequisite2.order == 1
+
+    def test_deleting_course_deletes_prerequisites(self):
+        """Deleting a course cascades to its prerequisites."""
+        course = CourseFactory()
+
+        prerequisite = PrerequisiteFactory(
+            course=course,
+        )
+
+        course.delete()
+
+        assert not Prerequisite.objects.filter(
+            pk=prerequisite.pk,
         ).exists()
