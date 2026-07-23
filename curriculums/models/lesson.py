@@ -6,15 +6,6 @@ from .section import Section
 
 
 class Lesson(models.Model):
-    class Type(models.TextChoices):
-        VIDEO = "video", _("Video")
-        ARTICLE = "article", _("Article")
-        FILE = "file", _("File")
-        QUIZ = "quiz", _("Quiz")
-        ASSIGNMENT = "assignment", _("Assignment")
-        LIVE_SESSION = "live_session", _("Live Session")
-        CODING_EXERCISE = "coding_exercise", _("Coding Exercise")
-
     class CompletionCriteria(models.TextChoices):
         MANUAL = "manual", _("Manual")
         WATCH_VIDEO = "watch_video", _("Watch Video")
@@ -37,12 +28,6 @@ class Lesson(models.Model):
     slug = models.SlugField(
         _("Slug"),
         max_length=280,
-    )
-
-    lesson_type = models.CharField(
-        _("Type"),
-        max_length=30,
-        choices=Type.choices,
     )
 
     duration = models.DurationField(
@@ -90,7 +75,6 @@ class Lesson(models.Model):
 
         indexes = [
             models.Index(fields=["section"]),
-            models.Index(fields=["lesson_type"]),
             models.Index(fields=["is_published"]),
         ]
 
