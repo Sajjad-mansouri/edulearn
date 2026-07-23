@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "accounts",
     "profiles",
     "courses",
+    "curriculums",
     # third party
     "rest_framework",
     "rest_framework_simplejwt",
