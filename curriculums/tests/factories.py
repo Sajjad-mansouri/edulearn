@@ -3,7 +3,8 @@ import datetime
 import factory
 
 from courses.tests.factories import CourseFactory
-from curriculums.models import Lesson, Section
+from curriculums.models import Lesson, LessonContent, Section, VideoContent
+from utils.test.files import file_field
 
 
 class SectionFactory(factory.django.DjangoModelFactory):
@@ -25,9 +26,56 @@ class LessonFactory(factory.django.DjangoModelFactory):
     section = factory.SubFactory(SectionFactory)
     title = factory.Sequence(lambda n: f"Lesson {n}")
     slug = factory.LazyAttribute(lambda obj: obj.title.lower().replace(" ", "-"))
-    lesson_type = Lesson.Type.VIDEO
     duration = datetime.timedelta(minutes=15)
     order = factory.Sequence(lambda n: n + 1)
     is_published = False
     is_preview = False
     completion_criteria = Lesson.CompletionCriteria.MANUAL
+
+
+class LessonContentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LessonContent
+
+    lesson = factory.SubFactory(LessonFactory)
+    title = factory.Sequence(lambda n: f"Content {n}")
+    content_type = LessonContent.Type.VIDEO
+    order = factory.Sequence(lambda n: n + 1)
+    is_published = False
+
+
+class VideoContentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = VideoContent
+
+    content = factory.SubFactory(LessonContentFactory)
+
+    source = VideoContent.Source.FILE
+
+    uploaded_video = factory.LazyFunction(
+        lambda: file_field(
+            "video.mp4",
+            b"video-content",
+        )
+    )
+
+    external_url = ""
+
+    duration = datetime.timedelta(minutes=10)
+
+    transcript = factory.Faker("paragraph")
+
+    captions = factory.LazyFunction(
+        lambda: file_field(
+            "captions.vtt",
+            b"WEBVTT",
+        )
+    )
+
+    class Params:
+        external = factory.Trait(
+            source=VideoContent.Source.URL,
+            uploaded_video=None,
+            captions=None,
+            external_url="https://www.youtube.com/watch?v=test_video",
+        )

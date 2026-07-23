@@ -21,7 +21,6 @@ class TestLessonModel:
             section=section,
             title="Introduction",
             slug="introduction",
-            lesson_type=Lesson.Type.VIDEO,
             duration=datetime.timedelta(minutes=15),
             order=1,
             is_published=True,
@@ -32,7 +31,6 @@ class TestLessonModel:
         assert lesson.section == section
         assert lesson.title == "Introduction"
         assert lesson.slug == "introduction"
-        assert lesson.lesson_type == Lesson.Type.VIDEO
         assert lesson.duration == datetime.timedelta(minutes=15)
         assert lesson.order == 1
         assert lesson.is_published is True
@@ -50,7 +48,6 @@ class TestLessonModel:
         lesson = Lesson.objects.create(
             section=section,
             title="Python Basics",
-            lesson_type=Lesson.Type.ARTICLE,
         )
 
         assert lesson.slug == "python-basics"
@@ -61,7 +58,6 @@ class TestLessonModel:
             section=section,
             title="Python Basics",
             slug="custom-slug",
-            lesson_type=Lesson.Type.ARTICLE,
         )
 
         assert lesson.slug == "custom-slug"
@@ -84,7 +80,6 @@ class TestLessonModel:
         lesson = Lesson.objects.create(
             section=section,
             title="Introduction",
-            lesson_type=Lesson.Type.ARTICLE,
         )
 
         assert lesson.duration is None
@@ -94,7 +89,6 @@ class TestLessonModel:
         lesson = Lesson.objects.create(
             section=section,
             title="Introduction",
-            lesson_type=Lesson.Type.ARTICLE,
         )
 
         assert lesson.is_published is False
@@ -104,7 +98,6 @@ class TestLessonModel:
         lesson = Lesson.objects.create(
             section=section,
             title="Introduction",
-            lesson_type=Lesson.Type.ARTICLE,
         )
 
         assert lesson.is_preview is False
@@ -114,7 +107,6 @@ class TestLessonModel:
         lesson = Lesson.objects.create(
             section=section,
             title="Introduction",
-            lesson_type=Lesson.Type.ARTICLE,
         )
 
         assert lesson.completion_criteria == Lesson.CompletionCriteria.MANUAL
@@ -129,8 +121,7 @@ class TestLessonModel:
         with pytest.raises(IntegrityError):
             Lesson.objects.create(
                 section=section,
-                title="Duplicate",
-                lesson_type=Lesson.Type.VIDEO,
+                title="Duplicate Lesson",
                 order=1,
             )
 
@@ -167,6 +158,12 @@ class TestLessonModel:
             lesson1,
             lesson2,
         }
+
+    def test_section_can_access_its_lessons(self, section):
+        """A section should access its lessons through the reverse relation."""
+        lesson = LessonFactory(section=section)
+
+        assert lesson in section.lessons.all()
 
     def test_lessons_are_ordered_by_order(self, section):
         """Lessons are returned in ascending order."""
