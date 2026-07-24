@@ -8,6 +8,7 @@ from curriculums.models import (
     FileContent,
     Lesson,
     LessonContent,
+    Question,
     QuizContent,
     Section,
     VideoContent,
@@ -143,3 +144,20 @@ class QuizContentFactory(factory.django.DjangoModelFactory):
     shuffle_choices = False
 
     show_correct_answers = True
+
+
+class QuestionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Question
+
+    quiz = factory.SubFactory(QuizContentFactory)
+
+    text = factory.Sequence(lambda n: f"What is question {n}?")
+
+    question_type = Question.Type.SINGLE_CHOICE
+
+    order = factory.Sequence(lambda n: n + 1)
+
+    points = 1
+
+    explanation = factory.Faker("sentence")
