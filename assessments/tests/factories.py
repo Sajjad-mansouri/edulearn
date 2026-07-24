@@ -5,6 +5,7 @@ from assessments.models import (
     AcceptedAnswer,
     Choice,
     Question,
+    QuizAnswer,
     QuizAttempt,
     QuizContent,
 )
@@ -85,3 +86,17 @@ class QuizAttemptFactory(factory.django.DjangoModelFactory):
 
     started_at = factory.LazyFunction(timezone.now)
     submitted_at = None
+
+
+class QuizAnswerFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = QuizAnswer
+
+    attempt = factory.SubFactory(QuizAttemptFactory)
+    question = factory.SubFactory(
+        QuestionFactory,
+        quiz=factory.SelfAttribute("..attempt.quiz"),
+    )
+
+    score_awarded = 0
+    text_answer = ""
