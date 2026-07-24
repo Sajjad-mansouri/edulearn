@@ -2,7 +2,7 @@ from .article_content import ArticleContent
 from .file_content import FileContent
 from .lesson import Lesson
 from .lesson_content import LessonContent
-from .quiz_content import Question, QuizContent
+from .quiz_content import AcceptedAnswer, Choice, Question, QuizContent
 from .section import Section
 from .video_content import VideoContent
 
@@ -15,4 +15,6 @@ __all__ = [
     "ArticleContent",
     "QuizContent",
     "Question",
+    "Choice",
+    "AcceptedAnswer",
 ]

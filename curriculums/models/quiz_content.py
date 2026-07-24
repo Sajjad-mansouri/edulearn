@@ -112,3 +112,43 @@ class Question(models.Model):
             models.Index(fields=["quiz"]),
             models.Index(fields=["order"]),
         ]
+
+
+class Choice(models.Model):
+    question = models.ForeignKey(
+        Question,
+        on_delete=models.CASCADE,
+        related_name="choices",
+    )
+
+    text = models.CharField(
+        max_length=500,
+    )
+
+    is_correct = models.BooleanField(
+        default=False,
+    )
+
+    order = models.PositiveSmallIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["question", "order"],
+                name="unique_choice_order_per_question",
+            )
+        ]
+
+        ordering = ("order",)
+
+
+class AcceptedAnswer(models.Model):
+    question = models.ForeignKey(
+        Question,
+        on_delete=models.CASCADE,
+        related_name="accepted_answers",
+    )
+
+    answer = models.CharField(
+        max_length=255,
+    )
