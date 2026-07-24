@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -30,3 +31,9 @@ class ArticleContent(models.Model):
 
     def __str__(self):
         return self.content.title
+
+    def clean(self):
+        super().clean()
+
+        if not self.body.strip():
+            raise ValidationError({"body": _("Article body is required.")})

@@ -3,7 +3,14 @@ import datetime
 import factory
 
 from courses.tests.factories import CourseFactory
-from curriculums.models import FileContent, Lesson, LessonContent, Section, VideoContent
+from curriculums.models import (
+    ArticleContent,
+    FileContent,
+    Lesson,
+    LessonContent,
+    Section,
+    VideoContent,
+)
 from utils.test.files import file_field
 
 
@@ -100,3 +107,14 @@ class FileContentFactory(factory.django.DjangoModelFactory):
     description = factory.Faker("paragraph")
 
     is_downloadable = True
+
+
+class ArticleContentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ArticleContent
+
+    content = factory.SubFactory(LessonContentFactory)
+
+    body = factory.Faker("paragraph", nb_sentences=10)
+
+    estimated_read_time = 5
