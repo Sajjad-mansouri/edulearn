@@ -3,7 +3,7 @@ import datetime
 import factory
 
 from courses.tests.factories import CourseFactory
-from curriculums.models import Lesson, LessonContent, Section, VideoContent
+from curriculums.models import FileContent, Lesson, LessonContent, Section, VideoContent
 from utils.test.files import file_field
 
 
@@ -79,3 +79,24 @@ class VideoContentFactory(factory.django.DjangoModelFactory):
             captions=None,
             external_url="https://www.youtube.com/watch?v=test_video",
         )
+
+
+class FileContentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = FileContent
+
+    content = factory.SubFactory(LessonContentFactory)
+
+    file = factory.LazyFunction(
+        lambda: file_field(
+            "document.pdf",
+            b"test file",
+            content_type="application/pdf",
+        )
+    )
+
+    display_name = factory.Sequence(lambda n: f"Document {n}")
+
+    description = factory.Faker("paragraph")
+
+    is_downloadable = True
