@@ -8,6 +8,7 @@ from curriculums.models import (
     FileContent,
     Lesson,
     LessonContent,
+    QuizContent,
     Section,
     VideoContent,
 )
@@ -118,3 +119,27 @@ class ArticleContentFactory(factory.django.DjangoModelFactory):
     body = factory.Faker("paragraph", nb_sentences=10)
 
     estimated_read_time = 5
+
+
+class QuizContentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = QuizContent
+
+    content = factory.SubFactory(LessonContentFactory)
+
+    instructions = factory.Faker(
+        "paragraph",
+        nb_sentences=3,
+    )
+
+    passing_score = 70
+
+    time_limit = 30
+
+    max_attempts = 1
+
+    shuffle_questions = False
+
+    shuffle_choices = False
+
+    show_correct_answers = True
