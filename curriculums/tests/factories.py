@@ -4,7 +4,9 @@ import factory
 
 from courses.tests.factories import CourseFactory
 from curriculums.models import (
+    AcceptedAnswer,
     ArticleContent,
+    Choice,
     FileContent,
     Lesson,
     LessonContent,
@@ -161,3 +163,22 @@ class QuestionFactory(factory.django.DjangoModelFactory):
     points = 1
 
     explanation = factory.Faker("sentence")
+
+
+class ChoiceFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Choice
+
+    question = factory.SubFactory(QuestionFactory)
+    text = factory.Sequence(lambda n: f"Choice {n}")
+    is_correct = False
+    order = factory.Sequence(lambda n: n + 1)
+
+
+class AcceptedAnswerFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = AcceptedAnswer
+
+    question = factory.SubFactory(QuestionFactory)
+
+    answer = factory.Sequence(lambda n: f"answer_{n}")

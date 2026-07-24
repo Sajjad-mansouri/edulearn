@@ -141,6 +141,9 @@ class Choice(models.Model):
 
         ordering = ("order",)
 
+    def __str__(self):
+        return self.text
+
 
 class AcceptedAnswer(models.Model):
     question = models.ForeignKey(
@@ -152,3 +155,14 @@ class AcceptedAnswer(models.Model):
     answer = models.CharField(
         max_length=255,
     )
+
+    def __str__(self):
+        return self.answer
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["question", "answer"],
+                name="unique_accepted_answer_per_question",
+            )
+        ]
