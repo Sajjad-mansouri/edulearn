@@ -11,6 +11,7 @@ from curriculums.tests.factories import (
     SectionFactory,
 )
 from enrollments.models import (
+    CourseProgress,
     Enrollment,
     LessonContentProgress,
     LessonProgress,
@@ -129,6 +130,35 @@ class SectionProgressFactory(factory.django.DjangoModelFactory):
 
         completed = factory.Trait(
             status=SectionProgress.Status.COMPLETED,
+            progress_percentage=100,
+            started_at=factory.LazyFunction(timezone.now),
+            completed_at=factory.LazyFunction(timezone.now),
+        )
+
+
+class CourseProgressFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = CourseProgress
+
+    enrollment = factory.SubFactory(EnrollmentFactory)
+
+    course = factory.SelfAttribute("enrollment.course")
+
+    status = CourseProgress.Status.NOT_STARTED
+    progress_percentage = 0
+
+    started_at = None
+    completed_at = None
+
+    class Params:
+        in_progress = factory.Trait(
+            status=CourseProgress.Status.IN_PROGRESS,
+            progress_percentage=50,
+            started_at=factory.LazyFunction(timezone.now),
+        )
+
+        completed = factory.Trait(
+            status=CourseProgress.Status.COMPLETED,
             progress_percentage=100,
             started_at=factory.LazyFunction(timezone.now),
             completed_at=factory.LazyFunction(timezone.now),
