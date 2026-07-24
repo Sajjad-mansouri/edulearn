@@ -157,3 +157,40 @@ class AssignmentSubmission(models.Model):
         self.feedback = feedback
         self.status = self.Status.GRADED
         self.graded_at = timezone.now()
+
+
+class AssignmentSubmissionFile(models.Model):
+    submission = models.ForeignKey(
+        AssignmentSubmission,
+        on_delete=models.CASCADE,
+        related_name="files",
+        verbose_name=_("Submission"),
+    )
+
+    file = models.FileField(
+        _("File"),
+        upload_to="assignments/submissions/",
+    )
+
+    original_filename = models.CharField(
+        _("Original Filename"),
+        max_length=255,
+    )
+
+    uploaded_at = models.DateTimeField(
+        _("Uploaded At"),
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = ("uploaded_at",)
+
+        indexes = [
+            models.Index(fields=["submission"]),
+        ]
+
+        verbose_name = _("Assignment Submission File")
+        verbose_name_plural = _("Assignment Submission Files")
+
+    def __str__(self):
+        return self.original_filename
