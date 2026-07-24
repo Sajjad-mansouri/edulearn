@@ -5,6 +5,7 @@ from assessments.models import (
     AcceptedAnswer,
     Assignment,
     AssignmentSubmission,
+    AssignmentSubmissionFile,
     Choice,
     Question,
     QuizAnswer,
@@ -13,6 +14,7 @@ from assessments.models import (
 )
 from curriculums.tests.factories import LessonContentFactory
 from enrollments.tests.factories import EnrollmentFactory
+from utils.test.files import file_field
 
 
 class QuizContentFactory(factory.django.DjangoModelFactory):
@@ -134,3 +136,21 @@ class AssignmentSubmissionFactory(factory.django.DjangoModelFactory):
     feedback = ""
     submitted_at = None
     graded_at = None
+
+
+class AssignmentSubmissionFileFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = AssignmentSubmissionFile
+
+    submission = factory.SubFactory(
+        AssignmentSubmissionFactory,
+    )
+
+    file = factory.LazyFunction(
+        lambda: file_field(
+            name="solution.pdf",
+            content=b"file content",
+        )
+    )
+
+    original_filename = "solution.pdf"

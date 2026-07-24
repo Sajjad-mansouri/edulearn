@@ -6,12 +6,14 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.utils import timezone
 
-from assessments.models import AssignmentSubmission
+from assessments.models import AssignmentSubmission, AssignmentSubmissionFile
 from assessments.tests.factories import (
     AssignmentFactory,
     AssignmentSubmissionFactory,
+    AssignmentSubmissionFileFactory,
 )
 from enrollments.tests.factories import EnrollmentFactory
+from utils.test.files import file_field
 
 
 @pytest.mark.django_db
@@ -332,3 +334,96 @@ class TestAssignmentSubmissionModel:
         assert not AssignmentSubmission.objects.filter(
             pk=submission.pk,
         ).exists()
+
+
+@pytest.mark.django_db
+class TestAssignmentSubmissionFileModel:
+    """Tests for the AssignmentSubmissionFile model."""
+
+    @pytest.fixture
+    def submission(self):
+        return AssignmentSubmissionFactory()
+
+    def test_create_submission_file(self, submission):
+        """A submission file can be created."""
+        uploaded_file = file_field(
+            name="solution.pdf",
+            content=b"PDF content",
+        )
+
+        submission_file = AssignmentSubmissionFile.objects.create(
+            submission=submission,
+            file=uploaded_file,
+            original_filename="solution.pdf",
+        )
+
+        assert submission_file.submission == submission
+        assert submission_file.original_filename == "solution.pdf"
+        assert submission_file.file.name.endswith("solution.pdf")
+        assert submission_file.uploaded_at is not None
+
+    def test_string_representation(self):
+        """String representation returns the original filename."""
+        submission_file = AssignmentSubmissionFileFactory(
+            original_filename="project.zip",
+        )
+
+        assert str(submission_file) == "project.zip"
+
+    def test_submission_can_have_multiple_files(self, submission):
+        """A submission can contain multiple uploaded files."""
+        file1 = AssignmentSubmissionFileFactory(
+            submission=submission,
+            original_filename="report.pdf",
+        )
+
+        file2 = AssignmentSubmissionFileFactory(
+            submission=submission,
+            original_filename="source.zip",
+        )
+
+        assert set(submission.files.all()) == {
+            file1,
+            file2,
+        }
+
+    def test_original_filename_is_required(self, submission):
+        """Original filename is required."""
+        submission_file = AssignmentSubmissionFile(
+            submission=submission,
+            file=file_field(),
+            original_filename="",
+        )
+
+        with pytest.raises(ValidationError):
+            submission_file.full_clean()
+
+    def test_deleting_submission_deletes_files(self):
+        """Deleting a submission cascades to its uploaded files."""
+        submission_file = AssignmentSubmissionFileFactory()
+
+        submission = submission_file.submission
+
+        submission.delete()
+
+        assert not AssignmentSubmissionFile.objects.filter(
+            pk=submission_file.pk,
+        ).exists()
+
+    def test_files_are_ordered_by_upload_time(self, submission):
+        """Files are returned in upload order."""
+        file1 = AssignmentSubmissionFileFactory(
+            submission=submission,
+            original_filename="a.pdf",
+        )
+        file2 = AssignmentSubmissionFileFactory(
+            submission=submission,
+            original_filename="b.pdf",
+        )
+
+        files = list(submission.files.all())
+
+        assert files == [
+            file1,
+            file2,
+        ]

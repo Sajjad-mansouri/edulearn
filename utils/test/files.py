@@ -2,7 +2,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 
 def file_field(
-    name: str,
+    name: str = "file.pdf",
     content: bytes = b"test file",
     content_type: str = "application/octet-stream",
 ):
