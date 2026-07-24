@@ -4,6 +4,7 @@ from django.utils import timezone
 from assessments.models import (
     AcceptedAnswer,
     Assignment,
+    AssignmentSubmission,
     Choice,
     Question,
     QuizAnswer,
@@ -116,3 +117,20 @@ class AssignmentFactory(factory.django.DjangoModelFactory):
     max_attempts = 1
     accepted_file_types = ""
     max_file_size_mb = 50
+
+
+class AssignmentSubmissionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = AssignmentSubmission
+
+    enrollment = factory.SubFactory(EnrollmentFactory)
+
+    assignment = factory.SubFactory(AssignmentFactory)
+
+    attempt_number = 1
+    status = AssignmentSubmission.Status.DRAFT
+    submission_text = factory.Faker("paragraph")
+    score = None
+    feedback = ""
+    submitted_at = None
+    graded_at = None
