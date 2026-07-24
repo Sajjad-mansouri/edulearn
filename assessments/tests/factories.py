@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from assessments.models import (
     AcceptedAnswer,
+    Assignment,
     Choice,
     Question,
     QuizAnswer,
@@ -100,3 +101,18 @@ class QuizAnswerFactory(factory.django.DjangoModelFactory):
 
     score_awarded = 0
     text_answer = ""
+
+
+class AssignmentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Assignment
+
+    content = factory.SubFactory(LessonContentFactory)
+
+    instructions = factory.Faker("paragraph")
+    max_score = 100
+    due_date = None
+    allow_late_submission = False
+    max_attempts = 1
+    accepted_file_types = ""
+    max_file_size_mb = 50
