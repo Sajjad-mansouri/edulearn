@@ -66,3 +66,31 @@ class QuizContent(models.Model):
             raise ValidationError(
                 {"passing_score": _("Passing score must be between 0 and 100.")}
             )
+
+
+class Question(models.Model):
+    class Type(models.TextChoices):
+        SINGLE_CHOICE = "single_choice", _("Single Choice")
+        MULTIPLE_CHOICE = "multiple_choice", _("Multiple Choice")
+        TRUE_FALSE = "true_false", _("True / False")
+        SHORT_ANSWER = "short_answer", _("Short Answer")
+
+    quiz = models.ForeignKey(
+        QuizContent,
+        on_delete=models.CASCADE,
+        related_name="questions",
+    )
+
+    text = models.TextField()
+
+    question_type = models.CharField(
+        max_length=30,
+        choices=Type.choices,
+        default=Type.SINGLE_CHOICE,
+    )
+
+    order = models.PositiveSmallIntegerField()
+
+    points = models.PositiveSmallIntegerField(default=1)
+
+    explanation = models.TextField(blank=True)
