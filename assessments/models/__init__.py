@@ -1,4 +1,5 @@
 from .accepted_answer import AcceptedAnswer
+from .assignment import Assignment
 from .choice import Choice
 from .question import Question
 from .quiz import QuizContent
@@ -12,4 +13,5 @@ __all__ = [
     "AcceptedAnswer",
     "QuizAttempt",
     "QuizAnswer",
+    "Assignment",
 ]
