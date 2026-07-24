@@ -5,8 +5,17 @@ from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
 from courses.tests.factories import CourseFactory
-from curriculums.tests.factories import LessonContentFactory, LessonFactory
-from enrollments.models import Enrollment, LessonContentProgress, LessonProgress
+from curriculums.tests.factories import (
+    LessonContentFactory,
+    LessonFactory,
+    SectionFactory,
+)
+from enrollments.models import (
+    Enrollment,
+    LessonContentProgress,
+    LessonProgress,
+    SectionProgress,
+)
 
 
 class EnrollmentFactory(factory.django.DjangoModelFactory):
@@ -92,6 +101,34 @@ class LessonProgressFactory(factory.django.DjangoModelFactory):
 
         completed = factory.Trait(
             status=LessonProgress.Status.COMPLETED,
+            progress_percentage=100,
+            started_at=factory.LazyFunction(timezone.now),
+            completed_at=factory.LazyFunction(timezone.now),
+        )
+
+
+class SectionProgressFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SectionProgress
+
+    enrollment = factory.SubFactory(EnrollmentFactory)
+    section = factory.SubFactory(SectionFactory)
+
+    status = SectionProgress.Status.NOT_STARTED
+    progress_percentage = 0
+
+    started_at = None
+    completed_at = None
+
+    class Params:
+        in_progress = factory.Trait(
+            status=SectionProgress.Status.IN_PROGRESS,
+            progress_percentage=50,
+            started_at=factory.LazyFunction(timezone.now),
+        )
+
+        completed = factory.Trait(
+            status=SectionProgress.Status.COMPLETED,
             progress_percentage=100,
             started_at=factory.LazyFunction(timezone.now),
             completed_at=factory.LazyFunction(timezone.now),
