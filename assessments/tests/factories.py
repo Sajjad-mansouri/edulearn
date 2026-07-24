@@ -1,12 +1,15 @@
 import factory
+from django.utils import timezone
 
 from assessments.models import (
     AcceptedAnswer,
     Choice,
     Question,
+    QuizAttempt,
     QuizContent,
 )
 from curriculums.tests.factories import LessonContentFactory
+from enrollments.tests.factories import EnrollmentFactory
 
 
 class QuizContentFactory(factory.django.DjangoModelFactory):
@@ -67,3 +70,18 @@ class AcceptedAnswerFactory(factory.django.DjangoModelFactory):
     question = factory.SubFactory(QuestionFactory)
 
     answer = factory.Sequence(lambda n: f"answer_{n}")
+
+
+class QuizAttemptFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = QuizAttempt
+
+    enrollment = factory.SubFactory(EnrollmentFactory)
+
+    quiz = factory.SubFactory(QuizContentFactory)
+
+    attempt_number = 1
+    score = 0
+
+    started_at = factory.LazyFunction(timezone.now)
+    submitted_at = None
