@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -27,6 +28,10 @@ class Course(models.Model):
         PUBLIC = "public", _("Public")
         PRIVATE = "private", _("Private")
         UNLISTED = "unlisted", _("Unlisted")
+
+    class PriceType(models.TextChoices):
+        PAID = "paid", _("Paid")
+        FREE = "free", _("Free")
 
     title = models.CharField(
         _("Title"),
@@ -124,6 +129,30 @@ class Course(models.Model):
         related_name="courses",
         verbose_name=_("Category"),
     )
+
+    short_description = models.CharField(
+        _("Short Description"), max_length=280, blank=True
+    )
+    duration = models.DurationField(
+        _("Duration"),
+        null=True,
+        blank=True,
+        help_text=_("Estimated duration of this Course."),
+    )
+    price_type = models.CharField(
+        _("Price Type"), choices=PriceType.choices, default=PriceType.FREE
+    )
+    price = models.DecimalField(
+        _("Price"), max_digits=10, decimal_places=2, default=0.00
+    )
+    price_discount = models.PositiveSmallIntegerField(
+        default=0, validators=[MinValueValidator(0), MaxValueValidator(100)]
+    )
+    course_trailer = models.URLField(
+        _("Course Trailer"),
+        blank=True,
+    )
+    version_note = models.CharField(_("Version Note"), max_length=250, blank=True)
 
     tags = models.ManyToManyField(
         Tag,
