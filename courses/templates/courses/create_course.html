@@ -1,0 +1,47 @@
+ {%extends 'profiles/instructor/base_account.html'%}
+{%block main_content%}
+        <main class="content-main" id="contentMain">
+            <header class="page-header">
+                <div class="page-header-top-row">
+                    <div>
+                        <h1 class="page-header-title">Create New Course</h1>
+                        <p class="page-header-desc">Build your course step by step</p>
+                    </div>
+                    <span class="auto-save-indicator" id="autoSaveIndicator">
+                        <i class="fas fa-check-circle"></i> Draft saved
+                    </span>
+                </div>
+            </header>
+
+            <!-- ==================== PROGRESS STEPS ==================== -->
+            <div class="progress-steps" id="progressSteps">
+                <button class="progress-step completed" data-step="1"><span class="step-number"><i class="fas fa-check"></i></span><span class="step-label">Basic Info</span></button>
+                <span class="step-connector completed"></span>
+                <button class="progress-step active" data-step="2"><span class="step-number">2</span><span class="step-label">Curriculum</span></button>
+                <span class="step-connector"></span>
+                <button class="progress-step" data-step="3"><span class="step-number">3</span><span class="step-label">Outcomes</span></button>
+                <span class="step-connector"></span>
+                <button class="progress-step" data-step="4"><span class="step-number">4</span><span class="step-label">Prerequisites</span></button>
+                <span class="step-connector"></span>
+                <button class="progress-step" data-step="5"><span class="step-number">5</span><span class="step-label">Target Audience</span></button>
+                <span class="step-connector"></span>
+                <button class="progress-step" data-step="6"><span class="step-number">6</span><span class="step-label">Pricing</span></button>
+                <span class="step-connector"></span>
+                <button class="progress-step" data-step="7"><span class="step-number">7</span><span class="step-label">Media & SEO</span></button>
+                <span class="step-connector"></span>
+                <button class="progress-step" data-step="8"><span class="step-number">8</span><span class="step-label">Publish</span></button>
+            </div>
+
+            <!-- ==================== STEP CONTENT ==================== -->
+            <div class="step-content" id="stepContent"></div>
+
+            <!-- ==================== NAVIGATION BUTTONS ==================== -->
+            <div class="step-navigation">
+                <button class="nav-btn secondary" id="prevStepBtn" style="display:none;"><i class="fas fa-arrow-left"></i> Previous Step</button>
+                <div class="nav-right-btns">
+                    <button class="nav-btn outline" id="saveDraftBtn"><i class="fas fa-save"></i> Save Draft</button>
+                    <button class="nav-btn primary" id="nextStepBtn">Next: Curriculum <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </div>
+        </main>
+{%endblock%}
