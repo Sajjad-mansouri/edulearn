@@ -3,7 +3,7 @@ from .file_content import FileContent
 from .lesson import Lesson
 from .lesson_content import LessonContent
 from .section import Section
-from .video_content import VideoContent
+from .video_content import VideoCaption, VideoContent
 
 __all__ = [
     "Section",
@@ -12,4 +12,5 @@ __all__ = [
     "VideoContent",
     "FileContent",
     "ArticleContent",
+    "VideoCaption",
 ]

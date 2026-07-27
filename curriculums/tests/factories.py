@@ -1,6 +1,7 @@
 import datetime
 
 import factory
+from django.core.files.base import ContentFile
 
 from courses.tests.factories import CourseFactory
 from curriculums.models import (
@@ -9,6 +10,7 @@ from curriculums.models import (
     Lesson,
     LessonContent,
     Section,
+    VideoCaption,
     VideoContent,
 )
 from utils.test.files import file_field
@@ -59,7 +61,7 @@ class VideoContentFactory(factory.django.DjangoModelFactory):
 
     source = VideoContent.Source.FILE
 
-    uploaded_video = factory.LazyFunction(
+    video_file = factory.LazyFunction(
         lambda: file_field(
             "video.mp4",
             b"video-content",
@@ -71,13 +73,6 @@ class VideoContentFactory(factory.django.DjangoModelFactory):
     duration = datetime.timedelta(minutes=10)
 
     transcript = factory.Faker("paragraph")
-
-    captions = factory.LazyFunction(
-        lambda: file_field(
-            "captions.vtt",
-            b"WEBVTT",
-        )
-    )
 
     class Params:
         external = factory.Trait(
@@ -118,3 +113,27 @@ class ArticleContentFactory(factory.django.DjangoModelFactory):
     body = factory.Faker("paragraph", nb_sentences=10)
 
     estimated_read_time = 5
+
+
+class VideoCaptionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = VideoCaption
+
+    video = factory.SubFactory(VideoContentFactory)
+
+    language = factory.Sequence(lambda n: f"lang{n}")
+
+    label = factory.LazyAttribute(lambda obj: obj.language.upper())
+
+    @factory.lazy_attribute
+    def file(self):
+        extension = self.file_format
+
+        return ContentFile(
+            b"WEBVTT\n\n00:00:00.000 --> 00:00:02.000\nHello World",
+            name=f"caption.{extension}",
+        )
+
+    file_format = VideoCaption.Format.VTT
+
+    is_default = False

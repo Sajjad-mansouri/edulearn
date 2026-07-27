@@ -41,10 +41,8 @@ class VideoContent(models.Model):
     )
 
     def clean(self):
-        if self.source == self.Source.FILE and not self.uploaded_video:
-            raise ValidationError(
-                {"uploaded_video": _("An uploaded video is required.")}
-            )
+        if self.source == self.Source.FILE and not self.video_file:
+            raise ValidationError({"video_file": _("An video file is required.")})
 
         if self.source != self.Source.FILE and not self.external_url:
             raise ValidationError({"external_url": _("A video URL is required.")})
@@ -89,3 +87,19 @@ class VideoCaption(models.Model):
     is_default = models.BooleanField(
         default=False,
     )
+
+    def __str__(self):
+        return f"{self.video} ({self.language})"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["video", "language"],
+                name="unique_caption_language_per_video",
+            ),
+            models.UniqueConstraint(
+                fields=["video"],
+                condition=models.Q(is_default=True),
+                name="unique_default_caption_per_video",
+            ),
+        ]
