@@ -1,6 +1,112 @@
 // ============================================
 // CREATE COURSE PAGE CONTROLLER
 // ============================================
+const baseUrl = window.location.origin;
+
+function objectToFormData(obj, formData = new FormData(), parentKey = "") {
+    Object.entries(obj).forEach(([key, value]) => {
+        const field = parentKey ? `${parentKey}[${key}]` : key;
+
+        if (value === null || value === undefined) {
+            return;
+        }
+
+        if (value instanceof File) {
+            formData.append(field, value);
+        } else if (value instanceof Date) {
+            formData.append(field, value.toISOString());
+        } else if (Array.isArray(value)) {
+            value.forEach((item, index) => {
+                objectToFormData(item, formData, `${field}[${index}]`);
+            });
+        } else if (typeof value === "object") {
+            objectToFormData(value, formData, field);
+        } else {
+            formData.append(field, value);
+        }
+    });
+
+    return formData;
+}
+
+function buildFormData(data, formData = new FormData(), parentKey = '') {
+    if (data === null || data === undefined) {
+        return formData;
+    }
+
+    // Handle Files and Blobs
+    if (data instanceof File || data instanceof Blob) {
+        formData.append(parentKey, data);
+        return formData;
+    }
+
+    // Handle Arrays
+    if (Array.isArray(data)) {
+        data.forEach((item, index) => {
+            const key = parentKey ? `${parentKey}[${index}]` : `${index}`;
+            if (typeof item === 'object' && item !== null && !(item instanceof File)) {
+                buildFormData(item, formData, key);
+            } else {
+                formData.append(key, item);
+            }
+        });
+        return formData;
+    }
+
+    // Handle Objects
+    if (typeof data === 'object') {
+        Object.keys(data).forEach(key => {
+            const value = data[key];
+            const newKey = parentKey ? `${parentKey}.${key}` : key;
+
+            // Handle special cases
+            if (key === 'thumbnail' || key === 'promoVideo' || key === 'courseTrailer') {
+                if (value instanceof File) {
+                    formData.append(newKey, value);
+                }
+                // If it's a URL string or null, send as string
+                else if (typeof value === 'string' || value === null) {
+                    formData.append(newKey, value || '');
+                }
+                return;
+            }
+
+            if (value instanceof Date) {
+                formData.append(newKey, value.toISOString());
+                return;
+            }
+
+            if (typeof value === 'object' && value !== null && !(value instanceof File)) {
+                buildFormData(value, formData, newKey);
+            } else {
+                formData.append(newKey, value);
+            }
+        });
+        return formData;
+    }
+
+    // Primitive values
+    if (parentKey) {
+        formData.append(parentKey, data);
+    }
+    return formData;
+}
+
+function mapData(courseData){
+    const { shortDescription, promoVideo,courseTrailer, priceType,discountPrice, fullDescription, thumbnailPreview, versionNotes, ...rest } = courseData;
+    const payload = {
+        ...rest,
+        short_description:shortDescription,
+        promo_video:promoVideo,
+        course_trailer:courseTrailer,
+        price_type:priceType,
+        price_discount:discountPrice,
+        description:fullDescription,
+        version_note:versionNotes
+    }
+    console.log(payload)
+    return payload
+}
 
 class CreateCoursePage {
     constructor() {
@@ -20,7 +126,7 @@ class CreateCoursePage {
             sections: [
                 {
                     id: 1, title: 'Introduction', description: '', duration: '', lessons: [
-                        { id: 101, title: 'Welcome & Overview', description: '', duration: '', type: 'video', preview: true, published: true, completionRule: 'watch90', content: { videoUrl: '', videoFile: null, videoFileName: '', textContent: '', duration: '', attachments: [] } },
+                        { id: 101, title: 'Welcome & Overview', description: '', duration: '', type: 'video', preview: true, published: true, completionRule: 'watch90', content: { videoUrl: '', videoFile: null, videoCaption: null,videoFileName: '', textContent: '', duration: '', attachments: [] } },
                         { id: 102, title: 'Course Objectives', description: '', duration: '', type: 'article', preview: true, published: true, completionRule: 'scroll', content: { text: '', attachments: [] } }
                     ]
                 }
@@ -40,7 +146,6 @@ class CreateCoursePage {
         this.bindEvents();
         this.loadDraft();
         this.renderStep(this.currentStep);
-        this.startAutoSave();
         this.hideLoader();
     }
 
@@ -48,10 +153,13 @@ class CreateCoursePage {
 
         document.getElementById('prevStepBtn')?.addEventListener('click', () => this.prevStep());
         document.getElementById('nextStepBtn')?.addEventListener('click', () => this.nextStep());
-        document.getElementById('saveDraftBtn')?.addEventListener('click', () => this.saveDraft(true));
 
         document.querySelectorAll('.progress-step').forEach(step => {
-            step.addEventListener('click', () => { const s = parseInt(step.dataset.step); this.goToStep(s); });
+
+            step.addEventListener('click', () => {
+
+                const s = parseInt(step.dataset.step); this.goToStep(s);
+            });
         });
 
         document.getElementById('lessonModalClose')?.addEventListener('click', () => this.closeLessonModal());
@@ -68,10 +176,17 @@ class CreateCoursePage {
     // ============================================
     renderStep(step) {
         this.currentStep = step;
+
+
         this.collectStepData();
+
+
         this.updateProgressUI();
+
+
         this.updateNavigationButtons();
         const container = document.getElementById('stepContent');
+
         switch (step) {
             case 1: container.innerHTML = this.renderBasicInfo(); break;
             case 2: container.innerHTML = this.renderCurriculum(); break;
@@ -91,6 +206,7 @@ class CreateCoursePage {
     // ============================================
     renderBasicInfo() {
         const d = this.courseData;
+
         return `
             <h2>Basic Information</h2><p class="step-description">Tell students what your course is about</p>
             <div class="form-group"><label>Course Title <span class="required">*</span></label><input type="text" id="courseTitle" class="form-input" value="${this.esc(d.title)}" placeholder="e.g. Complete Python Bootcamp 2026"></div>
@@ -213,7 +329,7 @@ class CreateCoursePage {
     renderMedia() {
         const d = this.courseData;
         return `<h2>Media & SEO</h2><p class="step-description">Upload a thumbnail, trailer, and optimize for search engines</p>
-            <div class="form-group"><label>Course Thumbnail</label><div class="thumbnail-upload ${d.thumbnail?'has-image':''}" id="thumbnailUpload" onclick="document.getElementById('thumbnailInput').click()">${d.thumbnail ? `<img src="${d.thumbnail}" alt="Thumbnail preview">` : '<div class="upload-placeholder"><i class="fas fa-image"></i><p>Click to upload thumbnail</p><small>Recommended: 1280x720px · Max 2MB</small></div>'}</div><input type="file" id="thumbnailInput" accept="image/*" style="display:none;" onchange="createCoursePage.handleThumbnail(this.files[0])"></div>
+            <div class="form-group"><label>Course Thumbnail</label><div class="thumbnail-upload ${d.thumbnailPreview?'has-image':''}" id="thumbnailUpload" onclick="document.getElementById('thumbnailInput').click()">${d.thumbnailPreview ? `<img src="${d.thumbnailPreview}" alt="Thumbnail preview">` : '<div class="upload-placeholder"><i class="fas fa-image"></i><p>Click to upload thumbnail</p><small>Recommended: 1280x720px · Max 2MB</small></div>'}</div><input type="file" id="thumbnailInput" accept="image/*" style="display:none;" onchange="createCoursePage.handleThumbnail(this.files[0])"></div>
             <div class="form-group"><label>Course Trailer URL</label><input type="url" id="courseTrailer" class="form-input" value="${this.esc(d.courseTrailer)}" placeholder="https://youtube.com/watch?v=..."></div>
             <div class="form-group"><label>Promo Video URL</label><input type="url" id="promoVideo" class="form-input" value="${this.esc(d.promoVideo)}" placeholder="https://youtube.com/watch?v=..."></div>
             <div class="form-group"><label>Course Attachments</label><div id="attachmentsList">${(d.attachments||[]).map((a,i)=>`<div class="prereq-item"><i class="fas fa-paperclip"></i><span>${this.esc(a.name||a)}</span><button class="outcome-remove" data-index="${i}" data-type="attachment"><i class="fas fa-times"></i></button></div>`).join('')}${(d.attachments||[]).length===0?'<p style="color:var(--color-gray-400);font-size:0.78rem;text-align:center;padding:8px;">No attachments</p>':''}</div><button class="add-btn" id="addAttachmentBtn"><i class="fas fa-plus"></i> Add Attachment</button><input type="file" id="attachmentInput" style="display:none;" multiple></div>
@@ -267,9 +383,7 @@ class CreateCoursePage {
         </div>
         <div class="publish-actions">
             <button class="nav-btn outline" id="saveDraftPublishBtn"><i class="fas fa-save"></i> Save Draft</button>
-            <button class="nav-btn secondary" id="previewPublishBtn"><i class="fas fa-eye"></i> Preview</button>
-            <button class="nav-btn primary" id="submitReviewPublishBtn" ${allDone?'':'disabled style="opacity:0.5;cursor:not-allowed;"'}><i class="fas fa-paper-plane"></i> Submit For Review</button>
-            <button class="nav-btn primary" id="publishPublishBtn" ${allDone?'':'disabled style="opacity:0.5;cursor:not-allowed;"'} style="background:#059669;"><i class="fas fa-rocket"></i> Publish</button>
+            <button class="nav-btn primary" id="submitReviewPublishBtn" ${true?'':'disabled style="opacity:0.5;cursor:not-allowed;"'}><i class="fas fa-paper-plane"></i> Submit For Review</button>
         </div>`;
     }
 
@@ -319,9 +433,7 @@ class CreateCoursePage {
         }
         if (step === 8) {
             document.getElementById('saveDraftPublishBtn')?.addEventListener('click', () => this.saveDraft(true));
-            document.getElementById('previewPublishBtn')?.addEventListener('click', () => this.showToast('Preview would open in new tab'));
             document.getElementById('submitReviewPublishBtn')?.addEventListener('click', () => this.submitForReview());
-            document.getElementById('publishPublishBtn')?.addEventListener('click', () => this.publishCourse());
         }
     }
 
@@ -476,6 +588,7 @@ class CreateCoursePage {
     // ============================================
     openLessonModal(si, li) {
         this.collectStepData();
+        console.log(this.courseData)
         const lesson = this.courseData.sections[si]?.lessons[li];
         if (!lesson) return;
         this.editingLesson = { sectionIndex: si, lessonIndex: li };
@@ -489,6 +602,7 @@ class CreateCoursePage {
         <div class="form-group"><label>Completion Rule</label><select id="lessonCompletionRule" class="form-select"><option value="watch90" ${lesson.completionRule==='watch90'?'selected':''}>Watch ≥90%</option><option value="scroll" ${lesson.completionRule==='scroll'?'selected':''}>Scroll to end</option><option value="manual" ${lesson.completionRule==='manual'?'selected':''}>Manual mark</option><option value="pass" ${lesson.completionRule==='pass'?'selected':''}>Pass quiz</option><option value="submit" ${lesson.completionRule==='submit'?'selected':''}>Submit assignment</option></select></div>`;
 
         if (lesson.type === 'video') {
+            let videoCaption = lesson.content?.videoCaption
             html += `
             <div class="form-group"><label>Video URL</label><input type="url" id="lessonVideoUrl" class="form-input" value="${this.esc(lesson.content?.videoUrl||'')}" placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."><small style="color:var(--color-gray-400);display:block;margin-top:4px;">Supports YouTube, Vimeo, and direct MP4 links</small></div>
             <div class="form-group" style="border:2px dashed var(--color-gray-300);border-radius:var(--radius-lg);padding:20px;text-align:center;margin-bottom:16px;">
@@ -497,6 +611,24 @@ class CreateCoursePage {
                 ${lesson.content?.videoFileName ? `<p style="margin-top:8px;font-size:0.82rem;color:var(--color-success);"><i class="fas fa-check-circle"></i> Uploaded: ${this.esc(lesson.content.videoFileName)}</p>` : ''}
                 <small style="color:var(--color-gray-400);display:block;margin-top:4px;">Max 2GB · MP4, WebM, MOV</small>
             </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--color-gray-200);">
+            <div class="form-group"><label><i class="fas fa-paperclip"></i> Video Caption</label>
+                <div id="lessonAttachmentsList">${videoCaption ? `
+  <div class="prereq-item" style="margin-bottom:6px;">
+    <i class="fas fa-paperclip"></i>
+    <span>${this.esc(videoCaption.name || a)}</span>
+    <button class="outcome-remove" data-index="0" data-type="video-caption">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+` : ''}${videoCaption?'':'<p style="color:var(--color-gray-400);font-size:0.78rem;text-align:center;padding:8px;">No caption yet</p>'}</div>
+                <button class="add-btn" id="addVideoCaptionBtn"><i class="fas fa-plus"></i> Add video caption</button>
+                <input type="file" id="videoCaptionInput" style="display:none;" multiple>
+            </div>
+        </div>
+
+
+
             <div class="form-group"><label>Text Content / Description Below Video</label><textarea id="lessonVideoText" class="form-input form-textarea" rows="6" placeholder="Additional text content shown below the video...">${this.esc(lesson.content?.textContent||'')}</textarea></div>`;
         } else if (lesson.type === 'article') {
             html += `<div class="form-group"><label>Article Content <span class="required">*</span></label><textarea id="lessonArticleText" class="form-input form-textarea" rows="14" placeholder="Write your article content here...">${this.esc(lesson.content?.text||'')}</textarea></div>`;
@@ -662,43 +794,49 @@ class CreateCoursePage {
     // ============================================
     // THUMBNAIL
     // ============================================
-    handleThumbnail(file) { if (!file) return; const r = new FileReader(); r.onload = e => { this.courseData.thumbnail = e.target.result; this.renderStep(7); }; r.readAsDataURL(file); this.showToast('Thumbnail uploaded'); }
+    handleThumbnail(file) {
+        if (!file) return;
+        this.courseData.thumbnail = file;
+        this.courseData.thumbnailPreview = URL.createObjectURL(file);
+        this.showToast('Thumbnail uploaded');
+    }
 
     // ============================================
     // DATA COLLECTION
     // ============================================
     collectStepData() {
         if (this.currentStep === 1) {
-            this.courseData.title = document.getElementById('courseTitle')?.value || '';
-            this.courseData.subtitle = document.getElementById('courseSubtitle')?.value || '';
-            this.courseData.shortDescription = document.getElementById('shortDesc')?.value || '';
-            this.courseData.category = document.getElementById('courseCategory')?.value || '';
-            this.courseData.subcategory = document.getElementById('courseSubcategory')?.value || '';
-            this.courseData.level = document.getElementById('courseLevel')?.value || 'intermediate';
-            this.courseData.language = document.getElementById('courseLanguage')?.value || 'en';
-            this.courseData.duration = document.getElementById('courseDuration')?.value || '';
-            this.courseData.visibility = document.getElementById('courseVisibility')?.value || 'public';
-            this.courseData.fullDescription = document.getElementById('fullDescription')?.value || '';
+
+            this.courseData.title = document.getElementById('courseTitle')?.value ||this.courseData.title|| '';
+            this.courseData.subtitle = document.getElementById('courseSubtitle')?.value ||this.courseData.subtitle|| '';
+            this.courseData.shortDescription = document.getElementById('shortDesc')?.value ||this.courseData.shortDescription|| '';
+            this.courseData.category = document.getElementById('courseCategory')?.value ||this.courseData.category|| '';
+            this.courseData.subcategory = document.getElementById('courseSubcategory')?.value ||this.courseData.subcategory|| '';
+            this.courseData.level = document.getElementById('courseLevel')?.value ||this.courseData.level|| 'intermediate';
+            this.courseData.language = document.getElementById('courseLanguage')?.value ||this.courseData.language|| 'en';
+            this.courseData.duration = document.getElementById('courseDuration')?.value ||this.courseData.duration|| '';
+            this.courseData.visibility = document.getElementById('courseVisibility')?.value ||this.courseData.visibility|| 'public';
+            this.courseData.fullDescription = document.getElementById('fullDescription')?.value ||this.courseData.fullDescription|| '';
         }
         if (this.currentStep === 2) {
             document.querySelectorAll('.section-title-input').forEach(i => { const si = parseInt(i.dataset.section); if (this.courseData.sections[si]) this.courseData.sections[si].title = i.value; });
         }
         if (this.currentStep === 6) {
-            this.courseData.priceType = document.querySelector('.pricing-option.active')?.dataset.type || 'paid';
-            this.courseData.price = parseFloat(document.getElementById('coursePrice')?.value) || 0;
-            this.courseData.discountPrice = document.getElementById('discountPrice')?.value || '';
+            this.courseData.priceType = document.querySelector('.pricing-option.active')?.dataset.type ||this.courseData.priceType|| 'paid';
+            this.courseData.price = parseFloat(document.getElementById('coursePrice')?.value) ||this.courseData.price|| 0;
+            this.courseData.discountPrice = document.getElementById('discountPrice')?.value ||this.courseData.discountPrice|| '';
         }
         if (this.currentStep === 7) {
-            this.courseData.courseTrailer = document.getElementById('courseTrailer')?.value || '';
-            this.courseData.promoVideo = document.getElementById('promoVideo')?.value || '';
-            this.courseData.seoTitle = document.getElementById('seoTitle')?.value || '';
-            this.courseData.seoDescription = document.getElementById('seoDescription')?.value || '';
+            this.courseData.courseTrailer = document.getElementById('courseTrailer')?.value ||this.courseData.courseTrailer|| '';
+            this.courseData.promoVideo = document.getElementById('promoVideo')?.value ||this.courseData.promoVideo|| '';
+            this.courseData.seoTitle = document.getElementById('seoTitle')?.value ||this.courseData.seoTitle|| '';
+            this.courseData.seoDescription = document.getElementById('seoDescription')?.value ||this.courseData.seoDescription|| '';
         }
         if (this.currentStep === 8) {
             const versionInput = document.getElementById('courseVersion');
-            if (versionInput) this.courseData.version = versionInput.value.trim() || '1.0';
+            this.courseData.version = document.getElementById('courseVersion')?.value.trim() ||this.courseData.version|| '1.0';
             const notesInput = document.getElementById('versionNotes');
-            if (notesInput) this.courseData.versionNotes = notesInput.value.trim();
+            this.courseData.versionNotes = document.getElementById('versionNotes')?.value.trim()||this.courseData.versionNotes||"";
         }
     }
 
@@ -715,11 +853,19 @@ class CreateCoursePage {
         this.courseData.reviewStatus = 'approved';
         this.courseData.lastUpdated = new Date();
         this.courseData.versionHistory = [{ version: this.courseData.version, date: new Date(), status: 'published', notes: this.courseData.versionNotes || 'Initial release' }];
-        console.log(this.courseData)
+
         // ==========================================
         // REAL API CALL
         // ==========================================
         // const response = await ApiService.createCourse(this.courseData);
+            const response = await auth.authenticatedRequest(
+                baseUrl + "/api/v1/courses/create/",
+                {
+                    method: 'POST',
+                    body: JSON.stringify(this.courseData)
+                }
+            );
+
         // await ApiService.publishCourse(response.id);
         this.showToast(`Course published as v${this.courseData.version}! 🎉`);
     }
@@ -730,7 +876,20 @@ class CreateCoursePage {
         if (versionInput) this.courseData.version = versionInput.value.trim() || '1.0';
         this.courseData.status = 'under_review';
         this.courseData.reviewStatus = 'pending';
-        this.renderAll();
+        const courseData = mapData(this.courseData)
+        const formData = objectToFormData(courseData);
+        const newformData = buildFormData(courseData)
+        console.log(newformData)
+            const response = await auth.authenticatedRequest(
+                baseUrl + "/api/v1/courses/create/",
+                {
+                    method: 'POST',
+                    body: newformData
+                }
+            );
+            const data = await response.json()
+
+            console.log(data)
         this.showToast('Course submitted for review');
     }
 
@@ -749,7 +908,7 @@ class CreateCoursePage {
 
     updateNavigationButtons() {
         const b = document.getElementById('nextStepBtn');
-        const stepLabels = ['', 'Curriculum', 'Outcomes', 'Prerequisites', 'Target Audience', 'Pricing', 'Media & SEO', 'Publish'];
+        const stepLabels = ['', '', 'Curriculum', 'Outcomes', 'Prerequisites', 'Target Audience', 'Pricing', 'Media & SEO', 'Publish'];
         if (this.currentStep < this.totalSteps) {
             b.innerHTML = `Next: ${stepLabels[this.currentStep + 1]} <i class="fas fa-arrow-right"></i>`;
             b.style.display = 'flex';
@@ -759,8 +918,6 @@ class CreateCoursePage {
     // ============================================
     // AUTO-SAVE
     // ============================================
-    startAutoSave() { this.autoSaveTimer = setInterval(() => this.saveDraft(false), 30000); }
-
     async saveDraft(showToastFlag = false) {
         this.collectStepData();
         localStorage.setItem('courseDraft', JSON.stringify(this.courseData));
@@ -772,6 +929,7 @@ class CreateCoursePage {
         }
         if (showToastFlag) this.showToast('Draft saved successfully');
     }
+
 
     loadDraft() {
         const saved = localStorage.getItem('courseDraft');

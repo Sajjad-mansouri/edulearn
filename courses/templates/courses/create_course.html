@@ -7,9 +7,7 @@
                         <h1 class="page-header-title">Create New Course</h1>
                         <p class="page-header-desc">Build your course step by step</p>
                     </div>
-                    <span class="auto-save-indicator" id="autoSaveIndicator">
-                        <i class="fas fa-check-circle"></i> Draft saved
-                    </span>
+
                 </div>
             </header>
 
@@ -39,9 +37,24 @@
             <div class="step-navigation">
                 <button class="nav-btn secondary" id="prevStepBtn" style="display:none;"><i class="fas fa-arrow-left"></i> Previous Step</button>
                 <div class="nav-right-btns">
-                    <button class="nav-btn outline" id="saveDraftBtn"><i class="fas fa-save"></i> Save Draft</button>
                     <button class="nav-btn primary" id="nextStepBtn">Next: Curriculum <i class="fas fa-arrow-right"></i></button>
                 </div>
             </div>
         </main>
+{%endblock%}
+
+{%block extra_content%}
+    <div class="modal-overlay" id="lessonModalOverlay" style="display:none;">
+        <div class="lesson-modal-container">
+            <div class="lesson-modal-header">
+                <div><h3 id="modalLessonTitle">Lesson Title</h3><span class="lesson-modal-type-badge" id="modalLessonType">Video</span></div>
+                <button class="modal-close" id="lessonModalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="lesson-modal-body" id="lessonContentArea"></div>
+            <div class="lesson-modal-footer">
+                <button class="nav-btn secondary" id="lessonModalCancel">Cancel</button>
+                <button class="nav-btn primary" id="lessonModalSave"><i class="fas fa-save"></i> Save Content</button>
+            </div>
+        </div>
+    </div>
 {%endblock%}

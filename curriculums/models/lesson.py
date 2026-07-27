@@ -25,6 +25,8 @@ class Lesson(models.Model):
         max_length=255,
     )
 
+    description = models.TextField(_("Description"), blank=True)
+
     slug = models.SlugField(
         _("Slug"),
         max_length=280,

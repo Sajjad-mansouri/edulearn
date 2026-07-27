@@ -22,7 +22,7 @@ class VideoContent(models.Model):
         default=Source.FILE,
     )
 
-    uploaded_video = models.FileField(
+    video_file = models.FileField(
         upload_to="courses/videos/",
         blank=True,
     )
@@ -37,11 +37,6 @@ class VideoContent(models.Model):
     )
 
     transcript = models.TextField(
-        blank=True,
-    )
-
-    captions = models.FileField(
-        upload_to="courses/captions/",
         blank=True,
     )
 
@@ -60,3 +55,37 @@ class VideoContent(models.Model):
 
     def __str__(self):
         return self.content.title
+
+
+class VideoCaption(models.Model):
+    class Format(models.TextChoices):
+        VTT = "vtt", "WebVTT"
+        SRT = "srt", "SubRip"
+
+    video = models.ForeignKey(
+        VideoContent,
+        on_delete=models.CASCADE,
+        related_name="captions",
+    )
+
+    language = models.CharField(
+        max_length=10,
+    )
+
+    label = models.CharField(
+        max_length=50,
+        blank=True,
+    )
+
+    file = models.FileField(
+        upload_to="courses/captions/",
+    )
+
+    file_format = models.CharField(
+        max_length=10,
+        choices=Format.choices,
+    )
+
+    is_default = models.BooleanField(
+        default=False,
+    )
