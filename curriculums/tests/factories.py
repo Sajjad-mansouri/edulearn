@@ -2,10 +2,12 @@ import datetime
 
 import factory
 from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from courses.tests.factories import CourseFactory
 from curriculums.models import (
     ArticleContent,
+    Attachment,
     FileContent,
     Lesson,
     LessonContent,
@@ -25,7 +27,7 @@ class SectionFactory(factory.django.DjangoModelFactory):
     description = factory.Faker("paragraph")
     order = factory.Sequence(lambda n: n + 1)
     is_published = False
-    estimated_duration = datetime.timedelta(minutes=30)
+    duration = datetime.timedelta(minutes=30)
 
 
 class LessonFactory(factory.django.DjangoModelFactory):
@@ -137,3 +139,27 @@ class VideoCaptionFactory(factory.django.DjangoModelFactory):
     file_format = VideoCaption.Format.VTT
 
     is_default = False
+
+
+class AttachmentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Attachment
+
+    course = factory.SubFactory(CourseFactory)
+    lesson_content = None
+
+    title = factory.Sequence(lambda n: f"Attachment {n}")
+
+    description = ""
+
+    file = factory.LazyFunction(
+        lambda: SimpleUploadedFile(
+            "attachment.pdf",
+            b"Dummy attachment content",
+            content_type="application/pdf",
+        )
+    )
+
+    file_url = ""
+
+    is_downloadable = True
