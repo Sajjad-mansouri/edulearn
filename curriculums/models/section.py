@@ -31,7 +31,7 @@ class Section(models.Model):
         _("Published"),
         default=False,
     )
-    estimated_duration = models.DurationField(
+    duration = models.DurationField(
         _("Estimated Duration"),
         null=True,
         blank=True,

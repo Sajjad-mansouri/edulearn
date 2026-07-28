@@ -16,6 +16,9 @@ class FileContent(models.Model):
         _("File"),
         upload_to="courses/files/",
     )
+    file_url = models.URLField(
+        blank=True,
+    )
 
     display_name = models.CharField(
         _("Display Name"),

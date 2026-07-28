@@ -1,4 +1,5 @@
 from .article_content import ArticleContent
+from .attachment import Attachment
 from .file_content import FileContent
 from .lesson import Lesson
 from .lesson_content import LessonContent
@@ -13,4 +14,5 @@ __all__ = [
     "FileContent",
     "ArticleContent",
     "VideoCaption",
+    "Attachment",
 ]
