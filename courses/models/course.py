@@ -160,6 +160,12 @@ class Course(models.Model):
         related_name="courses",
         verbose_name=_("Tags"),
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    seo_title = models.CharField(_("SEO Title"), max_length=60, blank=True)
+    seo_description = models.CharField(_("SEO Description"), max_length=160, blank=True)
+    seo_keywords = models.CharField(
+        _("SEO keywords"), max_length=255, blank=True
+    )  # comma-separat
 
     class Meta:
         ordering = (
@@ -192,6 +198,11 @@ class Course(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
 
+        if not self.seo_title:
+            self.seo_title = self.title[:60]
+
+        if not self.seo_description:
+            self.seo_description = self.description[:160]
         self.full_clean()
 
         super().save(*args, **kwargs)

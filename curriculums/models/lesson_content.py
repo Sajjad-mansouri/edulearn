@@ -36,11 +36,6 @@ class LessonContent(models.Model):
         _("Order"),
     )
 
-    is_published = models.BooleanField(
-        _("Published"),
-        default=False,
-    )
-
     class Meta:
         ordering = ("lesson", "order")
 
@@ -52,4 +47,7 @@ class LessonContent(models.Model):
         ]
 
     def __str__(self):
-        return self.title
+        if self.title:
+            return self.title
+        else:
+            return f"{self.lesson.title} content"

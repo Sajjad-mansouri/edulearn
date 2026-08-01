@@ -49,10 +49,10 @@ class Question(models.Model):
     )
 
     is_required = models.BooleanField(default=True)
-    estimated_time = models.PositiveSmallIntegerField(
+    estimated_time = models.DurationField(
         null=True,
         blank=True,
-        help_text=_("Estimated time to answer in seconds."),
+        help_text=_("Estimated time to answer."),
     )
 
     def __str__(self):

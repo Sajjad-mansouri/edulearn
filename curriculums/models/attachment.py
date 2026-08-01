@@ -69,6 +69,7 @@ class Attachment(models.Model):
     title = models.CharField(
         _("Title"),
         max_length=255,
+        blank=True,
         help_text=_("Name displayed to learners."),
     )
 

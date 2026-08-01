@@ -30,6 +30,7 @@ class VideoContent(models.Model):
     external_url = models.URLField(
         blank=True,
     )
+    text = models.TextField(_("Text"), blank=True)
 
     duration = models.DurationField(
         null=True,

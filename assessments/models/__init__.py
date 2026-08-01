@@ -1,6 +1,7 @@
 from .accepted_answer import AcceptedAnswer
 from .assignment import Assignment
 from .assignment_submission import AssignmentSubmission, AssignmentSubmissionFile
+from .bool_answer import BooleanAnswer
 from .choice import Choice
 from .question import Question
 from .quiz import QuizContent
@@ -12,6 +13,7 @@ __all__ = [
     "Question",
     "Choice",
     "AcceptedAnswer",
+    "BooleanAnswer",
     "QuizAttempt",
     "QuizAnswer",
     "Assignment",
