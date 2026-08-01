@@ -1,0 +1,143 @@
+ {%extends 'profiles/instructor/base_account.html'%}
+ {%load static%}
+
+ {%block style%}
+ <link rel="stylesheet" href="{% static 'css/courses/instructor_courses.css' %}">
+ {%endblock%}
+
+
+{%block main_content%}
+        <!-- ==================== MAIN CONTENT ==================== -->
+        <main class="content-main" id="contentMain">
+
+            <!-- Page Header -->
+            <header class="page-header">
+                <div class="page-header-top-row">
+                    <div>
+                        <h1 class="page-header-title">My Courses</h1>
+                        <p class="page-header-desc">Manage your courses across the entire publishing pipeline</p>
+                    </div>
+                    <a href="{%url 'courses:create_course'%}" class="create-course-btn">
+                        <i class="fas fa-plus"></i> Create New Course
+                    </a>
+                </div>
+            </header>
+
+            <!-- ==================== TAB NAVIGATION ==================== -->
+            <div class="courses-tabs" id="coursesTabs">
+                <button class="course-tab active" data-tab="all">All <span class="tab-count" id="countAll">15</span></button>
+                <button class="course-tab" data-tab="draft">Draft <span class="tab-count" id="countDraft">3</span></button>
+                <button class="course-tab" data-tab="ready_for_review">Ready for Review <span class="tab-count" id="countReadyForReview">1</span></button>
+                <button class="course-tab" data-tab="under_review">Under Review <span class="tab-count" id="countUnderReview">2</span></button>
+                <button class="course-tab" data-tab="published">Published <span class="tab-count" id="countPublished">7</span></button>
+                <button class="course-tab" data-tab="updated">Updated <span class="tab-count" id="countUpdated">1</span></button>
+                <button class="course-tab" data-tab="archived">Archived <span class="tab-count" id="countArchived">1</span></button>
+            </div>
+
+            <!-- ==================== TOOLBAR ==================== -->
+            <div class="courses-toolbar">
+                <div class="toolbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="courseSearch" class="toolbar-search-input" placeholder="Search courses...">
+                    <button class="search-clear-btn" id="searchClearBtn" style="display:none;"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="toolbar-filters">
+                    <div class="filter-dropdown">
+                        <button class="filter-btn" data-filter="category"><i class="fas fa-tags"></i> Category <i class="fas fa-chevron-down"></i></button>
+                        <div class="filter-menu" id="filterCategory">
+                            <label class="filter-option"><input type="checkbox" value="data-science"> Data Science</label>
+                            <label class="filter-option"><input type="checkbox" value="machine-learning"> Machine Learning</label>
+                            <label class="filter-option"><input type="checkbox" value="web-development"> Web Development</label>
+                            <label class="filter-option"><input type="checkbox" value="cloud"> Cloud Computing</label>
+                        </div>
+                    </div>
+                    <div class="filter-dropdown">
+                        <button class="filter-btn" data-filter="version"><i class="fas fa-code-branch"></i> Version <i class="fas fa-chevron-down"></i></button>
+                        <div class="filter-menu" id="filterVersion">
+                            <label class="filter-option"><input type="checkbox" value="1.0"> v1.0</label>
+                            <label class="filter-option"><input type="checkbox" value="1.1"> v1.1</label>
+                            <label class="filter-option"><input type="checkbox" value="2.0"> v2.0</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="toolbar-sort">
+                    <select id="sortSelect" class="sort-select">
+                        <option value="updated-desc">Last Updated</option>
+                        <option value="updated-asc">Oldest Updated</option>
+                        <option value="students-desc">Most Students</option>
+                        <option value="rating-desc">Highest Rated</option>
+                        <option value="revenue-desc">Highest Revenue</option>
+                        <option value="alpha-asc">Alphabetical (A-Z)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ==================== ACTIVE FILTERS ==================== -->
+            <div class="active-filters" id="activeFilters" style="display:none;"></div>
+
+            <!-- ==================== BULK ACTIONS ==================== -->
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="display:none;">
+                <label class="bulk-select-all">
+                    <input type="checkbox" id="selectAllCheckbox">
+                    <span>Select All</span>
+                </label>
+                <span class="bulk-selected-count" id="bulkSelectedCount">0 selected</span>
+                <div class="bulk-actions-dropdown">
+                    <button class="bulk-action-btn" id="bulkActionBtn">Bulk Actions <i class="fas fa-chevron-down"></i></button>
+                    <div class="bulk-action-menu" id="bulkActionMenu">
+                        <button class="bulk-action-item" data-action="publish"><i class="fas fa-check-circle"></i> Publish Selected</button>
+                        <button class="bulk-action-item" data-action="archive"><i class="fas fa-archive"></i> Archive Selected</button>
+                        <button class="bulk-action-item" data-action="submit-review"><i class="fas fa-paper-plane"></i> Submit for Review</button>
+                        <button class="bulk-action-item danger" data-action="delete"><i class="fas fa-trash-alt"></i> Delete Drafts</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== RESULTS COUNT ==================== -->
+            <div class="results-info" id="resultsInfo">
+                Showing <strong id="showingCount">15</strong> courses
+            </div>
+
+            <!-- ==================== COURSE GRID ==================== -->
+            <div class="courses-grid" id="coursesGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- ==================== EMPTY STATE ==================== -->
+            <div class="empty-courses-state" id="emptyState" style="display:none;">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- ==================== PAGINATION ==================== -->
+            <div class="pagination" id="pagination">
+                <button class="page-btn" id="prevPage" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+                <div class="page-numbers" id="pageNumbers"></div>
+                <button class="page-btn" id="nextPage">Next <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </main>
+{%endblock%}
+
+{%block extra_content%}
+    <!-- ==================== ACTIONS DROPDOWN PORTAL ==================== -->
+    <div class="actions-dropdown-portal" id="actionsDropdownPortal" style="display:none;">
+        <div class="course-actions-menu" id="courseActionsMenu"></div>
+    </div>
+
+    <!-- ==================== CONFIRM DIALOG ==================== -->
+    <div class="confirm-overlay" id="confirmOverlay" style="display:none;">
+        <div class="confirm-dialog">
+            <div class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3 class="confirm-title" id="confirmTitle">Confirm Action</h3>
+            <p class="confirm-message" id="confirmMessage">Are you sure?</p>
+            <div class="confirm-actions">
+                <button class="confirm-btn cancel" id="confirmCancel">Cancel</button>
+                <button class="confirm-btn danger" id="confirmOk">Confirm</button>
+            </div>
+        </div>
+    </div>
+{%endblock%}
+
+    {%block script%}
+    <script src="{%static 'js/courses/instructor_courses.js' %}"></script>
+
+    {%endblock%}

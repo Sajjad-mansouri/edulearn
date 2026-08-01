@@ -15,7 +15,8 @@
     <link rel="stylesheet" href="{% static 'css/profiles/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/profiles/sidebar.css' %}">
     <link rel="stylesheet" href="{% static 'css/profiles/footer.css' %}">
-    <link rel="stylesheet" href="{% static 'css/courses/create_course.css' %}">
+ {%block style%}
+ {%endblock%}
 </head>
 <body>
     <!-- ==================== TOP NAVIGATION ==================== -->
@@ -99,7 +100,9 @@
 
     <script src="{%static 'js/auth/auth.js' %}"></script>
     <script src="{%static 'js/profiles/topnav.js' %}"></script>
-    <script src="{%static 'js/courses/create_course.js' %}"></script>
+    {%block script%}
+    {%endblock%}
+
 
 
 </body>

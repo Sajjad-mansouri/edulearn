@@ -11,4 +11,5 @@ urlpatterns = [
         name="subcategories",
     ),
     path("create/", views.CourseBuilder.as_view(), name="create_course"),
+    path("", views.InstructorCoursesApiView.as_view(), name="instructor_course_list"),
 ]

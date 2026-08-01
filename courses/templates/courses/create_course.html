@@ -1,4 +1,8 @@
  {%extends 'profiles/instructor/base_account.html'%}
+ {%load static%}
+ {%block style%}
+ <link rel="stylesheet" href="{% static 'css/courses/create_course.css' %}">
+ {%endblock%}
 {%block main_content%}
         <main class="content-main" id="contentMain">
             <header class="page-header">
@@ -58,3 +62,9 @@
         </div>
     </div>
 {%endblock%}
+
+
+    {%block script%}
+    <script src="{%static 'js/courses/create_course.js' %}"></script>
+
+    {%endblock%}

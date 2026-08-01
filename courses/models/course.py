@@ -18,11 +18,16 @@ class Course(models.Model):
 
     class Status(models.TextChoices):
         DRAFT = "draft", _("Draft")
-        READY_FOR_REVIEW = "ready_for_review", _("Ready for Review")
-        UNDER_REVIEW = "under_review", _("Under Review")
         PUBLISHED = "published", _("Published")
         UPDATED = "updated", _("Updated")
         ARCHIVED = "archived", _("Archived")
+
+    class ReviewStatus(models.TextChoices):
+        NOT_SUBMITTED = "not_submitted", _("Not Submitted")
+        PENDING = "pending", _("Pending Review")
+        UNDER_REVIEW = "under_review", _("Under Review")
+        APPROVED = "approved", _("Approved")
+        CHANGES_REQUESTED = "changes_requested", _("Changes Requested")
 
     class Visibility(models.TextChoices):
         PUBLIC = "public", _("Public")
@@ -83,6 +88,14 @@ class Course(models.Model):
         max_length=30,
         choices=Status.choices,
         default=Status.DRAFT,
+        help_text="Lifecycle state of the course content",
+    )
+    review_status = models.CharField(
+        _("Review Status"),
+        max_length=20,
+        choices=ReviewStatus.choices,
+        default=ReviewStatus.NOT_SUBMITTED,
+        help_text="Current position in review workflow",
     )
 
     visibility = models.CharField(

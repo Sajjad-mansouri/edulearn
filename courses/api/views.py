@@ -3,10 +3,14 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from courses.models import Category
+from courses.models import Category, Course
 from normalizers.course import normalize_course_data
 
-from .serializers import CategorySerializer, CourseSerializer
+from .serializers import (
+    CategorySerializer,
+    CourseSerializer,
+    InstructorCourseSerializer,
+)
 from .services import CourseService
 
 
@@ -34,3 +38,10 @@ class CourseBuilder(APIView):
         serializer.is_valid(raise_exception=True)
         CourseService(instructor=request.user).create(serializer.validated_data)
         return Response(serializer.data)
+
+
+class InstructorCoursesApiView(ListAPIView):
+    serializer_class = InstructorCourseSerializer
+
+    def get_queryset(self):
+        return Course.objects.filter(owner=self.request.user)

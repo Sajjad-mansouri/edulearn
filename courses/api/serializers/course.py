@@ -72,3 +72,36 @@ class CourseSerializer(serializers.ModelSerializer):
             "sections",
             "attachments",
         ]
+
+
+class InstructorCourseSerializer(serializers.ModelSerializer):
+    category = serializers.CharField(source="category.name", read_only=True)
+    students = serializers.SerializerMethodField()
+    revenue = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Course
+        fields = [
+            "id",
+            "title",
+            "category",
+            "status",
+            "version",
+            "rating",
+            "students",
+            "revenue",
+            "review_status",
+            "thumbnail",
+            "last_updated",
+            "slug",
+        ]
+
+    def get_revenue(self, obj):
+        return 10
+
+    def get_students(self, obj):
+        return obj.enrollments.count()
+
+    def get_rating(self, obj):
+        return 5
