@@ -1,8 +1,10 @@
+from django.db.models import Avg
 from rest_framework import serializers
 
 from courses.models import (
     Category,
     Course,
+    CourseFeedback,
     LearningOutcome,
     Prerequisite,
     TargetAudience,
@@ -104,4 +106,9 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
         return obj.enrollments.count()
 
     def get_rating(self, obj):
-        return 5
+        avg_rating = CourseFeedback.objects.filter(enrollment__course=obj).aggregate(
+            avg=Avg("rating")
+        )["avg"]
+        if avg_rating:
+            return round(avg_rating, 1)
+        return avg_rating

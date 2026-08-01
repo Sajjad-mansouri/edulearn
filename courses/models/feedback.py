@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -15,7 +16,9 @@ class CourseFeedback(models.Model):
         verbose_name=_("Enrollment"),
     )
 
-    rating = models.PositiveSmallIntegerField()
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(10000)]
+    )
 
     title = models.CharField(max_length=150, blank=True)
 

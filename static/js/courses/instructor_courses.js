@@ -83,7 +83,7 @@ class InstructorCoursesPage {
             const { last_updated, review_status, ...rest } = course;
             const payload = {
                 ...rest,
-                lastUpdated: last_updated,
+                lastUpdated:  new Date(last_updated),
                 reviewStatus: review_status,
             };
             payloads.push(payload);
@@ -370,7 +370,7 @@ class InstructorCoursesPage {
                     <span class="course-stat-item version"><i class="fas fa-code-branch"></i> v${course.version}</span>
                     ${course.rating ? `<span class="course-stat-item rating"><i class="fas fa-star"></i> ${course.rating}</span>` : ''}
                     ${course.students ? `<span class="course-stat-item"><i class="fas fa-users"></i> ${this.formatNum(course.students)}</span>` : ''}
-                    ${course.revenue ? `<span class="course-stat-item"><i class="fas fa-dollar-sign"></i> $${this.formatRevenue(course.revenue)}</span>` : ''}
+                    ${course.revenue ? `<span class="course-stat-item">$${this.formatRevenue(course.revenue)}</span>` : ''}
                     <span class="course-stat-item status-indicator ${course.status}"><i class="fas fa-circle"></i> ${this.capitalize(statusLabel)}</span>
                 </div>
             `;
@@ -524,7 +524,6 @@ class InstructorCoursesPage {
         const menu = document.getElementById('courseActionsMenu');
 
         let items = '';
-        console.log(course)
         // Edit (all except archived)
         if (course.status !== 'archived') {
             items += `<button class="action-item" data-action="edit" data-id="${id}"><i class="fas fa-pen"></i> Edit Course</button>`;
@@ -740,6 +739,7 @@ class InstructorCoursesPage {
     }
 
     formatRelative(d) {
+
         const diff = Math.floor((Date.now() - d) / 86400000);
         if (diff === 0) return 'today';
         if (diff === 1) return 'yesterday';
