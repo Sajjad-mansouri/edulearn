@@ -6,6 +6,7 @@ from .course import (
     Prerequisite,
     TargetAudience,
 )
+from .feedback import CourseFeedback
 from .tag import Tag
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "Prerequisite",
     "TargetAudience",
     "CourseCollaborator",
+    "CourseFeedback",
 ]
