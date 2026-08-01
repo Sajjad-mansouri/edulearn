@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from courses.models import Category
-from normalizers.normalize_course_data import normalize_course_data
+from normalizers.course import normalize_course_data
 
 from .serializers import CategorySerializer, CourseSerializer
 from .services import CourseService

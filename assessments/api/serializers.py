@@ -30,7 +30,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
 class QuestionSerializer(serializers.ModelSerializer):
     boolean_answer = BooleanAnswerSerializer(required=False)
-    accepted_answer = AcceptedAnswerSerializer(required=False, many=True)
+    accepted_answers = AcceptedAnswerSerializer(required=False, many=True)
     options = ChoiceSerializer(required=False, many=True)
 
     class Meta:
@@ -44,7 +44,7 @@ class QuestionSerializer(serializers.ModelSerializer):
             "is_required",
             "estimated_time",
             "boolean_answer",
-            "accepted_answer",
+            "accepted_answers",
             "options",
         ]
 

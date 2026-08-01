@@ -225,7 +225,10 @@ class CourseService:
                 )
 
             elif question_type == "short_answer":
-                self._create_short_answer(question, question_content["accepted_answer"])
+                print("question_content", question_content)
+                self._create_short_answer(
+                    question, question_content["accepted_answers"]
+                )
 
     def _create_question_options(self, question, option_contents):
         for option_index, option_content in enumerate(option_contents, start=1):
