@@ -194,7 +194,7 @@ class InstructorCoursesPage {
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/courses/",
+                baseUrl + "/api/v1/instructor/courses/",
                 {
                     method: "GET",
                 }
@@ -596,12 +596,7 @@ class InstructorCoursesPage {
                 this.applyFilters();
                 this.showToast(`"${course.title}" restored to drafts`);
                 break;
-            case 'version-history':
-                window.location.href = `/instructor/courses/${id}/versions`;
-                break;
-            case 'collaborators':
-                window.location.href = `/instructor/courses/${id}/collaborators`;
-                break;
+
             case 'analytics':
                 window.location.href = `/instructor/analytics?course=${course.slug}`;
                 break;

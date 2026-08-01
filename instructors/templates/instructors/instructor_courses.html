@@ -2,7 +2,7 @@
  {%load static%}
 
  {%block style%}
- <link rel="stylesheet" href="{% static 'css/courses/instructor_courses.css' %}">
+ <link rel="stylesheet" href="{% static 'css/instructors/instructor_courses.css' %}">
  {%endblock%}
 
 
@@ -17,7 +17,7 @@
                         <h1 class="page-header-title">My Courses</h1>
                         <p class="page-header-desc">Manage your courses across the entire publishing pipeline</p>
                     </div>
-                    <a href="{%url 'courses:create_course'%}" class="create-course-btn">
+                    <a href="{%url 'instructor:create_course'%}" class="create-course-btn">
                         <i class="fas fa-plus"></i> Create New Course
                     </a>
                 </div>
@@ -121,6 +121,6 @@
 {%endblock%}
 
     {%block script%}
-    <script src="{%static 'js/courses/instructor_courses.js' %}"></script>
+    <script src="{%static 'js/instructors/instructor_courses.js' %}"></script>
 
     {%endblock%}

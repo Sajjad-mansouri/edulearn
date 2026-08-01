@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "enrollments",
     "assessments",
     "certificates",
+    "instructors",
     # third party
     "rest_framework",
     "rest_framework_simplejwt",

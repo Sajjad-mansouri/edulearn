@@ -2585,7 +2585,7 @@ class CreateCoursePage {
         console.log("data that sent to backend:",newformData)
         try{
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/courses/create/",
+                baseUrl + "/api/v1/instructor/courses/create/",
                 {
                     method: 'POST',
                     body: newformData
