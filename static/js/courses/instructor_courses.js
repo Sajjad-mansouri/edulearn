@@ -55,13 +55,9 @@ class InstructorCoursesPage {
         document.addEventListener('click', (e) => { if (!e.target.closest('.filter-dropdown')) document.querySelectorAll('.filter-menu.open').forEach(m => m.classList.remove('open')); });
 
         document.getElementById('selectAllCheckbox')?.addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
-        document.getElementById('bulkActionBtn')?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('bulkActionMenu')?.classList.toggle('open'); });
 
-        document.querySelectorAll('.bulk-action-item').forEach(item => {
-            item.addEventListener('click', () => { document.getElementById('bulkActionMenu')?.classList.remove('open'); this.handleBulkAction(item.dataset.action); });
-        });
 
-        document.addEventListener('click', (e) => { if (!e.target.closest('.bulk-actions-dropdown')) document.getElementById('bulkActionMenu')?.classList.remove('open'); });
+
         document.addEventListener('click', (e) => { if (this.openActionMenu && !e.target.closest('.card-more-btn') && !e.target.closest('.course-actions-menu')) this.closeActionMenu(); });
 
         document.getElementById('confirmCancel')?.addEventListener('click', () => this.closeConfirm());
@@ -288,7 +284,6 @@ class InstructorCoursesPage {
         this.renderCourseGrid();
         this.renderPagination();
         this.checkEmptyState();
-        this.updateBulkBar();
         this.updateFilterCounts();
     }
 
@@ -380,10 +375,7 @@ class InstructorCoursesPage {
                     <span class="course-stat-item version"><i class="fas fa-code-branch"></i> v${course.version}</span>
                     <span class="course-stat-item status-indicator ${course.status}"><i class="fas fa-circle"></i> ${this.capitalize(statusLabel)}</span>
                 </div>
-                <div class="course-draft-progress">
-                    <div class="draft-progress-bar-bg"><div class="draft-progress-fill" style="width:${course.progress || 0}%"></div></div>
-                    <div class="draft-progress-label">${course.progress || 0}% complete</div>
-                </div>
+
             `;
         }
 
@@ -451,7 +443,7 @@ class InstructorCoursesPage {
                 const id = parseInt(cb.dataset.id);
                 cb.checked ? this.selectedCourses.add(id) : this.selectedCourses.delete(id);
                 cb.closest('.course-card-instructor')?.classList.toggle('selected', cb.checked);
-                this.updateBulkBar();
+
             });
         });
 
@@ -477,41 +469,12 @@ class InstructorCoursesPage {
         const page = this.filteredCourses.slice(start, start + this.perPage);
         page.forEach(c => checked ? this.selectedCourses.add(c.id) : this.selectedCourses.delete(c.id));
         document.querySelectorAll('.card-select-checkbox').forEach(cb => { cb.checked = checked; cb.closest('.course-card-instructor')?.classList.toggle('selected', checked); });
-        this.updateBulkBar();
+
     }
 
-    updateBulkBar() {
-        const bar = document.getElementById('bulkActionsBar');
-        if (this.filteredCourses.length === 0) { bar.style.display = 'none'; return; }
-        bar.style.display = 'flex';
-        document.getElementById('bulkSelectedCount').textContent = `${this.selectedCourses.size} selected`;
-        document.getElementById('bulkActionBtn').disabled = this.selectedCourses.size === 0;
-    }
 
-    handleBulkAction(action) {
-        const count = this.selectedCourses.size;
-        if (count === 0) return;
-        const msgs = {
-            publish: `Publish ${count} course(s)?`,
-            archive: `Archive ${count} course(s)?`,
-            'submit-review': `Submit ${count} course(s) for review?`,
-            delete: `Delete ${count} draft(s)? This cannot be undone.`
-        };
-        this.showConfirm(msgs[action] || 'Confirm action', '', () => {
-            this.selectedCourses.forEach(id => {
-                const c = this.allCourses.find(c => c.id === id);
-                if (c) {
-                    if (action === 'publish') c.status = 'published';
-                    else if (action === 'archive') c.status = 'archived';
-                    else if (action === 'submit-review') c.status = 'under_review';
-                    else if (action === 'delete' && c.status === 'draft') this.allCourses = this.allCourses.filter(c => c.id !== id);
-                }
-            });
-            this.selectedCourses.clear();
-            this.applyFilters();
-            this.showToast(`${this.capitalize(action.replace(/-/g, ' '))} completed successfully`);
-        });
-    }
+
+
 
     toggleActionMenu(id, btn) {
         if (this.openActionMenu === id) { this.closeActionMenu(); return; }
@@ -680,24 +643,22 @@ class InstructorCoursesPage {
         document.getElementById('prevPage').disabled = this.currentPage <= 1;
         document.getElementById('nextPage').disabled = this.currentPage >= total;
         c.innerHTML = Array.from({ length: total }, (_, i) => `<button class="page-number ${i + 1 === this.currentPage ? 'active' : ''}" data-page="${i + 1}">${i + 1}</button>`).join('');
-        c.querySelectorAll('.page-number').forEach(b => b.addEventListener('click', () => { this.currentPage = parseInt(b.dataset.page); this.renderCourseGrid(); this.renderPagination(); this.updateBulkBar(); }));
+        c.querySelectorAll('.page-number').forEach(b => b.addEventListener('click', () => { this.currentPage = parseInt(b.dataset.page); this.renderCourseGrid(); this.renderPagination(); }));
     }
 
     changePage(d) {
         const total = Math.ceil(this.filteredCourses.length / this.perPage);
         const np = this.currentPage + d;
-        if (np >= 1 && np <= total) { this.currentPage = np; this.renderCourseGrid(); this.renderPagination(); this.updateBulkBar(); }
+        if (np >= 1 && np <= total) { this.currentPage = np; this.renderCourseGrid(); this.renderPagination(); }
     }
 
     checkEmptyState() {
         const grid = document.getElementById('coursesGrid');
         const empty = document.getElementById('emptyState');
         const pag = document.getElementById('pagination');
-        const bulk = document.getElementById('bulkActionsBar');
         if (this.filteredCourses.length === 0) {
             grid.style.display = 'none';
             pag.style.display = 'none';
-            bulk.style.display = 'none';
             empty.style.display = 'block';
             const msgs = {
                 all: { icon: '📚', title: 'No courses yet', desc: 'Start creating your first course!', btn: true },

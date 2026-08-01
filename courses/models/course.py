@@ -28,6 +28,7 @@ class Course(models.Model):
         UNDER_REVIEW = "under_review", _("Under Review")
         APPROVED = "approved", _("Approved")
         CHANGES_REQUESTED = "changes_requested", _("Changes Requested")
+        REJECTED = "rejected", _("Rejected")
 
     class Visibility(models.TextChoices):
         PUBLIC = "public", _("Public")
