@@ -1,10 +1,15 @@
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from curriculums.models import Lesson
+from curriculums.models import Lesson, LessonContent
 
 from .enrollment import Enrollment
+from .lesson_content_progress import LessonContentProgress
 
 
 class LessonProgress(models.Model):
@@ -34,12 +39,14 @@ class LessonProgress(models.Model):
         default=Status.NOT_STARTED,
     )
 
-    progress_percentage = models.PositiveSmallIntegerField(
+    progress = models.DecimalField(
         _("Progress Percentage"),
+        max_digits=5,
+        decimal_places=2,
         default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text=_("Overall completion percentage of the lesson (0-100)."),
     )
-
     started_at = models.DateTimeField(
         _("Started At"),
         null=True,
@@ -80,15 +87,6 @@ class LessonProgress(models.Model):
     def clean(self):
         super().clean()
 
-        if not 0 <= self.progress_percentage <= 100:
-            raise ValidationError(
-                {
-                    "progress_percentage": _(
-                        "Progress percentage must be between 0 and 100."
-                    )
-                }
-            )
-
         if (
             self.started_at
             and self.completed_at
@@ -97,3 +95,39 @@ class LessonProgress(models.Model):
             raise ValidationError(
                 {"completed_at": _("Completion time cannot be before the start time.")}
             )
+
+    def recalculate_progress(self):
+        """recalculate lesson progress from completed lessons."""
+        lesson_contents = LessonContent.objects.filter(lesson=self.lesson).values_list(
+            "pk", flat=True
+        )
+        total = lesson_contents.count()
+        if total == 0:
+            self.progress = 0
+        else:
+            completed = LessonContentProgress.objects.filter(
+                enrollment=self.enrollment,
+                content__in=lesson_contents,
+                status=self.Status.COMPLETED,
+            ).count()
+            self.progress = (Decimal(completed) * Decimal("100")) / Decimal(total)
+
+        if self.progress < Decimal("100"):
+            self.status = self.Status.IN_PROGRESS
+
+            if self.started_at is None:
+                self.started_at = timezone.now()
+
+            self.completed_at = None
+
+        else:
+            self.status = self.Status.COMPLETED
+
+            if self.started_at is None:
+                self.started_at = timezone.now()
+
+            if self.completed_at is None:
+                self.completed_at = timezone.now()
+        self.enrollment.recalculate_progress()
+
+        self.save(update_fields=["progress", "completed_at", "status", "started_at"])

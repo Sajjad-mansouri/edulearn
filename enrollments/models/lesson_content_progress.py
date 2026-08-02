@@ -33,19 +33,7 @@ class LessonContentProgress(models.Model):
         max_length=20,
         choices=Status.choices,
         default=Status.NOT_STARTED,
-    )
-
-    watch_percentage = models.PositiveSmallIntegerField(
-        _("Watch Percentage"),
-        default=0,
-        help_text=_("Video watch progress (0-100). Ignored for non-video content."),
-    )
-
-    resume_position = models.DurationField(
-        _("Resume Position"),
-        null=True,
-        blank=True,
-        help_text=_("Playback position for video content."),
+        db_index=True,
     )
 
     started_at = models.DateTimeField(
@@ -74,21 +62,18 @@ class LessonContentProgress(models.Model):
         ]
 
         indexes = [
-            models.Index(fields=["enrollment"]),
-            models.Index(fields=["content"]),
-            models.Index(fields=["status"]),
+            models.Index(fields=["enrollment", "status"]),
+            models.Index(fields=["content", "status"]),
         ]
+
+        verbose_name = _("Lesson Content Progress")
+        verbose_name_plural = _("Lesson Content Progress")
 
     def __str__(self):
         return f"{self.enrollment.user} - {self.content.title}"
 
     def clean(self):
         super().clean()
-
-        if not 0 <= self.watch_percentage <= 100:
-            raise ValidationError(
-                {"watch_percentage": _("Watch percentage must be between 0 and 100.")}
-            )
 
         if (
             self.started_at
@@ -99,19 +84,60 @@ class LessonContentProgress(models.Model):
                 {"completed_at": _("Completion time cannot be before the start time.")}
             )
 
+        if self.status == self.Status.COMPLETED and self.completed_at is None:
+            raise ValidationError(
+                {"completed_at": _("Completed content must have a completion date.")}
+            )
+
     def mark_started(self):
-        """Mark the content as started."""
+        """
+        Mark content as started.
+        """
+        changed_fields = []
+
         if self.started_at is None:
             self.started_at = timezone.now()
+            changed_fields.append("started_at")
 
         if self.status == self.Status.NOT_STARTED:
             self.status = self.Status.IN_PROGRESS
+            changed_fields.append("status")
+
+        if changed_fields:
+            self.save(update_fields=changed_fields)
 
     def mark_completed(self):
-        """Mark the content as completed."""
+        """
+        Mark content as completed and trigger parent progress update.
+        """
+        now = timezone.now()
+
+        update_fields = []
+
         if self.started_at is None:
-            self.started_at = timezone.now()
+            self.started_at = now
+            update_fields.append("started_at")
 
         self.status = self.Status.COMPLETED
-        self.watch_percentage = 100
-        self.completed_at = timezone.now()
+        update_fields.append("status")
+
+        if self.completed_at is None:
+            self.completed_at = now
+            update_fields.append("completed_at")
+
+        self.save(update_fields=update_fields)
+
+        self.update_lesson_progress()
+
+    def update_lesson_progress(self):
+        """
+        Recalculate parent lesson progress.
+        """
+        from .lesson_progress import LessonProgress
+
+        lesson_progress = LessonProgress.objects.get(
+            enrollment=self.enrollment,
+            lesson=self.content.lesson,
+        )
+
+        lesson_progress.recalculate_progress()
