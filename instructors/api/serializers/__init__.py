@@ -1,4 +1,8 @@
-from .category import CategorySerializer
 from .course import CourseSerializer, InstructorCourseSerializer
+from .student import InstructorDashboardSerializer
 
-__all__ = ["CourseSerializer", "CategorySerializer", "InstructorCourseSerializer"]
+__all__ = [
+    "CourseSerializer",
+    "InstructorCourseSerializer",
+    "InstructorDashboardSerializer",
+]

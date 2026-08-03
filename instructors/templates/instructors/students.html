@@ -1,0 +1,177 @@
+ {%extends 'profiles/instructor/base_account.html'%}
+ {%load static%}
+    {%block style%}
+ <link rel="stylesheet" href="{% static 'css/instructors/students.css' %}">
+
+    {%endblock%}
+
+    <!-- ==================== MAIN LAYOUT ==================== -->
+    {%block main_content%}
+        <main class="content-main" id="contentMain">
+            <header class="page-header">
+                <h1 class="page-header-title">Students</h1>
+                <p class="page-header-desc">Manage students enrolled in your courses</p>
+            </header>
+
+            <!-- ==================== STATISTICS BAR ==================== -->
+            <div class="students-stats-bar" id="studentsStatsBar">
+                <div class="student-stat-item">
+                    <span class="student-stat-icon">👥</span>
+                    <div><span class="student-stat-value" id="statTotal">0</span><span class="student-stat-label">Total Students</span></div>
+                </div>
+                <div class="student-stat-item">
+                    <span class="student-stat-icon">🟢</span>
+                    <div><span class="student-stat-value" id="statActive">0</span><span class="student-stat-label">Active</span></div>
+                </div>
+                <div class="student-stat-item">
+                    <span class="student-stat-icon">📊</span>
+                    <div><span class="student-stat-value" id="statCompletion">0%</span><span class="student-stat-label">Avg Completion</span></div>
+                </div>
+                <div class="student-stat-item">
+                    <span class="student-stat-icon">⭐</span>
+                    <div><span class="student-stat-value" id="statRating">0.0</span><span class="student-stat-label">Avg Rating</span></div>
+                </div>
+            </div>
+
+            <!-- ==================== TOOLBAR ==================== -->
+            <div class="students-toolbar">
+                <div class="toolbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="studentSearch" class="toolbar-search-input" placeholder="Search by name or email...">
+                    <button class="search-clear-btn" id="searchClearBtn" style="display:none;"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="toolbar-filters">
+                    <select id="courseFilter" class="filter-select">
+                        <option value="all">All Courses</option>
+                        <option value="python-ds">Python for Data Science</option>
+                        <option value="ml-az">Machine Learning A-Z</option>
+                        <option value="deep-learning">Deep Learning Specialization</option>
+                        <option value="data-eng">Data Engineering Essentials</option>
+                    </select>
+                    <select id="statusFilter" class="filter-select">
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="idle">Idle</option>
+                        <option value="stalled">Stalled</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div class="toolbar-sort">
+                    <select id="sortSelect" class="sort-select">
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                        <option value="progress-desc">Highest Progress</option>
+                        <option value="progress-asc">Lowest Progress</option>
+                        <option value="recent">Most Recent</option>
+                        <option value="oldest">Oldest</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ==================== BULK ACTIONS ==================== -->
+            <div class="bulk-actions-bar" id="bulkActionsBar">
+                <label class="bulk-select-all">
+                    <input type="checkbox" id="selectAllCheckbox">
+                    <span>Select All</span>
+                </label>
+                <span class="bulk-selected-count" id="bulkSelectedCount">0 selected</span>
+                <button class="bulk-action-btn" id="messageSelectedBtn">
+                    <i class="fas fa-envelope"></i> Message Selected
+                </button>
+                <button class="bulk-action-btn" id="exportBtn">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+            </div>
+
+            <!-- ==================== RESULTS COUNT ==================== -->
+            <div class="results-info" id="resultsInfo">
+                Showing <strong id="showingCount">0</strong> students
+            </div>
+
+            <!-- ==================== STUDENT TABLE (Desktop) ==================== -->
+            <div class="student-table-wrapper desktop-only">
+                <table class="student-table" id="studentTable">
+                    <thead>
+                        <tr>
+                            <th class="col-check"><input type="checkbox" id="headerCheckbox"></th>
+                            <th class="col-student">Student</th>
+                            <th class="col-courses">Enrolled Courses</th>
+                            <th class="col-progress">Progress</th>
+                            <th class="col-status">Status</th>
+                            <th class="col-last-active">Last Active</th>
+                            <th class="col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ==================== STUDENT CARDS (Mobile) ==================== -->
+            <div class="student-cards-list mobile-only" id="studentCardsList">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- ==================== EMPTY STATE ==================== -->
+            <div class="empty-students-state" id="emptyState" style="display:none;">
+                <span class="empty-students-icon">👥</span>
+                <h3>No students yet</h3>
+                <p>Students will appear here once they enroll in your courses.</p>
+            </div>
+
+            <!-- ==================== PAGINATION ==================== -->
+            <div class="pagination" id="pagination">
+                <button class="page-btn" id="prevPage" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+                <div class="page-numbers" id="pageNumbers"></div>
+                <button class="page-btn" id="nextPage">Next <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </main>
+    {%endblock%}
+    {%block extra_content%}
+    <!-- ==================== STUDENT DETAIL MODAL ==================== -->
+    <div class="modal-overlay" id="studentDetailModal" style="display:none;">
+        <div class="modal-container modal-lg">
+            <div class="modal-header">
+                <h3 id="detailModalTitle">Student Details</h3>
+                <button class="modal-close" id="detailModalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="detailModalBody">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MESSAGE MODAL ==================== -->
+    <div class="modal-overlay" id="messageModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Send Message</h3>
+                <button class="modal-close" id="messageModalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>To</label>
+                    <input type="text" id="messageRecipients" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Subject</label>
+                    <input type="text" id="messageSubject" class="form-input" placeholder="Enter subject...">
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea id="messageBody" class="form-input form-textarea" rows="6" placeholder="Type your message..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="nav-btn secondary" id="messageModalCancel">Cancel</button>
+                <button class="nav-btn primary" id="sendMessageBtn"><i class="fas fa-paper-plane"></i> Send</button>
+            </div>
+        </div>
+    </div>
+    {%endblock%}
+
+    {%block script%}
+    <script src="{%static 'js/instructors/students.js' %}"></script>
+
+    {%endblock%}

@@ -9,3 +9,7 @@ class CourseCreateTemplateView(InstructorRequiredMixin, TemplateView):
 
 class InstructorCourse(InstructorRequiredMixin, TemplateView):
     template_name = "instructors/instructor_courses.html"
+
+
+class Students(InstructorRequiredMixin, TemplateView):
+    template_name = "instructors/students.html"

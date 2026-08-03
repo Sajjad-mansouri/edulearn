@@ -10,4 +10,5 @@ urlpatterns = [
         views.CourseCreateTemplateView.as_view(),
         name="create_course",
     ),
+    path("students/", views.Students.as_view(), name="students"),
 ]
