@@ -55,6 +55,9 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username}'s Profile"
 
+    def get_avatar(self):
+        return self.avatar.url if self.avatar else ""
+
 
 class InstructorProfile(models.Model):
     profile = models.OneToOneField(

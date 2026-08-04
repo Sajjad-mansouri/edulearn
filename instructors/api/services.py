@@ -177,7 +177,7 @@ class CourseService:
 
     def _create_video_captions(self, video_content_obj, video_content):
         print("video_content in create video caption s", video_content)
-        for caption_content in video_content:
+        for caption_content in video_content["captions"]:
             VideoCaption.objects.create(
                 video=video_content_obj,
                 language=caption_content["language"],

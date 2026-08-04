@@ -23,6 +23,7 @@ def normalize_video_content(
 
     Extracts video URL, file, captions, transcript, and text content.
     """
+    print("query_dict\n\n", query_dict, "\n\n")
     base = f"{C.PREFIX_SECTIONS}[{section_index}].{C.PREFIX_LESSONS}[{lesson_index}]"
     content_base = f"{base}.{C.PREFIX_CONTENT}"
 

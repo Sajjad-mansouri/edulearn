@@ -4,7 +4,7 @@
 const baseUrl = window.location.origin;
 
 function buildFormData(data, formData = new FormData(), parentKey = '') {
-    console.log("buildFormData", data)
+
     if (data === null || data === undefined) {
         return formData;
     }
@@ -22,7 +22,7 @@ function buildFormData(data, formData = new FormData(), parentKey = '') {
             if (typeof item === 'object' && item !== null && !(item instanceof File)) {
                 buildFormData(item, formData, key);
             } else {
-                console.log("key",key, "item:",item)
+
                 formData.append(key, item);
             }
         });
@@ -127,7 +127,7 @@ function buildFormData(data, formData = new FormData(), parentKey = '') {
                                 });
                             }
                             // Process other lesson fields (skip attachments and content)
-                            console.log("lesson:",lesson)
+
                             Object.keys(lesson).forEach(lessonKeyName => {
                                 if (lessonKeyName !== 'content' && lessonKeyName !== 'attachments') {
                                     const lessonValue = lesson[lessonKeyName];
@@ -173,7 +173,7 @@ function buildFormData(data, formData = new FormData(), parentKey = '') {
 }
 
 function mapData(courseData){
-    console.log("map data input(coursedata):",courseData)
+
     const { shortDescription, promoVideo, courseTrailer, priceType, discountPrice, fullDescription, thumbnailPreview, versionNotes, ...rest } = courseData;
     const payload = {
         ...rest,
@@ -185,7 +185,7 @@ function mapData(courseData){
         description: fullDescription,
         version_note: versionNotes
     }
-    console.log(payload)
+
     return payload
 }
 
@@ -484,7 +484,7 @@ class CreateCoursePage {
             }
 
             const data = await response.json();
-            console.log(data)
+
             const subcategories = Array.isArray(data) ? data : (data.results ?? []);
 
             select.innerHTML = `
@@ -625,7 +625,7 @@ class CreateCoursePage {
     // STEP 7: Media & SEO
     renderMedia() {
         const d = this.courseData;
-        console.log(d.thumbnailPreview)
+
         return `<h2>Media & SEO</h2><p class="step-description">Upload a thumbnail, trailer, and optimize for search engines</p>
             <div class="form-group"><label>Course Thumbnail</label><div class="thumbnail-upload ${d.thumbnailPreview?'has-image':''}" id="thumbnailUpload" onclick="document.getElementById('thumbnailInput').click()">${d.thumbnailPreview ? `<img src="${d.thumbnailPreview}" alt="Thumbnail preview">` : '<div class="upload-placeholder"><i class="fas fa-image"></i><p>Click to upload thumbnail</p><small>Recommended: 1280x720px · Max 2MB</small></div>'}</div><input type="file" id="thumbnailInput" accept="image/*" style="display:none;" onchange="createCoursePage.handleThumbnail(this.files[0])"></div>
             <div class="form-group"><label>Course Trailer URL</label><input type="url" id="courseTrailer" class="form-input" value="${this.esc(d.courseTrailer)}" placeholder="https://youtube.com/watch?v=..."></div>
@@ -880,7 +880,7 @@ class CreateCoursePage {
             attachment_files: lesson.content?.attachment_files || []
         };
 
-        console.log('Quiz form data saved:', lesson.content);
+
     }
 
     /**
@@ -912,7 +912,6 @@ class CreateCoursePage {
             attachment_files: lesson.content?.attachment_files || []
         };
 
-        console.log('Assignment form data saved:', lesson.content);
     }
 
     // ============================================
@@ -1545,7 +1544,7 @@ class CreateCoursePage {
                 btn.classList.add('active');
                 const source = btn.dataset.source;
                 document.getElementById('videoFileSection').style.display = source === 'file' ? '' : 'none';
-                console.log(source)
+
                 if (source === 'file'){
                     document.getElementById('lessonVideoUrl').value =""
                 }else if(source === 'url'){
@@ -2582,7 +2581,7 @@ class CreateCoursePage {
         this.courseData.reviewStatus = 'pending';
         const courseData = mapData(this.courseData)
         const newformData = buildFormData(courseData)
-        console.log("data that sent to backend:",newformData)
+
         try{
             const response = await auth.authenticatedRequest(
                 baseUrl + "/api/v1/instructor/courses/create/",
@@ -2592,8 +2591,8 @@ class CreateCoursePage {
                 }
             );
             const data = await response.json()
-
             console.log(data)
+
             this.showToast('Course submitted for review');
         }catch(err){
             console.log(error)
@@ -2654,7 +2653,7 @@ class CreateCoursePage {
     async saveDraft(show) {
         this.collectStepData();
         const draftData = JSON.parse(JSON.stringify(this.courseData, (key, value) => {
-            console.log(key)
+
             if (value instanceof File || value instanceof Blob||key=="attachments"||key=="thumbnailPreview"||key=="captions" || key=="videoSource"||key=="videoFileName"||key=="videoUrl") {
                 return undefined;
             }

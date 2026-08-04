@@ -11,4 +11,5 @@ urlpatterns = [
         name="create_course",
     ),
     path("students/", views.Students.as_view(), name="students"),
+    path("assignments/", views.Assignments.as_view(), name="assignments"),
 ]

@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from rest_framework import serializers
 
@@ -12,6 +13,8 @@ from courses.models import (
 from curriculums.api.serializers import AttachmentSerializer, SectionSerializer
 
 from .tag import TagSerializer
+
+User = get_user_model()
 
 
 class LearningOutcomeSerializer(serializers.ModelSerializer):
@@ -64,7 +67,6 @@ class CourseSerializer(serializers.ModelSerializer):
             "course_trailer",
             "version",
             "version_note",
-            "status",
             "seo_title",
             "seo_description",
             "tags",
@@ -88,15 +90,14 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "category",
-            "status",
             "version",
             "rating",
             "students",
             "revenue",
-            "review_status",
             "thumbnail",
             "last_updated",
             "slug",
+            "status",
         ]
 
     def get_revenue(self, obj):
@@ -112,3 +113,14 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
         if avg_rating:
             return round(avg_rating, 1)
         return avg_rating
+
+
+class InstructorFilterCoursesSerializer(serializers.ModelSerializer):
+    courses = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["courses"]
+
+    def get_courses(self, obj):
+        return {course.slug: course.title for course in obj.owned_courses.all()}

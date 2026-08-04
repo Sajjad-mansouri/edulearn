@@ -129,7 +129,7 @@ def extract_lessons(query_dict, section_index):
     """Extract lessons for a specific section"""
     lessons = []
     lesson_index = 0
-
+    print("query_dict\n\n", query_dict, "\n\n")
     while True:
         # Check if lesson exists
         lesson_id_key = f"sections[{section_index}].lessons[{lesson_index}].id"
@@ -173,7 +173,7 @@ def extract_lesson_content(query_dict, section_index, lesson_index):
     contents = []
     content = {}
     type = query_dict.get(f"sections[{section_index}].lessons[{lesson_index}].type", "")
-
+    print("query_dict\n\n", query_dict, "\n\n")
     content["content_type"] = type
     if type == "video":
         content["video_content"] = extract_video_content(
@@ -257,6 +257,7 @@ def extract_video_content(query_dict, section_index, lesson_index):
     video_file_key = (
         f"sections[{section_index}].lessons[{lesson_index}].content.videoFile"
     )
+    print("query_dict\n\n", query_dict, "\n\n")
     if video_file_key in query_dict:
         value = query_dict[video_file_key]
         if value and value != "null":

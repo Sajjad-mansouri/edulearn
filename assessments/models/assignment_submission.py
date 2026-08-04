@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
@@ -7,12 +9,30 @@ from assessments.models import Assignment
 from enrollments.models import Enrollment
 
 
+def assignment_submission_upload_path(instance, filename):
+    owner_id = instance.submission.enrollment.course.owner_id
+    course_id = instance.submission.enrollment.course_id
+    user_id = instance.submission.enrollment.user_id
+
+    return (
+        f"courses/"
+        f"{owner_id}/"
+        f"{course_id}/"
+        f"lesson_contents/"
+        f"{instance.submission.assignment.content_id}/"
+        f"assignment_submission/"
+        f"user_{user_id}"
+        f"{filename}"
+    )
+
+
 class AssignmentSubmission(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", _("Draft")
         SUBMITTED = "submitted", _("Submitted")
         GRADED = "graded", _("Graded")
         RETURNED = "returned", _("Returned")
+        LATE = "late", _("Late")
 
     assignment = models.ForeignKey(
         Assignment,
@@ -58,11 +78,6 @@ class AssignmentSubmission(models.Model):
         blank=True,
     )
 
-    started_at = models.DateTimeField(
-        _("Started At"),
-        auto_now_add=True,
-    )
-
     submitted_at = models.DateTimeField(
         _("Submitted At"),
         null=True,
@@ -76,10 +91,7 @@ class AssignmentSubmission(models.Model):
     )
 
     class Meta:
-        ordering = (
-            "-submitted_at",
-            "-started_at",
-        )
+        ordering = ("-submitted_at",)
 
         constraints = [
             models.UniqueConstraint(
@@ -130,11 +142,6 @@ class AssignmentSubmission(models.Model):
                 }
             )
 
-        if self.submitted_at and self.submitted_at < self.started_at:
-            raise ValidationError(
-                {"submitted_at": _("Submission time cannot be before the start time.")}
-            )
-
         if self.graded_at and self.submitted_at and self.graded_at < self.submitted_at:
             raise ValidationError(
                 {"graded_at": _("Grading time cannot be before submission time.")}
@@ -158,6 +165,30 @@ class AssignmentSubmission(models.Model):
         self.status = self.Status.GRADED
         self.graded_at = timezone.now()
 
+    def get_letter_grade(self):
+        if self.score is not None:
+            max_score = self.assignment.max_score
+            if self.score >= Decimal("0.9") * max_score:
+                return "A"
+            elif self.score >= Decimal("0.8") * max_score:
+                return "B"
+            elif self.score >= Decimal("0.7") * max_score:
+                return "C"
+            else:
+                return "D"
+        else:
+            return ""
+
+    def save(self, *args, **kwargs):
+        print(
+            self.submitted_at,
+            self.assignment.due_date,
+            self.submitted_at > self.assignment.due_date,
+        )
+        if self.submitted_at > self.assignment.due_date:
+            self.status = self.Status.LATE
+        super().save(*args, **kwargs)
+
 
 class AssignmentSubmissionFile(models.Model):
     submission = models.ForeignKey(
@@ -169,7 +200,8 @@ class AssignmentSubmissionFile(models.Model):
 
     file = models.FileField(
         _("File"),
-        upload_to="assignments/submissions/",
+        upload_to=assignment_submission_upload_path,
+        max_length=255,
     )
 
     original_filename = models.CharField(
@@ -194,3 +226,7 @@ class AssignmentSubmissionFile(models.Model):
 
     def __str__(self):
         return self.original_filename
+
+    @property
+    def file_name(self):
+        return self.file.name.split("/")[-1]

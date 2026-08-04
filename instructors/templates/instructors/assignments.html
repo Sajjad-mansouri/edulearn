@@ -1,0 +1,151 @@
+ {%extends 'profiles/instructor/base_account.html'%}
+ {%load static%}
+    {%block style%}
+ <link rel="stylesheet" href="{% static 'css/instructors/assignments.css' %}">
+
+    {%endblock%}
+{%block main_content%}
+        <main class="content-main" id="contentMain">
+            <header class="page-header">
+                <h1 class="page-header-title">Assignments</h1>
+                <p class="page-header-desc">Review, grade, and manage student submissions</p>
+            </header>
+
+            <!-- Statistics Bar -->
+            <div class="assign-stats-bar" id="assignStatsBar">
+                <div class="assign-stat-item"><span class="assign-stat-icon">📝</span><div><span class="assign-stat-value" id="statTotal">0</span><span class="assign-stat-label">Total</span></div></div>
+                <div class="assign-stat-item pending"><span class="assign-stat-icon">⏳</span><div><span class="assign-stat-value" id="statPending">0</span><span class="assign-stat-label">Pending</span></div></div>
+                <div class="assign-stat-item graded"><span class="assign-stat-icon">✅</span><div><span class="assign-stat-value" id="statGraded">0</span><span class="assign-stat-label">Graded</span></div></div>
+                <div class="assign-stat-item late"><span class="assign-stat-icon">⚠️</span><div><span class="assign-stat-value" id="statLate">0</span><span class="assign-stat-label">Late</span></div></div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="assign-toolbar">
+                <div class="toolbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="assignSearch" class="toolbar-search-input" placeholder="Search by student or assignment...">
+                    <button class="search-clear-btn" id="searchClearBtn" style="display:none;"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="toolbar-filters">
+                    <select id="courseFilter" class="filter-select"><option value="all">All Courses</option><option value="python-ds">Python for Data Science</option><option value="ml-az">Machine Learning A-Z</option><option value="deep-learning">Deep Learning Specialization</option><option value="data-eng">Data Engineering Essentials</option></select>
+
+                </div>
+                <select id="sortSelect" class="sort-select"><option value="newest">Newest First</option><option value="oldest">Oldest First</option><option value="student-asc">Student (A-Z)</option></select>
+            </div>
+
+            <!-- Bulk Actions -->
+            <div class="bulk-actions-bar" id="bulkActionsBar">
+                <label class="bulk-select-all"><input type="checkbox" id="selectAllCheckbox"><span>Select All</span></label>
+                <span class="bulk-selected-count" id="bulkSelectedCount">0 selected</span>
+                <button class="bulk-action-btn" id="bulkGradeBtn"><i class="fas fa-check-double"></i> Bulk Grade</button>
+                <button class="bulk-action-btn" id="bulkDownloadBtn"><i class="fas fa-download"></i> Download Selected</button>
+            </div>
+
+            <!-- Results -->
+            <div class="results-info" id="resultsInfo">Showing <strong id="showingCount">0</strong> submissions</div>
+
+            <!-- Submission Table (Desktop) -->
+            <div class="submission-table-wrapper desktop-only">
+                <table class="submission-table" id="submissionTable">
+                    <thead><tr>
+                        <th class="col-check"><input type="checkbox" id="headerCheckbox"></th>
+                        <th class="col-student">Student</th>
+                        <th class="col-assignment">Assignment</th>
+                        <th class="col-course">Course</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-grade">Grade</th>
+                        <th class="col-actions">Actions</th>
+                    </tr></thead>
+                    <tbody id="submissionTableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Submission Cards (Mobile) -->
+            <div class="submission-cards-list mobile-only" id="submissionCardsList"></div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display:none;">
+                <span class="empty-icon">📝</span>
+                <h3>No submissions found</h3>
+                <p id="emptyMessage">Submissions will appear here when students submit their assignments.</p>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination">
+                <button class="page-btn" id="prevPage" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+                <div class="page-numbers" id="pageNumbers"></div>
+                <button class="page-btn" id="nextPage">Next <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </main>
+{%endblock%}
+{%block extra_content%}
+<!-- ============================================ -->
+<!-- GRADE MODAL -->
+<!-- ============================================ -->
+<div class="modal-overlay" id="gradeModal" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 id="gradeModalTitle">Grade Submission</h3>
+            <button class="modal-close" id="gradeModalClose">&times;</button>
+        </div>
+        <div class="modal-body" id="gradeModalBody">
+            <!-- Dynamically rendered by JavaScript -->
+        </div>
+        <div class="modal-footer">
+            <button class="nav-btn secondary" id="gradeModalCancel">Cancel</button>
+            <button class="nav-btn primary" id="submitGradeBtn">
+                <i class="fas fa-check"></i> Submit Grade
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- VIEW SUBMISSION MODAL -->
+<!-- ============================================ -->
+<div class="modal-overlay" id="viewSubmissionModal" style="display: none;">
+    <div class="modal-container modal-lg">
+        <div class="modal-header">
+            <h3 id="viewModalTitle">Submission Details</h3>
+            <button class="modal-close" id="viewModalClose">&times;</button>
+        </div>
+        <div class="modal-body" id="viewModalBody">
+            <!-- Dynamically rendered by JavaScript -->
+        </div>
+        <div class="modal-footer">
+            <button class="nav-btn secondary" id="viewModalCancel">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- FILE VIEWER MODAL -->
+<!-- ============================================ -->
+<div class="modal-overlay" id="fileViewerModal" style="display: none;">
+    <div class="modal-container modal-lg">
+        <div class="modal-header">
+            <h3 id="fileViewerTitle">File Preview</h3>
+            <button class="modal-close" id="fileViewerClose">&times;</button>
+        </div>
+        <div class="modal-body" id="fileViewerBody">
+            <!-- Dynamically rendered by JavaScript -->
+        </div>
+        <div class="modal-footer">
+            <button class="nav-btn primary" id="fileViewerDownload">
+                <i class="fas fa-download"></i> Download File
+            </button>
+            <button class="nav-btn secondary" id="fileViewerCancel">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- TOAST CONTAINER -->
+<!-- ============================================ -->
+<div class="toast-container" id="toastContainer"></div>
+{%endblock%}
+
+    {%block script%}
+    <script src="{%static 'js/instructors/assignments.js' %}"></script>
+
+    {%endblock%}
