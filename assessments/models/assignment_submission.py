@@ -90,6 +90,8 @@ class AssignmentSubmission(models.Model):
         blank=True,
     )
 
+    updated = models.DateTimeField(auto_now=True)
+
     class Meta:
         ordering = ("-submitted_at",)
 
@@ -180,13 +182,12 @@ class AssignmentSubmission(models.Model):
             return ""
 
     def save(self, *args, **kwargs):
-        print(
-            self.submitted_at,
-            self.assignment.due_date,
-            self.submitted_at > self.assignment.due_date,
-        )
         if self.submitted_at > self.assignment.due_date:
             self.status = self.Status.LATE
+
+        if self.score:
+            self.status = self.Status.GRADED
+            self.graded_at = timezone.now()
         super().save(*args, **kwargs)
 
 

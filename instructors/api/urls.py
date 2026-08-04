@@ -27,4 +27,9 @@ urlpatterns = [
         views.InstructorFilterCoursesApiView.as_view(),
         name="instructor_filter_courses",
     ),
+    path(
+        "assignments/grade/<int:pk>/",
+        views.GradeAssignmentApiView.as_view(),
+        name="grade_assignment",
+    ),
 ]

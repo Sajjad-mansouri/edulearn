@@ -1,4 +1,4 @@
-from .assignments import AssignmentSubmissionSerializer
+from .assignments import AssignmentSubmissionSerializer, GradeSerializer
 from .course import (
     CourseSerializer,
     InstructorCourseSerializer,
@@ -12,4 +12,5 @@ __all__ = [
     "InstructorDashboardSerializer",
     "AssignmentSubmissionSerializer",
     "InstructorFilterCoursesSerializer",
+    "GradeSerializer",
 ]

@@ -139,7 +139,7 @@ class InstructorAssignmentsPage {
 
         document.getElementById('selectAllCheckbox')?.addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
         document.getElementById('headerCheckbox')?.addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
-        document.getElementById('bulkGradeBtn')?.addEventListener('click', () => this.bulkGrade());
+
         document.getElementById('bulkDownloadBtn')?.addEventListener('click', () => this.bulkDownload());
 
         const gradeModal = document.getElementById('gradeModal');
@@ -486,7 +486,7 @@ class InstructorAssignmentsPage {
     updateBulkBar() {
         const c = this.selectedSubmissions.size;
         document.getElementById('bulkSelectedCount').textContent = `${c} selected`;
-        document.getElementById('bulkGradeBtn').disabled = c === 0;
+
         document.getElementById('bulkDownloadBtn').disabled = c === 0;
     }
 
@@ -865,22 +865,44 @@ class InstructorAssignmentsPage {
         document.getElementById('gradeModal').style.display = 'flex';
     }
 
-    submitGrade() {
+    async submitGrade() {
         if (!this.currentGradeId) return;
         const s = this.allSubmissions.find(sub => sub.id == this.currentGradeId);
         if (!s) return;
         const score = parseInt(document.getElementById('gradeScore').value) || 0;
         const letter = document.getElementById('gradeLetter').value || (score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F');
         const feedback = document.getElementById('gradeFeedback').value.trim();
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + `/api/v1/instructor/assignments/grade/${this.currentGradeId}/`,
+                {
+                    method: "PATCH",
+                    body:JSON.stringify({"feedback":feedback, "score":score})
+                }
+            );
 
-        s.status = 'graded';
-        s.score = score;
-        s.letterGrade = letter;
-        s.feedback = feedback;
-        s.gradedDate = new Date();
-        document.getElementById('gradeModal').style.display = 'none';
-        this.applyFilters();
-        this.showToast(`Grade submitted: ${score}/100 (${letter})`);
+            const data = await response.json();
+            if (!response.ok) {
+                console.log(data)
+                throw new Error("Failed to grade.");
+            }
+
+            console.log(data)
+            s.status = 'graded';
+            s.score = score;
+            s.letterGrade = letter;
+            s.feedback = feedback;
+            s.gradedDate = new Date();
+            document.getElementById('gradeModal').style.display = 'none';
+            this.applyFilters();
+            this.showToast(`Grade submitted: ${score}/100 (${letter})`);
+
+        } catch (error) {
+            console.error("Error grading assignment:", error);
+
+        }
+
+
     }
 
     bulkGrade() {

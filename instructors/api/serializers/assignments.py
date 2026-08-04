@@ -79,3 +79,9 @@ class AssignmentSubmissionSerializer(serializers.ModelSerializer):
             }
             for submission_file in obj.files.all()
         ]
+
+
+class GradeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssignmentSubmission
+        fields = ["score", "feedback"]

@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,6 +17,7 @@ from normalizers.course import normalize_course_data
 from .serializers import (
     AssignmentSubmissionSerializer,
     CourseSerializer,
+    GradeSerializer,
     InstructorCourseSerializer,
     InstructorDashboardSerializer,
     InstructorFilterCoursesSerializer,
@@ -54,6 +55,15 @@ class InstructorStudentsApiView(RetrieveAPIView):
 
 class InstructorAssignmentsApiView(ListAPIView):
     serializer_class = AssignmentSubmissionSerializer
+
+    def get_queryset(self):
+        return AssignmentSubmission.objects.filter(
+            enrollment__course__owner=self.request.user
+        )
+
+
+class GradeAssignmentApiView(UpdateAPIView):
+    serializer_class = GradeSerializer
 
     def get_queryset(self):
         return AssignmentSubmission.objects.filter(
