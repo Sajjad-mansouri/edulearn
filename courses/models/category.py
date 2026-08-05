@@ -39,6 +39,7 @@ class Category(models.Model):
         _("Active"),
         default=True,
     )
+    icon = models.CharField(_("Icon"), max_length=100, blank=True)
 
     class Meta:
         ordering = ("display_order", "name")

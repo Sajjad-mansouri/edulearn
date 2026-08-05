@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -39,6 +41,10 @@ class Course(models.Model):
         PAID = "paid", _("Paid")
         FREE = "free", _("Free")
 
+    class LANGUAGE(models.TextChoices):
+        ENGLISH = "en", _("English")
+        PERSIAN = "fa", _("Farsi")
+
     title = models.CharField(
         _("Title"),
         max_length=255,
@@ -73,8 +79,9 @@ class Course(models.Model):
 
     language = models.CharField(
         _("Language"),
-        max_length=50,
-        default="English",
+        choices=LANGUAGE.choices,
+        max_length=2,
+        default=LANGUAGE.ENGLISH,
     )
 
     level = models.CharField(
@@ -220,6 +227,21 @@ class Course(models.Model):
         self.full_clean()
 
         super().save(*args, **kwargs)
+
+    @property
+    def get_discounted_price(self):
+        if self.price_type == self.PriceType.PAID:
+            discount = Decimal(self.price_discount) / Decimal("100")
+            return self.price * (Decimal("1") - discount)
+        else:
+            return "free"
+
+    @property
+    def original_price(self):
+        if self.price_type == self.PriceType.PAID:
+            return self.price
+        else:
+            return self.PriceType.FREE
 
 
 class LearningOutcome(models.Model):

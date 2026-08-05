@@ -212,3 +212,6 @@ USE_CELERY = config("USE_CELERY", cast=bool)
 
 
 GEOIP_PATH = BASE_DIR / "geoip"
+
+BEST_SELLERS_COUNT = config("BEST_SELLERS_COUNT", cast=int)
+NEW_COUSRE_RANGE = config("NEW_COUSRE_RANGE", cast=int)

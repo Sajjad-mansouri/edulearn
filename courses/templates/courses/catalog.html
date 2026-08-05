@@ -1,0 +1,214 @@
+{%extends 'courses/base.html'%}
+{%load static%}
+
+{%block style%}
+    <link rel="stylesheet" href="{%static 'css/courses/catalog.css' %}">
+
+{%endblock%}
+
+{%block main_content%}
+    <!-- ==================== CATALOG LAYOUT ==================== -->
+    <div class="catalog-layout">
+
+        <!-- ==================== FILTERS SIDEBAR ==================== -->
+        <aside class="catalog-filters" id="catalogFilters">
+            <div class="filters-header">
+                <h3>Filters</h3>
+                <button class="clear-filters-btn" id="clearFiltersBtn">Clear All</button>
+            </div>
+
+            <!-- Rating Filter -->
+            <div class="filter-section">
+                <h4 class="filter-title">Rating</h4>
+                <label class="filter-check">
+                    <input type="checkbox" value="4.5" class="filter-input" data-filter="rating">
+                    <span class="checkmark"></span>
+                    <span class="filter-stars">⭐⭐⭐⭐⭐</span>
+                    <span class="filter-label-text">4.5 & above</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="4.0" class="filter-input" data-filter="rating">
+                    <span class="checkmark"></span>
+                    <span class="filter-stars">⭐⭐⭐⭐</span>
+                    <span class="filter-label-text">4.0 & above</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="3.0" class="filter-input" data-filter="rating">
+                    <span class="checkmark"></span>
+                    <span class="filter-stars">⭐⭐⭐</span>
+                    <span class="filter-label-text">3.0 & above</span>
+                </label>
+            </div>
+
+            <!-- Level Filter -->
+            <div class="filter-section">
+                <h4 class="filter-title">Level</h4>
+                <label class="filter-check">
+                    <input type="checkbox" value="beginner" class="filter-input" data-filter="level">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">Beginner</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="intermediate" class="filter-input" data-filter="level">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">Intermediate</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="advanced" class="filter-input" data-filter="level">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">Advanced</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="all-levels" class="filter-input" data-filter="level">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">All Levels</span>
+                </label>
+            </div>
+
+            <!-- Price Filter -->
+            <div class="filter-section">
+                <h4 class="filter-title">Price</h4>
+                <label class="filter-check">
+                    <input type="checkbox" value="free" class="filter-input" data-filter="price">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">Free</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="paid" class="filter-input" data-filter="price">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">Paid</span>
+                </label>
+            </div>
+
+            <!-- Duration Filter -->
+            <div class="filter-section">
+                <h4 class="filter-title">Duration</h4>
+                <label class="filter-check">
+                    <input type="checkbox" value="short" class="filter-input" data-filter="duration">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">0-3 Hours</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="medium" class="filter-input" data-filter="duration">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">3-10 Hours</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="long" class="filter-input" data-filter="duration">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">10+ Hours</span>
+                </label>
+            </div>
+
+            <!-- Language Filter -->
+            <div class="filter-section">
+                <h4 class="filter-title">Language</h4>
+                <label class="filter-check">
+                    <input type="checkbox" value="en" class="filter-input" data-filter="language" checked>
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">English</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="es" class="filter-input" data-filter="language">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">Español</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="fr" class="filter-input" data-filter="language">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">Français</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="de" class="filter-input" data-filter="language">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">Deutsch</span>
+                </label>
+                <label class="filter-check">
+                    <input type="checkbox" value="ar" class="filter-input" data-filter="language">
+                    <span class="checkmark"></span>
+                    <span class="filter-label-text">العربية</span>
+                </label>
+            </div>
+
+            <!-- Subcategory Filter (dynamic) -->
+            <div class="filter-section">
+                <h4 class="filter-title">Subcategory</h4>
+                <div id="subcategoryFilters">
+                    <label class="filter-check">
+                        <input type="checkbox" value="python" class="filter-input" data-filter="subcategory">
+                        <span class="checkmark"></span>
+                        <span class="filter-label-text">Python</span>
+                    </label>
+                    <label class="filter-check">
+                        <input type="checkbox" value="machine-learning" class="filter-input" data-filter="subcategory">
+                        <span class="checkmark"></span>
+                        <span class="filter-label-text">Machine Learning</span>
+                    </label>
+                    <label class="filter-check">
+                        <input type="checkbox" value="web-development" class="filter-input" data-filter="subcategory">
+                        <span class="checkmark"></span>
+                        <span class="filter-label-text">Web Development</span>
+                    </label>
+                    <label class="filter-check">
+                        <input type="checkbox" value="cloud" class="filter-input" data-filter="subcategory">
+                        <span class="checkmark"></span>
+                        <span class="filter-label-text">Cloud Computing</span>
+                    </label>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ==================== MAIN CONTENT ==================== -->
+        <main class="catalog-main">
+
+            <!-- Results Header -->
+            <div class="catalog-header">
+                <div class="results-info">
+                    <h2 id="catalogTitle">All Courses</h2>
+                    <span id="resultsCount">2,450 results</span>
+                </div>
+                <div class="catalog-sort">
+                    <span class="sort-label">Sort by:</span>
+                    <select id="sortSelect" class="sort-select">
+                        <option value="popular">Most Popular</option>
+                        <option value="newest">Newest</option>
+                        <option value="rating">Highest Rated</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Active Filters -->
+            <div class="active-filters-bar" id="activeFiltersBar" style="display:none;"></div>
+
+            <!-- Course Grid -->
+            <div class="course-grid-catalog" id="courseGrid"></div>
+
+            <!-- Empty State -->
+            <div class="empty-catalog" id="emptyCatalog" style="display:none;">
+                <i class="fas fa-search"></i>
+                <h3>No courses found</h3>
+                <p>Try adjusting your filters or search terms</p>
+                <button class="empty-reset-btn" onclick="catalogPage.clearAllFilters()">Reset Filters</button>
+            </div>
+
+            <!-- Pagination -->
+            <div class="catalog-pagination" id="pagination">
+                <button class="page-btn" id="prevPage" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <div class="page-numbers" id="pageNumbers"></div>
+                <button class="page-btn" id="nextPage">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+        </main>
+    </div>
+{%endblock%}
+
+{%block script%}
+    <script src="{%static 'js/courses/catalog.js' %}"></script>
+
+{%endblock%}
