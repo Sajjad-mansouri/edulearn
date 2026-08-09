@@ -17,12 +17,12 @@ class CourseFeedback(models.Model):
     )
 
     rating = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(0), MaxValueValidator(10000)]
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
 
     title = models.CharField(max_length=150, blank=True)
 
-    review = models.TextField(blank=True)
+    comment = models.TextField(blank=True)
 
     is_public = models.BooleanField(default=True)
 
@@ -35,3 +35,24 @@ class CourseFeedback(models.Model):
             course=self.enrollment.course.title,
             rating=self.rating,
         )
+
+
+class CourseFeedbackInteraction(models.Model):
+    enrollment = models.ForeignKey(
+        Enrollment,
+        on_delete=models.CASCADE,
+        verbose_name=_("Enrollment"),
+    )
+
+    feedback = models.ForeignKey(
+        CourseFeedback,
+        on_delete=models.CASCADE,
+        related_name="feedback_interactions",
+        verbose_name=_("Feedback"),
+    )
+
+    liked = models.BooleanField(_("Liked"), default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.enrollment.user.username} like {self.feedback}"

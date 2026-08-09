@@ -1,10 +1,11 @@
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, GenericAPIView
+from rest_framework.generics import CreateAPIView, GenericAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from .serializers import (
+    CurrentUserSerializer,
     LoginSerializer,
     LogoutSerializer,
     PasswordResetSerializer,
@@ -60,7 +61,7 @@ class LogoutApiView(GenericAPIView):
         )
 
 
-class PasswordResetApiView(GenericAPIView):
+class PasswordResetApiView(RetrieveAPIView):
     serializer_class = PasswordResetSerializer
     permission_classes = [AllowAny]
 
@@ -76,3 +77,10 @@ class PasswordResetApiView(GenericAPIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class CurrentUserApiView(RetrieveAPIView):
+    serializer_class = CurrentUserSerializer
+
+    def get_object(self):
+        return self.request.user

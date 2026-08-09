@@ -1,0 +1,164 @@
+{%extends 'courses/base.html'%}
+{%load static%}
+
+{%block style%}
+    <link rel="stylesheet" href="{%static 'css/courses/course_detail.css' %}">
+
+{%endblock%}
+
+{%block main_content%}
+
+    <!-- ==================== COURSE HERO ==================== -->
+    <div class="course-hero">
+        <div class="course-hero-inner">
+
+            <!-- Left: Course Info -->
+            <div class="course-hero-content">
+                <!-- Breadcrumb -->
+                <nav class="breadcrumb">
+                    <a href="/courses">Courses</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <a href="/courses/data-science">Data Science</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span></span>
+                </nav>
+
+                <!-- Title & Subtitle -->
+                <h1 class="course-hero-title"></h1>
+                <p class="course-hero-subtitle"></p>
+
+                <!-- Meta Badges -->
+                <div class="course-hero-meta"></div>
+
+                <!-- Instructor Info -->
+                <div class="course-hero-instructor"></div>
+
+                <!-- Dates -->
+                <div class="course-hero-dates">
+                    <span></span>
+                </div>
+            </div>
+
+            <!-- Right: Enrollment Card (Absolute Position) -->
+            <div class="enrollment-card" id="enrollmentCard">
+                <!-- Thumbnail -->
+                <div class="enrollment-card-thumb">
+                    <img src="" alt="Course thumbnail">
+                    <div class="thumb-play-overlay">
+                        <button class="thumb-play-btn" onclick="courseDetailPage.playPreview()">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="enrollment-card-body">
+                    <!-- Price -->
+                    <div class="enrollment-price-section">
+                        <span class="current-price"></span>
+                        <div class="original-price-group">
+                            <span class="original-price"></span>
+                            <span class="discount-badge"></span>
+                        </div>
+                    </div>
+
+                    <!-- CTA Buttons -->
+                    <button class="enroll-btn-primary" id="enrollBtn">
+                        <i class="fas fa-rocket"></i> Enroll Now
+                    </button>
+                    <button class="wishlist-btn-secondary" id="wishlistBtn">
+                        <i class="far fa-heart"></i> Add to Wishlist
+                    </button>
+
+                    <!-- Money Back -->
+                    <p class="money-back">
+                        <i class="fas fa-shield-halved"></i> 30-Day Money-Back Guarantee
+                    </p>
+
+                    <!-- Features -->
+                    <div class="enrollment-features"></div>
+
+                    <!-- Share -->
+                    <div class="enrollment-share">
+                        <span>Share:</span>
+                        <button class="share-icon-btn" title="Share on Facebook" onclick="courseDetailPage.shareCourse('facebook')">
+                            <i class="fab fa-facebook-f"></i>
+                        </button>
+                        <button class="share-icon-btn" title="Share on Twitter" onclick="courseDetailPage.shareCourse('twitter')">
+                            <i class="fab fa-twitter"></i>
+                        </button>
+                        <button class="share-icon-btn" title="Share on LinkedIn" onclick="courseDetailPage.shareCourse('linkedin')">
+                            <i class="fab fa-linkedin-in"></i>
+                        </button>
+                        <button class="share-icon-btn" title="Copy link" onclick="courseDetailPage.copyCourseLink()">
+                            <i class="fas fa-link"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== COURSE DETAIL BODY ==================== -->
+    <div class="course-detail-body">
+        <div class="course-detail-layout">
+            <div class="course-detail-main">
+
+                <!-- ==================== TABS ==================== -->
+                <div class="detail-tabs" id="detailTabs">
+                    <button class="detail-tab active" data-tab="overview">Overview</button>
+                    <button class="detail-tab" data-tab="curriculum">Curriculum <span class="tab-count"></span></button>
+                    <button class="detail-tab" data-tab="instructor">Instructor</button>
+                    <button class="detail-tab" data-tab="reviews">Reviews <span class="tab-count"></span></button>
+                </div>
+
+                <!-- ==================== OVERVIEW TAB ==================== -->
+                <div class="tab-content active" id="tabOverview">
+
+                    <!-- What You'll Learn -->
+                    <section class="detail-section">
+                        <h3 class="detail-section-title">What you'll learn</h3>
+                        <div class="learning-outcomes-grid" id="learningOutcomes"></div>
+                    </section>
+
+                    <!-- Description -->
+                    <section class="detail-section">
+                        <h3 class="detail-section-title">Description</h3>
+                        <div class="course-description" id="courseDescription"></div>
+                    </section>
+
+                    <!-- Prerequisites -->
+                    <section class="detail-section">
+                        <h3 class="detail-section-title">Prerequisites</h3>
+                        <ul class="prerequisites-list" id="prerequisitesList"></ul>
+                    </section>
+
+                    <!-- Target Audience -->
+                    <section class="detail-section">
+                        <h3 class="detail-section-title">Who this course is for</h3>
+                        <div class="audience-tags" id="audienceTags"></div>
+                    </section>
+                </div>
+
+                <!-- ==================== CURRICULUM TAB ==================== -->
+                <div class="tab-content" id="tabCurriculum" style="display:none;">
+                    <div class="curriculum-header-bar"></div>
+                    <div class="curriculum-sections" id="curriculumSections"></div>
+                </div>
+
+                <!-- ==================== INSTRUCTOR TAB ==================== -->
+                <div class="tab-content" id="tabInstructor" style="display:none;"></div>
+
+                <!-- ==================== REVIEWS TAB ==================== -->
+                <div class="tab-content" id="tabReviews" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+{%endblock%}
+
+{%block script%}
+    <script src="{%static 'js/courses/course_detail.js' %}"></script>
+
+{%endblock%}

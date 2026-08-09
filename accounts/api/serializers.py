@@ -42,3 +42,14 @@ class LogoutSerializer(serializers.Serializer):
 
 class PasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+
+class CurrentUserSerializer(serializers.ModelSerializer):
+    is_authenticated = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "email", "is_authenticated")
+
+    def get_is_authenticated(self, obj):
+        return True

@@ -388,3 +388,22 @@ class CourseCollaborator(models.Model):
 
     def __str__(self):
         return f"{self.user} ({self.get_role_display()})"
+
+
+class CourseFeature(models.Model):
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name="features",
+    )
+    icon = models.CharField(_("Icon"), max_length=100, blank=True)
+    text = models.CharField(_("Text"), max_length=250)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.course.title} : {self.text}"

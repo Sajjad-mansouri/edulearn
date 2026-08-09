@@ -1,16 +1,43 @@
 from datetime import timedelta
 
-from django.db.models import Avg, Count, Q
+from django.core.paginator import Paginator
+from django.db.models import Avg, Count, Prefetch, Q, Sum
 from django.utils import timezone
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import (
+    DestroyAPIView,
+    ListAPIView,
+    RetrieveAPIView,
+    get_object_or_404,
+)
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from courses.models import Category, Course
+from courses.models import (
+    Category,
+    Course,
+    CourseFeedback,
+    CourseFeedbackInteraction,
+    CourseWishlist,
+)
+from curriculums.models import Lesson, LessonContent, Section
+from enrollments.models import Enrollment
+from profiles.models import InstructorProfile
 
-from .serializers import CategorySerializer, CourseSerializer
-from .services import get_best_seller_ids, get_course_filter_metadata
+from .serializers import (
+    CategorySerializer,
+    CourseCurriculumSerializer,
+    CourseDetailInfoSerializer,
+    CourseFeedbackSerializer,
+    CourseInstructorSerializer,
+    CourseSerializer,
+    FeedbackSerializer,
+)
+from .services import (
+    get_best_seller_ids,
+    get_course_filter_metadata,
+    toggle_course_wishlist,
+)
 
 
 class CategoriesApiView(ListAPIView):
@@ -131,3 +158,211 @@ class CoursesApiView(ListAPIView):
         context["now"] = timezone.now()
 
         return context
+
+
+class CourseWishlistToggleApiView(APIView):
+    def post(self, request, course_id):
+        course = get_object_or_404(Course, id=course_id)
+
+        is_wishlisted = toggle_course_wishlist(
+            user=request.user,
+            course=course,
+        )
+
+        return Response(
+            {
+                "is_wishlisted": is_wishlisted,
+            }
+        )
+
+
+class CourseWishlistStatusApiView(APIView):
+    def get(self, request, course_id):
+        course = get_object_or_404(Course, id=course_id)
+
+        is_wishlisted = CourseWishlist.objects.filter(
+            course=course, user=request.user
+        ).exists()
+
+        return Response(
+            {
+                "is_wishlisted": is_wishlisted,
+            }
+        )
+
+
+class CourseDetailInfoApiView(RetrieveAPIView):
+    serializer_class = CourseDetailInfoSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        qs = Course.objects.filter(status="published").annotate(
+            rating=Avg("enrollments__feedback__rating"),
+            total_ratings=Count("enrollments__feedback", distinct=True),
+            total_students=Count("enrollments", distinct=True),
+        )
+        return qs
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+
+        course = self.get_object()
+
+        context["course_duration"] = course.sections.aggregate(
+            total=Sum("lessons__duration")
+        )["total"]
+
+        return context
+
+
+class CourseDetailInstructorInfoApiView(RetrieveAPIView):
+    serializer_class = CourseInstructorSerializer
+    permission_classes = [AllowAny]
+
+    def get_object(self):
+        course = get_object_or_404(
+            Course,
+            id=self.kwargs["course_id"],
+        )
+
+        return get_object_or_404(
+            self.get_queryset(),
+            profile__user__owned_courses=course,
+        )
+
+    def get_queryset(self):
+        return (
+            InstructorProfile.objects.select_related(
+                "profile",
+                "profile__user",
+            )
+            .prefetch_related(
+                "profile__social_links",
+            )
+            .annotate(
+                rating=Avg(
+                    "profile__user__owned_courses__enrollments__feedback__rating",
+                ),
+                total_students=Count(
+                    "profile__user__owned_courses__enrollments__user",
+                    distinct=True,
+                ),
+                total_courses=Count(
+                    "profile__user__owned_courses",
+                    distinct=True,
+                ),
+            )
+        )
+
+
+class CourseDetailCurriculumApiView(ListAPIView):
+    serializer_class = CourseCurriculumSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        main_contents = LessonContent.objects.filter(is_main_content=True)
+
+        lesson_qs = Lesson.objects.filter(
+            contents__is_main_content=True
+        ).prefetch_related(
+            Prefetch("contents", queryset=main_contents, to_attr="main_contents")
+        )
+        return (
+            Section.objects.filter(course_id=self.kwargs["course_id"])
+            .annotate(
+                section_duration=Sum(
+                    "lessons__duration",
+                    filter=Q(lessons__contents__is_main_content=True),
+                ),
+                lessons_count=Count(
+                    "lessons",
+                    filter=Q(lessons__contents__is_main_content=True),
+                    distinct=True,
+                ),
+            )
+            .prefetch_related(Prefetch("lessons", queryset=lesson_qs))
+            .order_by("order")
+        )
+
+
+class CourseReviewListApiView(APIView):
+    def get(self, request, course_id):
+        per_page = 3
+        page_number = request.query_params.get("page", 1)
+        feedback_qs = (
+            CourseFeedback.objects.filter(enrollment__course_id=course_id)
+            .select_related("enrollment__user__profile")
+            .annotate(helpful_count=Count("feedback_interactions"))
+            .order_by("created_at")
+        )
+
+        distribution_row = (
+            feedback_qs.values("rating").annotate(count=Count("id")).order_by("rating")
+        )
+
+        per_page = int(request.query_params.get("per_page", 3))
+        page_number = int(request.query_params.get("page_number", 1))
+
+        paginator = Paginator(feedback_qs, per_page)
+        page_obj = paginator.get_page(page_number)
+        serializer = CourseFeedbackSerializer(
+            page_obj.object_list, many=True, context={"request": request}
+        )
+        total_pages = paginator.count
+        distribution = {
+            r["rating"]: round((r["count"] / total_pages) * 100)
+            for r in distribution_row
+        }
+        for i in range(1, 6):
+            distribution.setdefault(i, 0)
+        data = {
+            "current_page": page_obj.number,
+            "per_page": per_page,
+            "total_reviews": paginator.count,
+            "total_pages": paginator.num_pages,
+            "distribution": distribution,
+            "items": serializer.data,
+        }
+        return Response(data)
+
+
+class CourseReviewApiView(APIView):
+    def post(self, request, course_id):
+        enrollment = get_object_or_404(
+            Enrollment, user=request.user, course_id=course_id
+        )
+
+        data = {"enrollment": enrollment.id, **request.data}
+        serializer = FeedbackSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class CourseReviewHelpfulApiView(APIView):
+    def post(self, request, course_id, review_id):
+        enrollment = get_object_or_404(
+            Enrollment, user=request.user, course_id=course_id
+        )
+
+        feedback = get_object_or_404(CourseFeedback, id=review_id)
+        obj, created = CourseFeedbackInteraction.objects.get_or_create(
+            enrollment=enrollment, feedback=feedback
+        )
+        user_has_liked = True
+        if not created:
+            obj.delete()
+            user_has_liked = False
+
+        helpful_count = feedback.feedback_interactions.aggregate(count=Count("id"))[
+            "count"
+        ]
+        data = {"helpful_count": helpful_count, "user_has_liked": user_has_liked}
+        return Response(data)
+
+
+class CourseReviewDestroyApiView(DestroyAPIView):
+    lookup_url_kwarg = "review_id"
+
+    def get_queryset(self):
+        return CourseFeedback.objects.filter(enrollment__user=self.request.user)

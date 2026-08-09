@@ -12,6 +12,13 @@ class User(AbstractUser):
     class Meta(AbstractUser.Meta):
         indexes = [models.Index(fields=["username"])]
 
+    @property
+    def avatar(self):
+        profile = getattr(self, "profile", None)
+        if profile and profile.avatar:
+            return profile.avatar.url
+        return None
+
 
 class Role(models.Model):
     ROLE_CHOICES = [

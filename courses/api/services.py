@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db.models import Count
 
-from courses.models import Course
+from courses.models import Course, CourseWishlist
 
 from .selectors import (
     get_category_options,
@@ -33,3 +33,16 @@ def get_best_seller_ids():
         .order_by("-students_count")
         .values_list("id", flat=True)[: settings.BEST_SELLERS_COUNT]
     )
+
+
+def toggle_course_wishlist(*, user, course):
+    wishlist, created = CourseWishlist.objects.get_or_create(
+        user=user,
+        course=course,
+    )
+
+    if created:
+        return True
+
+    wishlist.delete()
+    return False

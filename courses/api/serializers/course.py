@@ -3,7 +3,8 @@ from datetime import timedelta
 from django.conf import settings
 from rest_framework import serializers
 
-from courses.models import Course
+from courses.models import Course, CourseFeature
+from curriculums.models import VideoCaption
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -53,7 +54,8 @@ class CourseSerializer(serializers.ModelSerializer):
         return ""
 
     def get_duration(self, obj):
-        total_seconds = obj.duration.total_seconds()
+        course_duration = self.context["course_duration"]
+        total_seconds = course_duration.total_seconds()
         hour = total_seconds / (60 * 60)
         return f"{hour:.2}h"
 
@@ -73,3 +75,70 @@ class CourseSerializer(serializers.ModelSerializer):
         if now - obj.published_at <= timedelta(days=settings.NEW_COUSRE_RANGE):
             return "new"
         return ""
+
+
+class CourseFeatureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseFeature
+        fields = ["icon", "text"]
+
+
+class CourseDetailInfoSerializer(CourseSerializer):
+    rating = serializers.FloatField(read_only=True)
+    total_ratings = serializers.IntegerField(read_only=True)
+    total_students = serializers.IntegerField(read_only=True)
+    subtitles = serializers.SerializerMethodField()
+    learning_outcomes = serializers.SerializerMethodField()
+    prerequisites = serializers.SerializerMethodField()
+    target_audience = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+
+    features = CourseFeatureSerializer(many=True)
+
+    class Meta(CourseSerializer.Meta):
+        fields = [
+            "id",
+            "slug",
+            "title",
+            "subtitle",
+            "description",
+            "thumbnail",
+            "price",
+            "original_price",
+            "price_discount",
+            "level",
+            "language",
+            "subtitles",
+            "rating",
+            "total_ratings",
+            "rating_count",
+            "total_students",
+            "last_updated",
+            "category",
+            "subcategory",
+            "learning_outcomes",
+            "prerequisites",
+            "target_audience",
+            "features",
+            "instructor",
+            "duration",
+        ]
+
+    def get_subtitles(self, obj):
+        return set(
+            VideoCaption.objects.filter(
+                video__content__lesson__section__course=obj
+            ).values_list("language", flat=True)
+        )
+
+    def get_learning_outcomes(self, obj):
+        return list(obj.learning_outcomes.values_list("description", flat=True))
+
+    def get_prerequisites(self, obj):
+        return list(obj.prerequisites.values_list("description", flat=True))
+
+    def get_target_audience(self, obj):
+        return list(obj.target_audiences.values_list("description", flat=True))
+
+    def get_rating(self, obj):
+        return round(obj.rating, 1)

@@ -267,6 +267,16 @@ class Experience(models.Model):
 
 
 class SocialLink(models.Model):
+    class Platform(models.TextChoices):
+        TELEGRAM = "telegram", _("Telegram")
+        INSTAGRAM = "instagram", _("Instagram")
+        TWITTER = "twitter", _("Twitter")
+        LINKEDIN = "linkedin", _("LinkedIn")
+        YOUTUBE = "youtube", _("YouTube")
+        GITHUB = "github", _("GitHub")
+        FACEBOOK = "facebook", _("Facebook")
+        EMAIL = "email", _("Email")
+
     class Visibility(models.TextChoices):
         PUBLIC = "public", _("Public")
         PRIVATE = "private", _("Private")
@@ -280,11 +290,12 @@ class SocialLink(models.Model):
 
     platform = models.CharField(
         _("Platform"),
-        max_length=100,
+        max_length=20,
+        choices=Platform.choices,
     )
 
-    url = models.URLField(
-        _("URL"),
+    address = models.URLField(
+        _("Address"),
     )
 
     visibility = models.CharField(

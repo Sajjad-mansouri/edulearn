@@ -20,6 +20,7 @@ class LessonContent(models.Model):
         related_name="contents",
         verbose_name=_("Lesson"),
     )
+    is_main_content = models.BooleanField(default=False)
 
     title = models.CharField(
         _("Title"),
@@ -43,7 +44,12 @@ class LessonContent(models.Model):
             models.UniqueConstraint(
                 fields=["lesson", "order"],
                 name="unique_content_order_per_lesson",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["lesson"],
+                condition=models.Q(is_main_content=True),
+                name="unique_main_content_per_lesson",
+            ),
         ]
 
     def __str__(self):
