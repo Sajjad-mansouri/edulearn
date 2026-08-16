@@ -4,10 +4,10 @@ from .question import Question
 
 
 class AcceptedAnswer(models.Model):
-    question = models.ForeignKey(
+    question = models.OneToOneField(
         Question,
         on_delete=models.CASCADE,
-        related_name="accepted_answers",
+        related_name="accepted_answer",
     )
 
     answer = models.CharField(
@@ -16,11 +16,3 @@ class AcceptedAnswer(models.Model):
 
     def __str__(self):
         return self.answer
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["question", "answer"],
-                name="unique_accepted_answer_per_question",
-            )
-        ]

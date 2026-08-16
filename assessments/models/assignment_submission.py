@@ -204,7 +204,7 @@ class AssignmentSubmissionFile(models.Model):
         upload_to=assignment_submission_upload_path,
         max_length=255,
     )
-
+    size = models.PositiveIntegerField(null=True, blank=True)
     original_filename = models.CharField(
         _("Original Filename"),
         max_length=255,
@@ -231,3 +231,11 @@ class AssignmentSubmissionFile(models.Model):
     @property
     def file_name(self):
         return self.file.name.split("/")[-1]
+
+    def save(self, *args, **kwargs):
+        if self.file:
+            self.size = self.file.size
+        else:
+            self.size = None
+
+        super().save(*args, **kwargs)

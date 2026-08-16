@@ -9,6 +9,8 @@ from assessments.models import (
     BooleanAnswer,
     Choice,
     Question,
+    QuizAnswer,
+    QuizAttempt,
     QuizContent,
 )
 
@@ -20,3 +22,5 @@ admin.site.register(BooleanAnswer)
 admin.site.register(Assignment)
 admin.site.register(AssignmentSubmission)
 admin.site.register(AssignmentSubmissionFile)
+admin.site.register(QuizAttempt)
+admin.site.register(QuizAnswer)

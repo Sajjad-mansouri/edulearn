@@ -6,6 +6,7 @@ from .models import (
     Attachment,
     FileContent,
     Lesson,
+    LessonCompletionCriteria,
     LessonContent,
     Section,
     VideoCaption,
@@ -20,3 +21,4 @@ admin.site.register(ArticleContent)
 admin.site.register(VideoContent)
 admin.site.register(VideoCaption)
 admin.site.register(FileContent)
+admin.site.register(LessonCompletionCriteria)

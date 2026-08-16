@@ -7,7 +7,7 @@ class BooleanAnswer(models.Model):
     question = models.OneToOneField(
         Question,
         on_delete=models.CASCADE,
-        related_name="boolean_answers",
+        related_name="boolean_answer",
     )
 
     answer = models.BooleanField(default=False)

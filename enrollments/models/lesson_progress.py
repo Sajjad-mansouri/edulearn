@@ -96,6 +96,29 @@ class LessonProgress(models.Model):
                 {"completed_at": _("Completion time cannot be before the start time.")}
             )
 
+    def mark_completed(self):
+        """
+        Mark Lesson as completed and trigger parent progress update.
+        """
+        now = timezone.now()
+
+        update_fields = []
+
+        if self.started_at is None:
+            self.started_at = now
+            update_fields.append("started_at")
+
+        self.status = self.Status.COMPLETED
+        update_fields.append("status")
+
+        if self.completed_at is None:
+            self.completed_at = now
+            update_fields.append("completed_at")
+
+        self.save(update_fields=update_fields)
+
+        self.enrollment.recalculate_progress()
+
     def recalculate_progress(self):
         """recalculate lesson progress from completed lessons."""
         lesson_contents = LessonContent.objects.filter(lesson=self.lesson).values_list(

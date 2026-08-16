@@ -8,5 +8,55 @@ urlpatterns = [
         "user-enrollment-status/<int:course_id>/",
         views.CurrentUserEnrollmentStatus.as_view(),
         name="user_enrollment_status",
-    )
+    ),
+    path(
+        "<int:enrollment_id>/course/",
+        views.EnrollmentCourseApiView.as_view(),
+        name="enrollment_course",
+    ),
+    path(
+        "<int:enrollment_id>/lesson/<int:lesson_id>/",
+        views.LessonContentApiView.as_view(),
+        name="lesson_content",
+    ),
+    path(
+        "<enrollment_id>/lesson/<lesson_id>/complete/",
+        views.LessonCompletion.as_view(),
+        name="complete_lesson",
+    ),
+    path(
+        "<enrollment_id>/progress/",
+        views.EnrollmentProgress.as_view(),
+        name="enrollment_progress",
+    ),
+    path(
+        "<enrollment_id>/lesson/<int:lesson_id>/resume/",
+        views.LessonVideoProgressApiView.as_view(),
+        name="enrollment_progress",
+    ),
+    path(
+        "<enrollment_id>/lesson/<int:lesson_id>/bookmark/",
+        views.LessonBookmarkApiView.as_view(),
+        name="toggle_lesson_bookmark",
+    ),
+    path(
+        "<enrollment_id>/lesson/<int:lesson_id>/quiz/submit/",
+        views.QuizSubmitApiView.as_view(),
+        name="quiz_submit",
+    ),
+    path(
+        "<enrollment_id>/lesson/<int:lesson_id>/quiz/attempts/",
+        views.QuizSubmitAttemptsApiView.as_view(),
+        name="quiz_submit_attempts",
+    ),
+    path(
+        "<enrollment_id>/lesson/<int:lesson_id>/assignment/",
+        views.AssignmentApiView.as_view(),
+        name="assignment",
+    ),
+    path(
+        "<enrollment_id>/lesson/<int:lesson_id>/assignment/submit/",
+        views.AssignmentSubmissionApiView.as_view(),
+        name="assignment_submit",
+    ),
 ]

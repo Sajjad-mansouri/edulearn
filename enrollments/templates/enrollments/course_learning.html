@@ -1,0 +1,466 @@
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn - EduLearn LMS</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="{% static 'css/enrollments/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/enrollments/course_learning.css' %}">
+</head>
+<body>
+    <!-- ==================== LEARNING NAVIGATION ==================== -->
+    <nav class="learn-nav" id="learnNav">
+        <div class="learn-nav-inner">
+            <div class="learn-nav-left">
+                <button class="learn-nav-icon" id="sidebarToggleBtn" title="Toggle curriculum">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a href="/student/dashboard" class="learn-logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>EduLearn</span>
+                </a>
+                <span class="learn-nav-course-title" id="navCourseTitle">Python for Data Science</span>
+            </div>
+
+            <div class="learn-nav-center">
+                <div class="lesson-navigator">
+                    <button class="nav-lesson-btn" id="navPrevLesson" title="Previous lesson">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="nav-lesson-indicator" id="navLessonIndicator">Lesson 3 of 108</span>
+                    <button class="nav-lesson-btn" id="navNextLesson" title="Next lesson">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="learn-nav-right">
+                <div class="learn-nav-progress">
+                    <div class="nav-progress-bar">
+                        <div class="nav-progress-fill" id="navProgressFill" style="width: 12%;"></div>
+                    </div>
+                    <span class="nav-progress-text" id="navProgressText">12% complete</span>
+                </div>
+                <button class="learn-nav-icon" id="notesToggleBtn" title="Notes">
+                    <i class="fas fa-sticky-note"></i>
+                </button>
+                <button class="learn-nav-icon" id="bookmarkToggleBtn" title="Bookmark">
+                    <i class="far fa-bookmark"></i>
+                </button>
+                <button class="learn-nav-icon" id="resourcesToggleBtn" title="Resources">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <div class="learn-user-menu">
+                    <img src="https://ui-avatars.com/api/?name=John+Doe&background=4F46E5&color=fff&size=32" alt="Avatar" class="learn-user-avatar" id="userAvatar">
+                    <div class="learn-user-dropdown" id="userDropdown">
+                        <a href="/student/dashboard"><i class="fas fa-th-large"></i> Dashboard</a>
+                        <a href="/my-learning"><i class="fas fa-book-open"></i> My Learning</a>
+                        <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="/logout" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== MAIN LEARNING LAYOUT ==================== -->
+    <div class="learn-layout">
+
+        <!-- ==================== CURRICULUM SIDEBAR ==================== -->
+        <aside class="learn-sidebar" id="learnSidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-header-top">
+                    <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Close sidebar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <h3 class="sidebar-title">Course Curriculum</h3>
+                </div>
+                <div class="sidebar-overall-progress">
+                    <div class="sidebar-progress-bar">
+                        <div class="sidebar-progress-fill" id="sidebarProgressFill" style="width: 12%;"></div>
+                    </div>
+                    <div class="sidebar-progress-info">
+                        <span id="sidebarProgressText">12% complete</span>
+                        <span id="sidebarProgressCount">13 / 108 completed</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-curriculum" id="sidebarCurriculum">
+                <!-- Section 1 -->
+                <div class="curriculum-section">
+                    <div class="curriculum-section-header" onclick="toggleSection(this)">
+                        <div class="section-header-left">
+                            <i class="fas fa-chevron-down section-chevron"></i>
+                            <span class="section-number">Section 1</span>
+                        </div>
+                        <div class="section-header-right">
+                            <span class="section-title-text">Introduction to Python</span>
+                            <span class="section-progress">4/8</span>
+                        </div>
+                    </div>
+                    <div class="curriculum-lessons">
+                        <div class="curriculum-lesson-item completed" data-lesson="1" onclick="navigateToLesson(1)">
+                            <div class="lesson-item-left">
+                                <span class="lesson-status-icon completed"><i class="fas fa-check-circle"></i></span>
+                                <span class="lesson-item-title">Welcome & Overview</span>
+                            </div>
+                            <div class="lesson-item-right">
+                                <span class="lesson-item-type"><i class="fas fa-play-circle"></i></span>
+                                <span class="lesson-item-duration">15:00</span>
+                            </div>
+                        </div>
+                        <div class="curriculum-lesson-item completed" data-lesson="2" onclick="navigateToLesson(2)">
+                            <div class="lesson-item-left">
+                                <span class="lesson-status-icon completed"><i class="fas fa-check-circle"></i></span>
+                                <span class="lesson-item-title">Setting Up Your Environment</span>
+                            </div>
+                            <div class="lesson-item-right">
+                                <span class="lesson-item-type article"><i class="fas fa-file-lines"></i></span>
+                                <span class="lesson-item-duration">20:00</span>
+                            </div>
+                        </div>
+                        <div class="curriculum-lesson-item active" data-lesson="3" onclick="navigateToLesson(3)">
+                            <div class="lesson-item-left">
+                                <span class="lesson-status-icon"><span class="status-circle"></span></span>
+                                <span class="lesson-item-title">Variables and Data Types</span>
+                            </div>
+                            <div class="lesson-item-right">
+                                <span class="lesson-item-type"><i class="fas fa-play-circle"></i></span>
+                                <span class="lesson-item-duration">18:00</span>
+                            </div>
+                        </div>
+                        <div class="curriculum-lesson-item" data-lesson="4" onclick="navigateToLesson(4)">
+                            <div class="lesson-item-left">
+                                <span class="lesson-status-icon"><span class="status-circle"></span></span>
+                                <span class="lesson-item-title">Python Basics Quiz</span>
+                            </div>
+                            <div class="lesson-item-right">
+                                <span class="lesson-item-type quiz"><i class="fas fa-circle-question"></i></span>
+                                <span class="lesson-item-duration">10 questions</span>
+                            </div>
+                        </div>
+                        <div class="curriculum-lesson-item" data-lesson="5" onclick="navigateToLesson(5)">
+                            <div class="lesson-item-left">
+                                <span class="lesson-status-icon"><span class="status-circle"></span></span>
+                                <span class="lesson-item-title">Python Best Practices</span>
+                            </div>
+                            <div class="lesson-item-right">
+                                <span class="lesson-item-type article"><i class="fas fa-file-lines"></i></span>
+                                <span class="lesson-item-duration">15:00</span>
+                            </div>
+                        </div>
+                        <div class="curriculum-lesson-item" data-lesson="6" onclick="navigateToLesson(6)">
+                            <div class="lesson-item-left">
+                                <span class="lesson-status-icon"><span class="status-circle"></span></span>
+                                <span class="lesson-item-title">Functions and Modules</span>
+                            </div>
+                            <div class="lesson-item-right">
+                                <span class="lesson-item-type"><i class="fas fa-play-circle"></i></span>
+                                <span class="lesson-item-duration">22:00</span>
+                            </div>
+                        </div>
+                        <div class="curriculum-lesson-item" data-lesson="7" onclick="navigateToLesson(7)">
+                            <div class="lesson-item-left">
+                                <span class="lesson-status-icon"><span class="status-circle"></span></span>
+                                <span class="lesson-item-title">Python Practice Assignment</span>
+                            </div>
+                            <div class="lesson-item-right">
+                                <span class="lesson-item-type assignment"><i class="fas fa-tasks"></i></span>
+                                <span class="lesson-item-duration">Assignment</span>
+                            </div>
+                        </div>
+                        <div class="curriculum-lesson-item" data-lesson="8" onclick="navigateToLesson(8)">
+                            <div class="lesson-item-left">
+                                <span class="lesson-status-icon"><span class="status-circle"></span></span>
+                                <span class="lesson-item-title">Python Cheat Sheet</span>
+                            </div>
+                            <div class="lesson-item-right">
+                                <span class="lesson-item-type pdf"><i class="fas fa-file-pdf"></i></span>
+                                <span class="lesson-item-duration">PDF</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2 -->
+                <div class="curriculum-section">
+                    <div class="curriculum-section-header" onclick="toggleSection(this)">
+                        <div class="section-header-left">
+                            <i class="fas fa-chevron-down section-chevron"></i>
+                            <span class="section-number">Section 2</span>
+                        </div>
+                        <div class="section-header-right">
+                            <span class="section-title-text">NumPy Fundamentals</span>
+                            <span class="section-progress">0/10</span>
+                        </div>
+                    </div>
+                    <div class="curriculum-lessons" style="display:none;">
+                        <div class="curriculum-lesson-item" data-lesson="9" onclick="navigateToLesson(9)">
+                            <div class="lesson-item-left">
+                                <span class="lesson-status-icon"><span class="status-circle"></span></span>
+                                <span class="lesson-item-title">Introduction to NumPy</span>
+                            </div>
+                            <div class="lesson-item-right">
+                                <span class="lesson-item-type"><i class="fas fa-play-circle"></i></span>
+                                <span class="lesson-item-duration">22:00</span>
+                            </div>
+                        </div>
+                        <div class="curriculum-lesson-item" data-lesson="10" onclick="navigateToLesson(10)">
+                            <div class="lesson-item-left">
+                                <span class="lesson-status-icon"><span class="status-circle"></span></span>
+                                <span class="lesson-item-title">NumPy Arrays and Operations</span>
+                            </div>
+                            <div class="lesson-item-right">
+                                <span class="lesson-item-type"><i class="fas fa-play-circle"></i></span>
+                                <span class="lesson-item-duration">25:00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3 -->
+                <div class="curriculum-section">
+                    <div class="curriculum-section-header" onclick="toggleSection(this)">
+                        <div class="section-header-left">
+                            <i class="fas fa-chevron-down section-chevron"></i>
+                            <span class="section-number">Section 3</span>
+                        </div>
+                        <div class="section-header-right">
+                            <span class="section-title-text">Data Analysis with Pandas</span>
+                            <span class="section-progress">0/12</span>
+                        </div>
+                    </div>
+                    <div class="curriculum-lessons" style="display:none;"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ==================== MAIN CONTENT ==================== -->
+        <main class="learn-main" id="learnMain">
+
+            <div id="assignmentSection" style="display:none;"></div>
+            <!-- ==================== VIDEO PLAYER ==================== -->
+            <div class="video-player-section" id="videoPlayerSection">
+                <div class="video-container" id="videoContainer">
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <i class="fas fa-play-circle"></i>
+                        <p>Video Player</p>
+                        <span>Variables and Data Types · 18:00</span>
+                    </div>
+                    <div class="video-overlay" id="videoOverlay">
+                        <button class="video-big-play-btn" id="videoBigPlayBtn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Video Controls -->
+                <div class="video-controls" id="videoControls">
+                    <div class="controls-left">
+                        <button class="control-btn" id="playPauseBtn"><i class="fas fa-play"></i></button>
+                        <button class="control-btn" id="speedBtn">1x</button>
+                        <span class="time-display">0:00-18:00</span>
+                    </div>
+                    <div class="controls-right">
+                        <button class="control-btn" id="fullscreenBtn"><i class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== ARTICLE CONTENT ==================== -->
+            <div class="article-section" id="articleSection" style="display:none;">
+                <div class="article-container">
+                    <div class="article-header">
+                        <h2 class="article-title" id="articleTitle">Setting Up Your Environment</h2>
+                        <div class="article-meta">
+                            <span><i class="fas fa-clock"></i> 20 min read</span>
+                            <span><i class="fas fa-book-open"></i> Article</span>
+                        </div>
+                    </div>
+                    <div class="article-body" id="articleBody">
+                        <p>In this lesson, we'll set up your Python development environment...</p>
+                    </div>
+                    <div class="article-complete-area">
+                        <button class="mark-complete-btn" id="articleMarkCompleteBtn">
+                            <i class="fas fa-check-circle"></i> Mark as Complete & Continue
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== QUIZ CONTENT ==================== -->
+            <div class="quiz-section" id="quizSection" style="display:none;">
+                <div class="quiz-container">
+                    <div class="quiz-header">
+                        <h2 class="quiz-title" id="quizTitle">Python Basics Quiz</h2>
+                        <div class="quiz-meta">
+                            <span><i class="fas fa-circle-question"></i> 10 Questions</span>
+                            <span><i class="fas fa-trophy"></i> Pass Score: 80%</span>
+                        </div>
+                    </div>
+                    <div class="quiz-question-card" id="quizQuestionCard">
+                        <div class="quiz-q-header">
+                            <span class="quiz-q-number">Question 1 of 10</span>
+                            <span class="quiz-q-points">1 point</span>
+                        </div>
+                        <p class="quiz-q-text">What does the <code>print()</code> function do in Python?</p>
+                        <div class="quiz-options">
+                            <label class="quiz-option">
+                                <input type="radio" name="quiz_answer" value="a">
+                                <span class="quiz-option-letter">A</span>
+                                <span class="quiz-option-text">Displays output to the console</span>
+                            </label>
+                            <label class="quiz-option">
+                                <input type="radio" name="quiz_answer" value="b">
+                                <span class="quiz-option-letter">B</span>
+                                <span class="quiz-option-text">Reads input from the user</span>
+                            </label>
+                            <label class="quiz-option">
+                                <input type="radio" name="quiz_answer" value="c">
+                                <span class="quiz-option-letter">C</span>
+                                <span class="quiz-option-text">Saves data to a file</span>
+                            </label>
+                            <label class="quiz-option">
+                                <input type="radio" name="quiz_answer" value="d">
+                                <span class="quiz-option-letter">D</span>
+                                <span class="quiz-option-text">Imports a module</span>
+                            </label>
+                        </div>
+                        <div class="quiz-actions">
+                            <button class="quiz-btn secondary" id="quizSkipBtn">Skip</button>
+                            <button class="quiz-btn primary" id="quizSubmitBtn">Submit Answer</button>
+                        </div>
+                    </div>
+                    <div class="quiz-result" id="quizResult" style="display:none;">
+                        <div class="quiz-result-icon" id="quizResultIcon"></div>
+                        <h3 id="quizResultTitle"></h3>
+                        <p id="quizResultExplanation"></p>
+                        <button class="quiz-btn primary" id="quizNextBtn">Next Question</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== LESSON INFO BAR ==================== -->
+            <div class="lesson-info-bar" id="lessonInfoBar">
+                <div class="lesson-info-left">
+                    <h2 class="current-lesson-title" id="currentLessonTitle">Variables and Data Types</h2>
+                    <div class="current-lesson-meta">
+                        <span class="lesson-type-badge video"><i class="fas fa-play-circle"></i> Video</span>
+                        <span class="lesson-duration-badge"><i class="fas fa-clock"></i> 18:00</span>
+                    </div>
+                </div>
+                <div class="lesson-info-right">
+                    <button class="mark-complete-btn-main" id="mainMarkCompleteBtn">
+                        <i class="fas fa-check-circle"></i> Mark as Complete
+                    </button>
+                </div>
+            </div>
+
+            <!-- ==================== LESSON TABS ==================== -->
+            <div class="lesson-tabs" id="lessonTabs">
+                <button class="lesson-tab active" data-tab="overview">Overview</button>
+                <button class="lesson-tab" data-tab="resources">Resources <span class="tab-badge">2</span></button>
+                <button class="lesson-tab" data-tab="transcript">Transcript</button>
+            </div>
+
+            <!-- ==================== TAB CONTENT ==================== -->
+            <div class="lesson-tab-content">
+                <!-- Overview Tab -->
+                <div class="tab-panel active" id="tabOverview">
+                    <div class="overview-content">
+                        <p>In this lesson, you'll learn about Python's fundamental data types including integers, floats, strings, and booleans. We'll also cover how to declare variables and the rules for naming them.</p>
+
+                        <h4>What you'll learn</h4>
+                        <ul>
+                            <li>Understanding Python's built-in data types</li>
+                            <li>Declaring and assigning variables</li>
+                            <li>Type conversion and casting</li>
+                            <li>Variable naming conventions</li>
+                        </ul>
+                    </div>
+                </div>
+
+
+                <!-- Resources Tab -->
+                <div class="tab-panel" id="tabResources" style="display:none;">
+                    <div class="resources-area">
+                        <div class="resource-item-card">
+                            <div class="resource-icon"><i class="fas fa-file-pdf"></i></div>
+                            <div class="resource-info">
+                                <span class="resource-name">Lesson Slides - Variables and Data Types.pdf</span>
+                                <span class="resource-size">2.4 MB</span>
+                            </div>
+                            <a href="#" class="resource-download-btn"><i class="fas fa-download"></i> Download</a>
+                        </div>
+                        <div class="resource-item-card">
+                            <div class="resource-icon"><i class="fas fa-file-code"></i></div>
+                            <div class="resource-info">
+                                <span class="resource-name">Practice Exercises - Variables.py</span>
+                                <span class="resource-size">15 KB</span>
+                            </div>
+                            <a href="#" class="resource-download-btn"><i class="fas fa-download"></i> Download</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transcript Tab -->
+                <div class="tab-panel" id="tabTranscript" style="display:none;">
+                    <div class="transcript-area">
+                        <div class="transcript-line">
+                            <span class="transcript-time">00:00</span>
+                            <p>Welcome back! In this lesson, we're going to explore Python's fundamental data types.</p>
+                        </div>
+                        <div class="transcript-line">
+                            <span class="transcript-time">00:15</span>
+                            <p>Python has several built-in data types that you'll use in almost every program you write.</p>
+                        </div>
+                        <div class="transcript-line">
+                            <span class="transcript-time">00:45</span>
+                            <p>Let's start with integers. An integer is a whole number without a decimal point.</p>
+                        </div>
+                        <div class="transcript-line active">
+                            <span class="transcript-time">01:20</span>
+                            <p>Now let's look at how to declare variables. In Python, you simply write the variable name followed by an equals sign and the value.</p>
+                        </div>
+                        <div class="transcript-line">
+                            <span class="transcript-time">02:00</span>
+                            <p>Python is dynamically typed, which means you don't need to specify the type when declaring a variable.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ==================== MOBILE BOTTOM BAR ==================== -->
+    <div class="mobile-learn-bar">
+        <button class="mobile-bar-btn" id="mobilePrevBtn">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="mobile-bar-btn" id="mobileCurriculumBtn">
+            <i class="fas fa-list"></i>
+        </button>
+        <span class="mobile-lesson-count">3 / 108</span>
+        <button class="mobile-bar-btn" id="mobileMarkCompleteBtn">
+            <i class="fas fa-check-circle"></i>
+        </button>
+        <button class="mobile-bar-btn" id="mobileNextBtn">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <script src="{%static 'js/auth/auth.js' %}"></script>
+
+    <script src="{% static 'js/enrollments/course_learning.js' %}"></script>
+</body>
+</html>

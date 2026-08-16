@@ -1,21 +1,7 @@
 from rest_framework import serializers
 
 from curriculums.models import Lesson, Section
-
-
-def format_duration(duration):
-    total_seconds = int(duration.total_seconds())
-
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes = remainder // 60
-
-    if hours and minutes:
-        return f"{hours} hr {minutes} min"
-
-    if hours:
-        return f"{hours} hr"
-
-    return f"{minutes} min"
+from utils.datetime.format_duration import format_duration
 
 
 class CoursesSectionLessonSerializer(serializers.ModelSerializer):

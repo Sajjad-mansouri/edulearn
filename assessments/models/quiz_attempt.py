@@ -73,10 +73,14 @@ class QuizAttempt(models.Model):
                 {"enrollment": _("Enrollment must belong to the quiz course.")}
             )
 
-        if not 0 <= self.score <= 100:
+        if self.score is not None and not 0 <= self.score <= 100:
             raise ValidationError({"score": _("Score must be between 0 and 100.")})
 
-        if self.submitted_at and self.submitted_at < self.started_at:
+        if (
+            self.submitted_at
+            and self.started_at
+            and self.submitted_at < self.started_at
+        ):
             raise ValidationError(
                 {"submitted_at": _("Submission time cannot be before the start time.")}
             )

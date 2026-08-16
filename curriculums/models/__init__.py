@@ -1,7 +1,7 @@
 from .article_content import ArticleContent
 from .attachment import Attachment
 from .file_content import FileContent
-from .lesson import Lesson
+from .lesson import Lesson, LessonCompletionCriteria
 from .lesson_content import LessonContent
 from .section import Section
 from .video_content import VideoCaption, VideoContent
@@ -9,6 +9,7 @@ from .video_content import VideoCaption, VideoContent
 __all__ = [
     "Section",
     "Lesson",
+    "LessonCompletionCriteria",
     "LessonContent",
     "VideoContent",
     "FileContent",

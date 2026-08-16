@@ -28,6 +28,7 @@ class QuizAnswer(models.Model):
         related_name="quiz_answers",
         verbose_name=_("Selected Choices"),
     )
+    bool_answer = models.BooleanField(blank=True, null=True)
 
     text_answer = models.TextField(
         _("Text Answer"),
