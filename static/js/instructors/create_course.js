@@ -126,13 +126,30 @@ function buildFormData(data, formData = new FormData(), parentKey = '') {
                                     }
                                 });
                             }
-                            // Process other lesson fields (skip attachments and content)
-
+                            // Process completion_criteria field
+                            if (lesson.completion_criteria && typeof lesson.completion_criteria === 'object') {
+                                const criteriaKey = `${lessonKey}.completion_criteria`;
+                                Object.keys(lesson.completion_criteria).forEach(criteriaKeyName => {
+                                    const criteriaValue = lesson.completion_criteria[criteriaKeyName];
+                                    if (criteriaValue !== null && criteriaValue !== undefined && criteriaValue !== '') {
+                                        if (typeof criteriaValue === 'object') {
+                                            buildFormData(criteriaValue, formData, `${criteriaKey}.${criteriaKeyName}`);
+                                        } else {
+                                            formData.append(`${criteriaKey}.${criteriaKeyName}`, criteriaValue);
+                                        }
+                                    }
+                                });
+                            }
+                            // Process other lesson fields (skip attachments, content, and completion_criteria)
                             Object.keys(lesson).forEach(lessonKeyName => {
-                                if (lessonKeyName !== 'content' && lessonKeyName !== 'attachments') {
+                                if (lessonKeyName !== 'content' && lessonKeyName !== 'attachments' && lessonKeyName !== 'completion_criteria') {
                                     const lessonValue = lesson[lessonKeyName];
-                                    if (!(lessonValue instanceof File) && !(lessonValue instanceof Blob)) {
-                                        formData.append(`${lessonKey}.${lessonKeyName}`, lessonValue);
+                                    if (!(lessonValue instanceof File) && !(lessonValue instanceof Blob) && lessonValue !== null && lessonValue !== undefined) {
+                                        if (typeof lessonValue === 'object') {
+                                            buildFormData(lessonValue, formData, `${lessonKey}.${lessonKeyName}`);
+                                        } else {
+                                            formData.append(`${lessonKey}.${lessonKeyName}`, lessonValue);
+                                        }
                                     }
                                 }
                             });
@@ -142,8 +159,12 @@ function buildFormData(data, formData = new FormData(), parentKey = '') {
                     Object.keys(section).forEach(sectionKeyName => {
                         if (sectionKeyName !== 'lessons') {
                             const sectionValue = section[sectionKeyName];
-                            if (!(sectionValue instanceof File) && !(sectionValue instanceof Blob)) {
-                                formData.append(`${sectionKey}.${sectionKeyName}`, sectionValue);
+                            if (!(sectionValue instanceof File) && !(sectionValue instanceof Blob) && sectionValue !== null && sectionValue !== undefined) {
+                                if (typeof sectionValue === 'object') {
+                                    buildFormData(sectionValue, formData, `${sectionKey}.${sectionKeyName}`);
+                                } else {
+                                    formData.append(`${sectionKey}.${sectionKeyName}`, sectionValue);
+                                }
                             }
                         }
                     });
@@ -158,7 +179,7 @@ function buildFormData(data, formData = new FormData(), parentKey = '') {
 
             if (typeof value === 'object' && value !== null && !(value instanceof File)) {
                 buildFormData(value, formData, newKey);
-            } else {
+            } else if (value !== null && value !== undefined) {
                 formData.append(newKey, value);
             }
         });
@@ -196,6 +217,8 @@ class CreateCoursePage {
         this.courseData = this.getDefaultData();
         this.autoSaveTimer = null;
         this.editingLesson = null;
+        this.courseLanguages = [];
+        this.courseLevels = [];
         this.dragState = {
             active: false,
             type: null,
@@ -221,7 +244,12 @@ class CreateCoursePage {
                     id: 1, title: 'Introduction', description: '', duration: '', lessons: [
                         {
                             id: 101, title: 'Welcome & Overview', description: '', duration: '', type: 'video',
-                            preview: true, published: true, completionRule: 'watch90',
+                            preview: true, published: true,
+                            completion_criteria: {
+                                criteria_type: 'watch_video',
+                                video_watch_percentage: 90,
+                                quiz_passing_score: null
+                            },
                             content: {
                                 videoSource: 'file', videoUrl: '', videoFile: null, videoFileName: '',
                                 textContent: '', transcript: '',
@@ -232,7 +260,12 @@ class CreateCoursePage {
                         },
                         {
                             id: 102, title: 'Course Objectives', description: '', duration: '', type: 'article',
-                            preview: true, published: true, completionRule: 'manual',
+                            preview: true, published: true,
+                            completion_criteria: {
+                                criteria_type: 'read_article',
+                                video_watch_percentage: null,
+                                quiz_passing_score: null
+                            },
                             content: {
                                 text: '',
                                 attachments: [],
@@ -256,9 +289,55 @@ class CreateCoursePage {
     async init() {
         this.bindGlobalEvents();
         this.loadDraft();
+        await this.loadCourseMetadata();
         this.renderStep(this.currentStep);
         this.startAutoSave();
         this.hideLoader();
+    }
+
+    /**
+     * Fetch course languages and levels from the backend API
+     */
+    async loadCourseMetadata() {
+        try {
+            // Fetch languages
+            const languagesResponse = await auth.authenticatedRequest(
+                baseUrl + "/api/v1/courses/languages/",
+                {
+                    method: "GET",
+                }
+            );
+
+            if (languagesResponse.ok) {
+                const languagesData = await languagesResponse.json();
+                this.courseLanguages = Array.isArray(languagesData) ? languagesData : (languagesData.results || []);
+            }
+
+            // Fetch levels
+            const levelsResponse = await auth.authenticatedRequest(
+                baseUrl + "/api/v1/courses/levels/",
+                {
+                    method: "GET",
+                }
+            );
+
+            if (levelsResponse.ok) {
+                const levelsData = await levelsResponse.json();
+                this.courseLevels = Array.isArray(levelsData) ? levelsData : (levelsData.results || []);
+            }
+        } catch (error) {
+            console.error("Error loading course metadata:", error);
+            // Set fallback values if API fails
+            this.courseLanguages = [
+                { value: 'en', label: 'English' }
+            ];
+            this.courseLevels = [
+                { value: 'beginner', label: 'Beginner' },
+                { value: 'intermediate', label: 'Intermediate' },
+                { value: 'advanced', label: 'Advanced' },
+                { value: 'all_levels', label: 'All Levels' }
+            ];
+        }
     }
 
     bindGlobalEvents() {
@@ -515,6 +594,28 @@ class CreateCoursePage {
     // STEP 1: Basic Information
     renderBasicInfo() {
         const d = this.courseData;
+
+        // Build language options from fetched data
+        const languageOptions = this.courseLanguages.length > 0
+            ? this.courseLanguages.map(lang => {
+                const value = lang.value || lang.code || lang;
+                const label = lang.label || lang.name || value;
+                return `<option value="${value}" ${d.language===value?'selected':''}>${label}</option>`;
+            }).join('')
+            : `<option value="en" ${d.language==='en'?'selected':''}>English</option>`;
+
+        // Build level options from fetched data
+        const levelOptions = this.courseLevels.length > 0
+            ? this.courseLevels.map(level => {
+                const value = level.value || level.code || level;
+                const label = level.label || level.name || value;
+                return `<option value="${value}" ${d.level===value?'selected':''}>${label}</option>`;
+            }).join('')
+            : `<option value="beginner" ${d.level==='beginner'?'selected':''}>Beginner</option>
+               <option value="intermediate" ${d.level==='intermediate'?'selected':''}>Intermediate</option>
+               <option value="advanced" ${d.level==='advanced'?'selected':''}>Advanced</option>
+               <option value="all_levels" ${d.level==='all_levels'?'selected':''}>All Levels</option>`;
+
         return `
             <h2>Basic Information</h2><p class="step-description">Tell students what your course is about</p>
             <div class="form-group"><label>Course Title <span class="required">*</span></label><input type="text" id="courseTitle" class="form-input" value="${this.esc(d.title)}" placeholder="e.g. Complete Python Bootcamp 2026"></div>
@@ -526,8 +627,8 @@ class CreateCoursePage {
             </div>
             <div class="form-group"><label>Tags</label><div class="tags-container" id="tagsContainer">${(d.tags||[]).map((t,i)=>`<span class="tag-chip">${this.esc(t)}<button class="tag-chip-remove" data-index="${i}"><i class="fas fa-times"></i></button></span>`).join('')}</div><div class="add-tag-row"><input type="text" id="tagInput" class="form-input" placeholder="Add a tag..."><button class="add-btn" id="addTagBtn"><i class="fas fa-plus"></i> Add</button></div></div>
             <div class="form-row-3">
-                <div class="form-group"><label>Level <span class="required">*</span></label><select id="courseLevel" class="form-select"><option value="beginner" ${d.level==='beginner'?'selected':''}>Beginner</option><option value="intermediate" ${d.level==='intermediate'?'selected':''}>Intermediate</option><option value="advanced" ${d.level==='advanced'?'selected':''}>Advanced</option></select></div>
-                <div class="form-group"><label>Language <span class="required">*</span></label><select id="courseLanguage" class="form-select"><option value="en" ${d.language==='en'?'selected':''}>English</option><option value="es" ${d.language==='es'?'selected':''}>Español</option><option value="fr" ${d.language==='fr'?'selected':''}>Français</option><option value="de" ${d.language==='de'?'selected':''}>Deutsch</option></select></div>
+                <div class="form-group"><label>Level <span class="required">*</span></label><select id="courseLevel" class="form-select"><option value="">Select level</option>${levelOptions}</select></div>
+                <div class="form-group"><label>Language <span class="required">*</span></label><select id="courseLanguage" class="form-select"><option value="">Select language</option>${languageOptions}</select></div>
                 <div class="form-group"><label>Duration (hours)</label><input type="text" id="courseDuration" class="form-input" value="${this.esc(d.duration)}" placeholder="e.g. 42"></div>
             </div>
             <div class="form-row"><div class="form-group"><label>Visibility</label><select id="courseVisibility" class="form-select"><option value="public" ${d.visibility==='public'?'selected':''}>Public</option><option value="private" ${d.visibility==='private'?'selected':''}>Private</option><option value="unlisted" ${d.visibility==='unlisted'?'selected':''}>Unlisted</option></select></div></div>
@@ -548,7 +649,7 @@ class CreateCoursePage {
                         <div class="section-header-info">
                             <input type="text" value="${this.esc(section.title)}" class="section-title-input" data-section="${si}" placeholder="Section title" onclick="event.stopPropagation();">
                             <div class="section-meta-row">
-                                <input type="text" value="${this.esc(section.description||'')}" class="section-meta-input description" data-section="${si}" placeholder="Description" onclick="event.stopPropagation();" style="width:200px;">
+                                <textarea class="section-meta-input description-textarea" data-section="${si}" placeholder="Description" onclick="event.stopPropagation();" rows="2">${this.esc(section.description||'')}</textarea>
                                 <input type="text" value="${this.esc(section.duration||'')}" class="section-meta-input duration" data-section="${si}" placeholder="Duration" onclick="event.stopPropagation();">
                             </div>
                         </div>
@@ -580,6 +681,21 @@ class CreateCoursePage {
         const typeOptions = ['video', 'article', 'file', 'quiz', 'assignment'];
         const hasAttachments = (lesson.content?.attachments?.length > 0);
         const hasCaptions = (lesson.content?.captions?.length > 0);
+        const criteriaType = lesson.completion_criteria?.criteria_type || 'manual';
+        const criteriaLabels = {
+            manual: 'Manual',
+            watch_video: 'Watch Video',
+            read_article: 'Read Article',
+            pass_quiz: 'Pass Quiz',
+            submit_assignment: 'Submit Assignment'
+        };
+        const criteriaIcons = {
+            manual: 'fa-check',
+            watch_video: 'fa-play',
+            read_article: 'fa-book',
+            pass_quiz: 'fa-question-circle',
+            submit_assignment: 'fa-tasks'
+        };
         return `
             <div class="lesson-item" data-section="${si}" data-lesson="${li}">
                 <span class="lesson-drag drag-handle" data-drag-type="lesson" data-section="${si}" data-lesson="${li}"><i class="fas fa-grip-vertical"></i></span>
@@ -590,6 +706,10 @@ class CreateCoursePage {
                 ${hasCaptions ? '<i class="fas fa-closed-captioning" style="color:var(--color-gray-400);font-size:0.7rem;margin-left:2px;" title="Has captions"></i>' : ''}
                 <span class="lesson-preview-badge ${lesson.preview?'preview-enabled':'preview-disabled'}">${lesson.preview?'Preview':'No Preview'}</span>
                 <span class="lesson-published-badge ${lesson.published?'published':'unpublished'}">${lesson.published?'Pub':'Unpub'}</span>
+                <span class="completion-criteria-badge" title="Completion: ${criteriaLabels[criteriaType] || criteriaType}">
+                    <i class="fas ${criteriaIcons[criteriaType] || 'fa-check'}" style="margin-right:2px;"></i>
+                    ${criteriaLabels[criteriaType] || criteriaType}
+                </span>
                 <select class="lesson-type-select" data-section="${si}" data-lesson="${li}" onchange="event.stopPropagation();createCoursePage.changeLessonType(${si},${li},this.value)">
                     ${typeOptions.map(t => `<option value="${t}" ${lesson.type===t?'selected':''} ${t==='live_session'||t==='coding_exercise'?'disabled':''}>${typeLabels[t]}</option>`).join('')}
                 </select>
@@ -707,6 +827,16 @@ class CreateCoursePage {
             });
             document.querySelectorAll('.section-title-input').forEach(inp => {
                 inp.addEventListener('click', (e) => e.stopPropagation());
+            });
+            // Bind textarea events for section descriptions
+            document.querySelectorAll('.section-meta-input.description-textarea').forEach(textarea => {
+                textarea.addEventListener('click', (e) => e.stopPropagation());
+                textarea.addEventListener('input', (e) => {
+                    const si = parseInt(e.target.dataset.section);
+                    if (!isNaN(si) && this.courseData.sections[si]) {
+                        this.courseData.sections[si].description = e.target.value;
+                    }
+                });
             });
             // Drag handles are handled by event delegation on stepContent
         }
@@ -880,7 +1010,13 @@ class CreateCoursePage {
             attachment_files: lesson.content?.attachment_files || []
         };
 
-
+        // Update completion criteria for quiz lessons
+        if (!lesson.completion_criteria) {
+            lesson.completion_criteria = {};
+        }
+        lesson.completion_criteria.criteria_type = 'pass_quiz';
+        lesson.completion_criteria.quiz_passing_score = quizSettings.passingScore;
+        lesson.completion_criteria.video_watch_percentage = null;
     }
 
     /**
@@ -912,6 +1048,55 @@ class CreateCoursePage {
             attachment_files: lesson.content?.attachment_files || []
         };
 
+        // Update completion criteria for assignment lessons
+        if (!lesson.completion_criteria) {
+            lesson.completion_criteria = {};
+        }
+        lesson.completion_criteria.criteria_type = 'submit_assignment';
+        lesson.completion_criteria.video_watch_percentage = null;
+        lesson.completion_criteria.quiz_passing_score = null;
+    }
+
+    /**
+     * Save the current completion criteria form data
+     */
+    saveCurrentCompletionCriteriaData() {
+        if (!this.editingLesson) return;
+
+        const lesson = this.courseData.sections[this.editingLesson.sectionIndex]?.lessons[this.editingLesson.lessonIndex];
+        if (!lesson) return;
+
+        // For quiz lessons, completion criteria is managed automatically
+        if (lesson.type === 'quiz') {
+            return; // Don't manually set completion criteria for quiz lessons
+        }
+
+        // For assignment lessons, completion criteria is managed automatically
+        if (lesson.type === 'assignment') {
+            return; // Don't manually set completion criteria for assignment lessons
+        }
+
+        const criteriaType = document.getElementById('lessonCompletionCriteriaType')?.value || 'manual';
+
+        if (!lesson.completion_criteria) {
+            lesson.completion_criteria = {};
+        }
+
+        lesson.completion_criteria.criteria_type = criteriaType;
+
+        // Always include both fields based on criteria type
+        if (criteriaType === 'watch_video') {
+            const watchPercentage = parseInt(document.getElementById('videoWatchPercentage')?.value) || 90;
+            lesson.completion_criteria.video_watch_percentage = watchPercentage;
+            lesson.completion_criteria.quiz_passing_score = null;
+        } else if (criteriaType === 'pass_quiz') {
+            const passingScore = parseInt(document.getElementById('quizPassingScoreCriteria')?.value) || 70;
+            lesson.completion_criteria.quiz_passing_score = passingScore;
+            lesson.completion_criteria.video_watch_percentage = null;
+        } else {
+            lesson.completion_criteria.video_watch_percentage = null;
+            lesson.completion_criteria.quiz_passing_score = null;
+        }
     }
 
     // ============================================
@@ -925,11 +1110,50 @@ class CreateCoursePage {
         document.getElementById('modalLessonTitle').textContent = lesson.title || 'Untitled Lesson';
         document.getElementById('modalLessonType').textContent = lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1);
 
+        const criteriaType = lesson.completion_criteria?.criteria_type || 'manual';
+        const videoWatchPercentage = lesson.completion_criteria?.video_watch_percentage || 90;
+        const quizPassingScore = lesson.completion_criteria?.quiz_passing_score || 70;
+
         let html = `
         <div class="form-group"><label>Lesson Title</label><input type="text" id="lessonTitle" class="form-input" value="${this.esc(lesson.title)}"></div>
-        <div class="form-row"><div class="form-group"><label>Description</label><input type="text" id="lessonDesc" class="form-input" value="${this.esc(lesson.description||'')}"></div><div class="form-group"><label>Duration (min)</label><input type="number" id="lessonDuration" class="form-input" value="${this.esc(lesson.duration||'')}" min="1"></div></div>
-        <div class="form-row"><div class="form-group"><label>Preview Enabled</label><select id="lessonPreview" class="form-select"><option value="1" ${lesson.preview?'selected':''}>Yes</option><option value="0" ${!lesson.preview?'selected':''}>No</option></select></div><div class="form-group"><label>Published</label><select id="lessonPublished" class="form-select"><option value="1" ${lesson.published?'selected':''}>Yes</option><option value="0" ${!lesson.published?'selected':''}>No</option></select></div></div>
-        <div class="form-group"><label>Completion Rule</label><select id="lessonCompletionRule" class="form-select"><option value="manual" ${lesson.completionRule==='manual'?'selected':''}>Manual mark</option><option value="watch_video" ${lesson.completionRule==='watch_video'?'selected':''}>Watch ≥90%</option><option value="read_article" ${lesson.completionRule==='read_article'?'selected':''}>Scroll to end</option><option value="pass_quiz" ${lesson.completionRule==='pass_quiz'?'selected':''}>Pass quiz</option><option value="submit_assignment" ${lesson.completionRule==='submit_assignment'?'selected':''}>Submit assignment</option></select></div>`;
+        <div class="form-group"><label>Description</label><textarea id="lessonDesc" class="form-input form-textarea" rows="3">${this.esc(lesson.description||'')}</textarea></div>
+        <div class="form-row"><div class="form-group"><label>Duration (min)</label><input type="number" id="lessonDuration" class="form-input" value="${this.esc(lesson.duration||'')}" min="1"></div><div class="form-group"><label>Preview Enabled</label><select id="lessonPreview" class="form-select"><option value="1" ${lesson.preview?'selected':''}>Yes</option><option value="0" ${!lesson.preview?'selected':''}>No</option></select></div></div>
+        <div class="form-row"><div class="form-group"><label>Published</label><select id="lessonPublished" class="form-select"><option value="1" ${lesson.published?'selected':''}>Yes</option><option value="0" ${!lesson.published?'selected':''}>No</option></select></div></div>`;
+
+        // Only show completion criteria section for non-quiz and non-assignment lessons
+        if (lesson.type !== 'quiz' && lesson.type !== 'assignment') {
+            html += `
+        <div class="form-group completion-criteria-section" style="background:var(--color-gray-50);border:1px solid var(--color-gray-200);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;">
+            <label style="font-weight:600;display:block;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Completion Criteria</label>
+            <p style="font-size:0.78rem;color:var(--color-gray-500);margin-bottom:10px;">Define how students complete this lesson</p>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>Criteria Type</label>
+                <select id="lessonCompletionCriteriaType" class="form-select" onchange="createCoursePage.toggleCompletionCriteriaFields()">
+                    <option value="manual" ${criteriaType==='manual'?'selected':''}>Manual (student marks as complete)</option>
+                    <option value="watch_video" ${criteriaType==='watch_video'?'selected':''}>Watch Video (percentage based)</option>
+                    <option value="read_article" ${criteriaType==='read_article'?'selected':''}>Read Article (scroll to end)</option>
+                    <option value="pass_quiz" ${criteriaType==='pass_quiz'?'selected':''}>Pass Quiz (score based)</option>
+                    <option value="submit_assignment" ${criteriaType==='submit_assignment'?'selected':''}>Submit Assignment</option>
+                </select>
+            </div>
+
+            <div id="videoWatchPercentageField" style="display:${criteriaType==='watch_video'?'block':'none'};">
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label>Required Watch Percentage (%)</label>
+                    <input type="number" id="videoWatchPercentage" class="form-input" value="${videoWatchPercentage}" min="1" max="100" placeholder="90">
+                    <small style="color:var(--color-gray-400);display:block;margin-top:4px;">Student must watch this percentage of the video (1-100)</small>
+                </div>
+            </div>
+
+            <div id="quizPassingScoreCriteriaField" style="display:${criteriaType==='pass_quiz'?'block':'none'};">
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label>Required Passing Score (%)</label>
+                    <input type="number" id="quizPassingScoreCriteria" class="form-input" value="${quizPassingScore}" min="0" max="100" placeholder="70">
+                    <small style="color:var(--color-gray-400);display:block;margin-top:4px;">Student must score at least this percentage to pass (0-100)</small>
+                </div>
+            </div>
+        </div>`;
+        }
 
         if (lesson.type === 'video') {
             const isFileSource = lesson.content?.videoSource === 'file' || (!lesson.content?.videoSource && !lesson.content?.videoUrl);
@@ -1043,6 +1267,24 @@ class CreateCoursePage {
 
         // Bind attachment events
         this.bindAttachmentEvents(lesson);
+    }
+
+    /**
+     * Toggle completion criteria fields based on selected criteria type
+     */
+    toggleCompletionCriteriaFields() {
+        const criteriaType = document.getElementById('lessonCompletionCriteriaType')?.value || 'manual';
+
+        const videoWatchField = document.getElementById('videoWatchPercentageField');
+        const quizPassingField = document.getElementById('quizPassingScoreCriteriaField');
+
+        if (videoWatchField) {
+            videoWatchField.style.display = criteriaType === 'watch_video' ? 'block' : 'none';
+        }
+
+        if (quizPassingField) {
+            quizPassingField.style.display = criteriaType === 'pass_quiz' ? 'block' : 'none';
+        }
     }
 
     /**
@@ -1571,8 +1813,7 @@ class CreateCoursePage {
     }
 
     /**
-     * Bind attachment events
-     */
+     * Bind attachment events     */
     bindAttachmentEvents(lesson) {
         const lessonType = lesson.type; // Store lesson type to use in callbacks
 
@@ -1637,6 +1878,9 @@ class CreateCoursePage {
                     this.saveCurrentQuizFormData();
                 } else if (lesson.type === 'assignment') {
                     this.saveCurrentAssignmentFormData();
+                } else {
+                    // Save completion criteria data for non-quiz/assignment lessons
+                    this.saveCurrentCompletionCriteriaData();
                 }
             }
         }
@@ -1658,7 +1902,11 @@ class CreateCoursePage {
         const durEl = document.getElementById('lessonDuration'); if (durEl) lesson.duration = durEl.value.trim();
         const prevEl = document.getElementById('lessonPreview'); if (prevEl) lesson.preview = prevEl.value === '1';
         const pubEl = document.getElementById('lessonPublished'); if (pubEl) lesson.published = pubEl.value === '1';
-        const ruleEl = document.getElementById('lessonCompletionRule'); if (ruleEl) lesson.completionRule = ruleEl.value;
+
+        // Save completion criteria only for non-quiz and non-assignment lessons
+        if (lesson.type !== 'quiz' && lesson.type !== 'assignment') {
+            this.saveCurrentCompletionCriteriaData();
+        }
 
         const existingAttachments = lesson.content?.attachments || [];
         const existingAttachmentFiles = lesson.content?.attachment_files || [];
@@ -1994,6 +2242,29 @@ class CreateCoursePage {
         const oldAttFiles = lesson.content?.attachment_files || [];
         lesson.type = newType;
 
+        // Set default completion criteria based on lesson type
+        let defaultCriteriaType = 'manual';
+        let defaultVideoWatchPercentage = null;
+        let defaultQuizPassingScore = null;
+
+        if (newType === 'video') {
+            defaultCriteriaType = 'watch_video';
+            defaultVideoWatchPercentage = 90;
+        } else if (newType === 'article') {
+            defaultCriteriaType = 'read_article';
+        } else if (newType === 'quiz') {
+            defaultCriteriaType = 'pass_quiz';
+            defaultQuizPassingScore = 70;
+        } else if (newType === 'assignment') {
+            defaultCriteriaType = 'submit_assignment';
+        }
+
+        lesson.completion_criteria = {
+            criteria_type: defaultCriteriaType,
+            video_watch_percentage: defaultVideoWatchPercentage,
+            quiz_passing_score: defaultQuizPassingScore
+        };
+
         if (newType === 'quiz') {
             lesson.content = {
                 quizSettings: {
@@ -2009,6 +2280,8 @@ class CreateCoursePage {
                 attachments: oldAtt,
                 attachment_files: oldAttFiles
             };
+            // Sync completion criteria with quiz passing score
+            lesson.completion_criteria.quiz_passing_score = 70;
         } else if (newType === 'assignment') {
             lesson.content = {
                 instructions: '',
@@ -2380,7 +2653,11 @@ class CreateCoursePage {
             type: 'video',
             preview: false,
             published: false,
-            completionRule: 'watch90',
+            completion_criteria: {
+                criteria_type: 'watch_video',
+                video_watch_percentage: 90,
+                quiz_passing_score: null
+            },
             content: {
                 videoSource: 'file',
                 videoUrl: '',
@@ -2523,10 +2800,10 @@ class CreateCoursePage {
             }
         });
 
-        document.querySelectorAll('.section-meta-input.description').forEach(i => {
-            const si = parseInt(i.dataset.section);
+        document.querySelectorAll('.section-meta-input.description-textarea').forEach(textarea => {
+            const si = parseInt(textarea.dataset.section);
             if (!isNaN(si) && this.courseData.sections[si]) {
-                this.courseData.sections[si].description = i.value || this.courseData.sections[si].description || '';
+                this.courseData.sections[si].description = textarea.value || this.courseData.sections[si].description || '';
             }
         });
         document.querySelectorAll('.section-meta-input.duration').forEach(i => {
@@ -2595,7 +2872,7 @@ class CreateCoursePage {
 
             this.showToast('Course submitted for review');
         }catch(err){
-            console.log(error)
+            console.log(err)
         }
 
     }

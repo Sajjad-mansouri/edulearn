@@ -30,6 +30,7 @@ from .serializers import (
     CourseDetailInfoSerializer,
     CourseFeedbackSerializer,
     CourseInstructorSerializer,
+    CourseMetadataSerializer,
     CourseSerializer,
     FeedbackSerializer,
 )
@@ -366,3 +367,9 @@ class CourseReviewDestroyApiView(DestroyAPIView):
 
     def get_queryset(self):
         return CourseFeedback.objects.filter(enrollment__user=self.request.user)
+
+
+class CourseMetadataApiView(APIView):
+    def get(self, request, *args, **kwargs):
+        serializer = CourseMetadataSerializer(Course)
+        return Response(serializer.data)

@@ -1,5 +1,9 @@
 from .category import CategorySerializer
-from .course import CourseDetailInfoSerializer, CourseSerializer
+from .course import (
+    CourseDetailInfoSerializer,
+    CourseMetadataSerializer,
+    CourseSerializer,
+)
 from .course_curriculum import CourseCurriculumSerializer
 from .course_instructor import CourseInstructorSerializer
 from .feedback import CourseFeedbackSerializer, FeedbackSerializer
@@ -13,4 +17,5 @@ __all__ = [
     "CourseFeedbackSerializerFeedbackSerializer",
     "CourseFeedbackSerializer",
     "FeedbackSerializer",
+    "CourseMetadataSerializer",
 ]

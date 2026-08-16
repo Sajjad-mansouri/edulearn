@@ -15,6 +15,7 @@ from curriculums.models import (
     Attachment,
     FileContent,
     Lesson,
+    LessonCompletionCriteria,
     LessonContent,
     Section,
     VideoCaption,
@@ -36,9 +37,6 @@ class CourseService:
 
     def _create_course(self, data):
         category = self._get_category_object(data)
-        print("*+*+*+*+*+*")
-        print(data)
-        print("*+*+*+*+*+*")
 
         course = Course.objects.create(
             owner=self.instructor,
@@ -106,12 +104,22 @@ class CourseService:
                 duration=lesson_data["duration"],
                 is_published=lesson_data["is_published"],
                 is_preview=lesson_data["is_preview"],
-                completion_criteria=lesson_data["completion_criteria"],
+            )
+            self._create_lesson_completion_criteria(
+                lesson=lesson, completion_criteria=lesson_data["completion_criteria"]
             )
             self._create_lesson_content(
                 lesson=lesson,
                 contents=lesson_data["contents"],
             )
+
+    def _create_lesson_completion_criteria(self, lesson, completion_criteria):
+        LessonCompletionCriteria.objects.create(
+            lesson=lesson,
+            criteria_type=completion_criteria["criteria_type"],
+            video_watch_percentage=completion_criteria["video_watch_percentage"],
+            quiz_passing_score=completion_criteria["quiz_passing_score"],
+        )
 
     def _create_lesson_content(self, lesson, contents):
         for content_order, content in enumerate(contents, start=1):
@@ -119,12 +127,11 @@ class CourseService:
             lesson_content = LessonContent.objects.create(
                 lesson=lesson, content_type=content_type, order=content_order
             )
-            print("lesson_content object", lesson_content)
+
             self._create_lesson_content_attachments(lesson, lesson_content, content)
             if content_type == "file":
                 self._create_file_content(lesson_content, content["file_content"])
             elif content_type == "article":
-                print("lesson content in _create lesson content", lesson_content)
                 self._create_article_content(lesson_content, content["article_content"])
             elif content_type == "video":
                 self._create_video_content(lesson_content, content["video_content"])
@@ -132,7 +139,6 @@ class CourseService:
                 self._create_quiz_content(lesson_content, content["quiz_content"])
 
             elif content_type == "assignment":
-                print("content", content)
                 self._create_assignment_content(
                     lesson_content, content["assignment_content"]
                 )
@@ -153,13 +159,11 @@ class CourseService:
         )
 
     def _create_article_content(self, lesson_content, article_content):
-        print("lesson content", lesson_content)
         ArticleContent.objects.create(
             content=lesson_content, body=article_content["body"]
         )
 
     def _create_video_content(self, lesson_content, video_content):
-        print("lesson content", lesson_content)
         source = "file"
         if video_content["external_url"] != "":
             source = "url"
@@ -176,7 +180,6 @@ class CourseService:
         self._create_video_captions(video_content_obj, video_content)
 
     def _create_video_captions(self, video_content_obj, video_content):
-        print("video_content in create video caption s", video_content)
         for caption_content in video_content["captions"]:
             VideoCaption.objects.create(
                 video=video_content_obj,
@@ -204,7 +207,7 @@ class CourseService:
     def _create_quiz_questions(self, quiz, question_contents):
         for question_index, question_content in enumerate(question_contents, start=1):
             question_type = question_content["question_type"]
-            print("question", question_index, "question_type:", question_type)
+
             question = Question.objects.create(
                 quiz=quiz,
                 text=question_content["text"],
@@ -225,7 +228,6 @@ class CourseService:
                 )
 
             elif question_type == "short_answer":
-                print("question_content", question_content)
                 self._create_short_answer(
                     question, question_content["accepted_answers"]
                 )

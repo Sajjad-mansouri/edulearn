@@ -120,7 +120,9 @@ def normalize_quiz_content(
             "passing_score": get_value(
                 query_dict, f"{quiz_base}.{C.QUIZ_PASSING_SCORE}"
             ),
-            "time_limit": get_value(query_dict, f"{quiz_base}.{C.QUIZ_TIME_LIMIT}"),
+            "time_limit": get_value(
+                query_dict, f"{quiz_base}.{C.QUIZ_TIME_LIMIT}", None
+            ),
             "max_attempts": get_value(query_dict, f"{quiz_base}.{C.QUIZ_MAX_ATTEMPTS}"),
             "shuffle_questions": get_value(
                 query_dict, f"{quiz_base}.{C.QUIZ_SHUFFLE_QUESTIONS}"

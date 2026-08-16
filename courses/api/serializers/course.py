@@ -142,3 +142,30 @@ class CourseDetailInfoSerializer(CourseSerializer):
 
     def get_rating(self, obj):
         return round(obj.rating, 1)
+
+
+class CourseMetadataSerializer(serializers.Serializer):
+    levels = serializers.SerializerMethodField()
+    languages = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Course
+        fields = ["levels", "languages"]
+
+    def get_levels(self, obj):
+        return [
+            {
+                "label": level.label,
+                "value": level.value,
+            }
+            for level in Course.Level
+        ]
+
+    def get_languages(self, obj):
+        return [
+            {
+                "label": level.label,
+                "value": level.value,
+            }
+            for level in Course.LANGUAGE
+        ]

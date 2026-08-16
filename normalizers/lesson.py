@@ -6,8 +6,8 @@ import logging
 
 from django.http import QueryDict
 
+from . import constants as C
 from .constants import (
-    FIELD_LESSON_COMPLETION_RULE,
     FIELD_LESSON_DESCRIPTION,
     FIELD_LESSON_DURATION,
     FIELD_LESSON_ID,
@@ -53,11 +53,36 @@ def normalize_lessons(query_dict: QueryDict, section_index: int) -> list:
             "is_preview": get_value(
                 query_dict, f"{lesson_base}.{FIELD_LESSON_PREVIEW}"
             ),
-            "completion_criteria": get_value(
-                query_dict, f"{lesson_base}.{FIELD_LESSON_COMPLETION_RULE}"
+            "completion_criteria": normalize_completion_criteria(
+                query_dict, section_index, i
             ),
             "contents": normalize_lesson_content(query_dict, section_index, i),
         }
         lessons.append(lesson)
 
     return lessons
+
+
+def normalize_completion_criteria(
+    query_dict: QueryDict, section_index: int, lesson_index: int
+) -> dict:
+    base = f"{C.PREFIX_SECTIONS}[{section_index}].{C.PREFIX_LESSONS}[{lesson_index}]"
+    completion_criteria_base = f"{base}.{C.PREFIX_COMPLETION_CRITERIA}"
+    criteria_type = get_value(
+        query_dict, f"{completion_criteria_base}.{C.COMPLETION_CRITERIA_TYPE}"
+    )
+    quiz_passing_score = get_value(
+        query_dict,
+        f"{completion_criteria_base}.{C.COMPLETION_QUIZ_PASSING_SCORE}",
+        None,
+    )
+    video_watch_percentage = get_value(
+        query_dict,
+        f"{completion_criteria_base}.{C.COMPLETION_VIDEO_WATCH_PERCENTAGE}",
+        None,
+    )
+    return {
+        "criteria_type": criteria_type,
+        "quiz_passing_score": quiz_passing_score,
+        "video_watch_percentage": video_watch_percentage,
+    }

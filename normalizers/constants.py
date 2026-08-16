@@ -42,6 +42,7 @@ FIELD_ATTACHMENT_FILES = "attachment_files"
 PREFIX_SECTIONS = "sections"
 PREFIX_LESSONS = "lessons"
 PREFIX_CONTENT = "content"
+PREFIX_COMPLETION_CRITERIA = "completion_criteria"
 
 # Section fields
 FIELD_SECTION_ID = "id"
@@ -117,3 +118,9 @@ CAPTION_FILE_SIZE = "fileSize"
 CAPTION_IS_DEFAULT = "is_default"
 CAPTION_FILE = "file"
 CAPTION_FORMAT = "file_format"
+
+
+# completion criterial fields
+COMPLETION_CRITERIA_TYPE = "criteria_type"
+COMPLETION_QUIZ_PASSING_SCORE = "quiz_passing_score"
+COMPLETION_VIDEO_WATCH_PERCENTAGE = "video_watch_percentage"

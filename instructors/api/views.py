@@ -32,9 +32,13 @@ class CourseBuilder(APIView):
 
     def post(self, request, *args, **kwargs):
         course_data = normalize_course_data(request.data)
-        print(course_data)
+        print("*******request.data****")
+        print(request.data)
+        print("*******end request.data****")
+        print("normalized data", course_data)
         serializer = CourseSerializer(data=course_data)
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid(raise_exception=False)
+        print("serializer.errors", serializer.errors)
         CourseService(instructor=request.user).create(serializer.validated_data)
         return Response(serializer.data)
 

@@ -6,6 +6,7 @@ from curriculums.models import (
     Attachment,
     FileContent,
     Lesson,
+    LessonCompletionCriteria,
     LessonContent,
     Section,
     VideoCaption,
@@ -74,8 +75,15 @@ class LessonContentSerializer(serializers.ModelSerializer):
         ]
 
 
+class CompletionCriteraSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonCompletionCriteria
+        fields = ["criteria_type", "quiz_passing_score", "video_watch_percentage"]
+
+
 class LessonSerializer(serializers.ModelSerializer):
     contents = LessonContentSerializer(many=True)
+    completion_criteria = CompletionCriteraSerializer()
 
     class Meta:
         model = Lesson

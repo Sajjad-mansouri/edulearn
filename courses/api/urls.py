@@ -5,6 +5,7 @@ from . import views
 app_name = "courses_api"
 urlpatterns = [
     path("", views.CoursesApiView.as_view(), name="courses"),
+    path("metadata/", views.CourseMetadataApiView.as_view(), name="metadata"),
     path("categories/", views.CategoriesApiView.as_view(), name="categories"),
     path(
         "category/<categorySlug>/subcategories/",
