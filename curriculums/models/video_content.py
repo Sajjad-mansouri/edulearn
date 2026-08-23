@@ -22,10 +22,7 @@ class VideoContent(models.Model):
         default=Source.FILE,
     )
 
-    video_file = models.FileField(
-        upload_to="courses/videos/",
-        blank=True,
-    )
+    video_file = models.FileField(upload_to="courses/videos/", blank=True, null=True)
 
     external_url = models.URLField(
         blank=True,

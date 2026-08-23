@@ -4,10 +4,10 @@ from .question import Question
 
 
 class AcceptedAnswer(models.Model):
-    question = models.OneToOneField(
+    question = models.ForeignKey(
         Question,
         on_delete=models.CASCADE,
-        related_name="accepted_answer",
+        related_name="accepted_answers",
     )
 
     answer = models.CharField(

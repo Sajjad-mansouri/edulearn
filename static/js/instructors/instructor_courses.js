@@ -37,10 +37,22 @@ class InstructorCoursesPage {
 
         const searchInput = document.getElementById('courseSearch');
         const searchClear = document.getElementById('searchClearBtn');
-        searchInput?.addEventListener('input', (e) => { this.searchQuery = e.target.value.toLowerCase().trim(); searchClear.style.display = this.searchQuery ? 'flex' : 'none'; this.applyFilters(); });
-        searchClear?.addEventListener('click', () => { searchInput.value = ''; this.searchQuery = ''; searchClear.style.display = 'none'; this.applyFilters(); });
+        searchInput?.addEventListener('input', (e) => {
+            this.searchQuery = e.target.value.toLowerCase().trim();
+            searchClear.style.display = this.searchQuery ? 'flex' : 'none';
+            this.applyFilters();
+        });
+        searchClear?.addEventListener('click', () => {
+            searchInput.value = '';
+            this.searchQuery = '';
+            searchClear.style.display = 'none';
+            this.applyFilters();
+        });
 
-        document.getElementById('sortSelect')?.addEventListener('change', (e) => { this.sortBy = e.target.value; this.applyFilters(); });
+        document.getElementById('sortSelect')?.addEventListener('change', (e) => {
+            this.sortBy = e.target.value;
+            this.applyFilters();
+        });
 
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -52,13 +64,15 @@ class InstructorCoursesPage {
             });
         });
 
-        document.addEventListener('click', (e) => { if (!e.target.closest('.filter-dropdown')) document.querySelectorAll('.filter-menu.open').forEach(m => m.classList.remove('open')); });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.filter-dropdown')) document.querySelectorAll('.filter-menu.open').forEach(m => m.classList.remove('open'));
+        });
 
         document.getElementById('selectAllCheckbox')?.addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
 
-
-
-        document.addEventListener('click', (e) => { if (this.openActionMenu && !e.target.closest('.card-more-btn') && !e.target.closest('.course-actions-menu')) this.closeActionMenu(); });
+        document.addEventListener('click', (e) => {
+            if (this.openActionMenu && !e.target.closest('.card-more-btn') && !e.target.closest('.course-actions-menu')) this.closeActionMenu();
+        });
 
         document.getElementById('confirmCancel')?.addEventListener('click', () => this.closeConfirm());
         document.getElementById('confirmOk')?.addEventListener('click', () => this.executeConfirm());
@@ -79,7 +93,7 @@ class InstructorCoursesPage {
             const { last_updated, review_status, ...rest } = course;
             const payload = {
                 ...rest,
-                lastUpdated:  new Date(last_updated),
+                lastUpdated: new Date(last_updated),
                 reviewStatus: review_status,
             };
             payloads.push(payload);
@@ -186,11 +200,6 @@ class InstructorCoursesPage {
 
     async loadCourses() {
         this.showSkeletons();
-        // ==========================================
-        // REAL API CALL
-        // ==========================================
-        // const data = await ApiService.getInstructorCourses();
-        // this.allCourses = data.results || data;
 
         try {
             const response = await auth.authenticatedRequest(
@@ -217,9 +226,9 @@ class InstructorCoursesPage {
         } catch (error) {
             console.error("Error loading categories:", error);
             // Fallback to dummy data if API fails
-            // this.allCourses = this.getDummyCourses();
-            // this.extractFilterOptions(this.allCourses);
-            // this.populateFilterDropdowns();
+            this.allCourses = this.getDummyCourses();
+            this.extractFilterOptions(this.allCourses);
+            this.populateFilterDropdowns();
         }
 
         this.applyFilters();
@@ -227,21 +236,204 @@ class InstructorCoursesPage {
 
     getDummyCourses() {
         return [
-            { id: 1, title: 'Python for Data Science', category: 'data-science', status: 'published', version: '2.1', rating: 4.8, students: 1245, revenue: 24000, reviewStatus: 'approved', thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 2 * 86400000), slug: 'python-data-science' },
-            { id: 2, title: 'Machine Learning A-Z', category: 'machine-learning', status: 'published', version: '1.5', rating: 4.6, students: 890, revenue: 18000, reviewStatus: 'approved', thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 7 * 86400000), slug: 'ml-az' },
-            { id: 3, title: 'Deep Learning Specialization', category: 'machine-learning', status: 'published', version: '3.0', rating: 4.9, students: 640, revenue: 14000, reviewStatus: 'approved', thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 3 * 86400000), slug: 'deep-learning' },
-            { id: 4, title: 'Data Engineering Essentials', category: 'data-science', status: 'published', version: '1.2', rating: 4.5, students: 520, revenue: 10500, reviewStatus: 'approved', thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 5 * 86400000), slug: 'data-engineering' },
-            { id: 5, title: 'SQL for Data Analysis', category: 'data-science', status: 'published', version: '2.0', rating: 4.7, students: 780, revenue: 15600, reviewStatus: 'approved', thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 10 * 86400000), slug: 'sql-analysis' },
-            { id: 6, title: 'Cloud Computing with AWS', category: 'cloud', status: 'published', version: '1.0', rating: 4.4, students: 430, revenue: 8600, reviewStatus: 'approved', thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 14 * 86400000), slug: 'aws-cloud' },
-            { id: 7, title: 'Full-Stack Web Development', category: 'web-development', status: 'published', version: '1.8', rating: 4.3, students: 380, revenue: 7600, reviewStatus: 'approved', thumbnail: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 21 * 86400000), slug: 'fullstack-web' },
-            { id: 8, title: 'Advanced ML Techniques', category: 'machine-learning', status: 'updated', version: '2.0', rating: 4.2, students: 210, revenue: 4200, reviewStatus: 'pending', thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 1 * 86400000), slug: 'advanced-ml' },
-            { id: 9, title: 'Advanced NLP with Transformers', category: 'machine-learning', status: 'draft', version: '0.1', progress: 60, reviewStatus: 'not_submitted', thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 1 * 86400000), slug: 'advanced-nlp' },
-            { id: 10, title: 'Computer Vision 2026', category: 'machine-learning', status: 'draft', version: '0.1', progress: 35, reviewStatus: 'not_submitted', thumbnail: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 4 * 86400000), slug: 'cv-2026' },
-            { id: 11, title: 'Reinforcement Learning', category: 'machine-learning', status: 'draft', version: '0.1', progress: 10, reviewStatus: 'not_submitted', thumbnail: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 8 * 86400000), slug: 'rl-course' },
-            { id: 12, title: 'SQL for Data Analysis v2', category: 'data-science', status: 'ready_for_review', version: '2.5', progress: 95, reviewStatus: 'not_submitted', thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 1 * 86400000), slug: 'sql-v2' },
-            { id: 13, title: 'Python for DS Update', category: 'data-science', status: 'under_review', version: '3.0', progress: 100, reviewStatus: 'pending', thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 3 * 86400000), slug: 'python-ds-update' },
-            { id: 14, title: 'ML A-Z Refresh', category: 'machine-learning', status: 'under_review', version: '2.0', progress: 100, reviewStatus: 'pending', thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 5 * 86400000), slug: 'ml-az-refresh' },
-            { id: 15, title: 'Intro to Statistics', category: 'data-science', status: 'archived', version: '1.0', rating: 4.0, students: 150, revenue: 3000, reviewStatus: 'approved', thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=340&fit=crop', lastUpdated: new Date(Date.now() - 90 * 86400000), slug: 'intro-stats' }
+            {
+                id: 1,
+                title: 'Python for Data Science',
+                category: 'data-science',
+                status: 'published',
+                version: '2.1',
+                rating: 4.8,
+                students: 1245,
+                revenue: 24000,
+                reviewStatus: 'approved',
+                thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 2 * 86400000),
+                slug: 'python-data-science'
+            },
+            {
+                id: 2,
+                title: 'Machine Learning A-Z',
+                category: 'machine-learning',
+                status: 'published',
+                version: '1.5',
+                rating: 4.6,
+                students: 890,
+                revenue: 18000,
+                reviewStatus: 'approved',
+                thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 7 * 86400000),
+                slug: 'ml-az'
+            },
+            {
+                id: 3,
+                title: 'Deep Learning Specialization',
+                category: 'machine-learning',
+                status: 'published',
+                version: '3.0',
+                rating: 4.9,
+                students: 640,
+                revenue: 14000,
+                reviewStatus: 'approved',
+                thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 3 * 86400000),
+                slug: 'deep-learning'
+            },
+            {
+                id: 4,
+                title: 'Data Engineering Essentials',
+                category: 'data-science',
+                status: 'published',
+                version: '1.2',
+                rating: 4.5,
+                students: 520,
+                revenue: 10500,
+                reviewStatus: 'approved',
+                thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 5 * 86400000),
+                slug: 'data-engineering'
+            },
+            {
+                id: 5,
+                title: 'SQL for Data Analysis',
+                category: 'data-science',
+                status: 'published',
+                version: '2.0',
+                rating: 4.7,
+                students: 780,
+                revenue: 15600,
+                reviewStatus: 'approved',
+                thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 10 * 86400000),
+                slug: 'sql-analysis'
+            },
+            {
+                id: 6,
+                title: 'Cloud Computing with AWS',
+                category: 'cloud',
+                status: 'published',
+                version: '1.0',
+                rating: 4.4,
+                students: 430,
+                revenue: 8600,
+                reviewStatus: 'approved',
+                thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 14 * 86400000),
+                slug: 'aws-cloud'
+            },
+            {
+                id: 7,
+                title: 'Full-Stack Web Development',
+                category: 'web-development',
+                status: 'published',
+                version: '1.8',
+                rating: 4.3,
+                students: 380,
+                revenue: 7600,
+                reviewStatus: 'approved',
+                thumbnail: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 21 * 86400000),
+                slug: 'fullstack-web'
+            },
+            {
+                id: 8,
+                title: 'Advanced ML Techniques',
+                category: 'machine-learning',
+                status: 'updated',
+                version: '2.0',
+                rating: 4.2,
+                students: 210,
+                revenue: 4200,
+                reviewStatus: 'pending',
+                thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 1 * 86400000),
+                slug: 'advanced-ml'
+            },
+            {
+                id: 9,
+                title: 'Advanced NLP with Transformers',
+                category: 'machine-learning',
+                status: 'draft',
+                version: '0.1',
+                progress: 60,
+                reviewStatus: 'not_submitted',
+                thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 1 * 86400000),
+                slug: 'advanced-nlp'
+            },
+            {
+                id: 10,
+                title: 'Computer Vision 2026',
+                category: 'machine-learning',
+                status: 'draft',
+                version: '0.1',
+                progress: 35,
+                reviewStatus: 'not_submitted',
+                thumbnail: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 4 * 86400000),
+                slug: 'cv-2026'
+            },
+            {
+                id: 11,
+                title: 'Reinforcement Learning',
+                category: 'machine-learning',
+                status: 'draft',
+                version: '0.1',
+                progress: 10,
+                reviewStatus: 'not_submitted',
+                thumbnail: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 8 * 86400000),
+                slug: 'rl-course'
+            },
+            {
+                id: 12,
+                title: 'SQL for Data Analysis v2',
+                category: 'data-science',
+                status: 'ready_for_review',
+                version: '2.5',
+                progress: 95,
+                reviewStatus: 'not_submitted',
+                thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 1 * 86400000),
+                slug: 'sql-v2'
+            },
+            {
+                id: 13,
+                title: 'Python for DS Update',
+                category: 'data-science',
+                status: 'under_review',
+                version: '3.0',
+                progress: 100,
+                reviewStatus: 'pending',
+                thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 3 * 86400000),
+                slug: 'python-ds-update'
+            },
+            {
+                id: 14,
+                title: 'ML A-Z Refresh',
+                category: 'machine-learning',
+                status: 'under_review',
+                version: '2.0',
+                progress: 100,
+                reviewStatus: 'pending',
+                thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 5 * 86400000),
+                slug: 'ml-az-refresh'
+            },
+            {
+                id: 15,
+                title: 'Intro to Statistics',
+                category: 'data-science',
+                status: 'archived',
+                version: '1.0',
+                rating: 4.0,
+                students: 150,
+                revenue: 3000,
+                reviewStatus: 'approved',
+                thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=340&fit=crop',
+                lastUpdated: new Date(Date.now() - 90 * 86400000),
+                slug: 'intro-stats'
+            }
         ];
     }
 
@@ -375,7 +567,12 @@ class InstructorCoursesPage {
                     <span class="course-stat-item version"><i class="fas fa-code-branch"></i> v${course.version}</span>
                     <span class="course-stat-item status-indicator ${course.status}"><i class="fas fa-circle"></i> ${this.capitalize(statusLabel)}</span>
                 </div>
-
+                ${course.progress !== undefined ? `
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${course.progress}%"></div>
+                </div>
+                <span class="progress-text">${course.progress}% complete</span>
+                ` : ''}
             `;
         }
 
@@ -383,31 +580,31 @@ class InstructorCoursesPage {
         if (isPublished) {
             footerHtml = `
                 <span class="last-updated">Updated ${this.formatRelative(course.lastUpdated)}</span>
-                <button class="card-action-btn view" data-id="${course.id}"><i class="fas fa-eye"></i> View</button>
+                <button class="card-action-btn view" data-id="${course.id}" data-slug="${course.slug}"><i class="fas fa-eye"></i> View</button>
                 <button class="card-more-btn" data-id="${course.id}"><i class="fas fa-ellipsis-h"></i></button>
             `;
         } else if (isUpdated) {
             footerHtml = `
                 <span class="last-updated">Updated ${this.formatRelative(course.lastUpdated)}</span>
-                <button class="card-action-btn view" data-id="${course.id}"><i class="fas fa-eye"></i> View</button>
+                <button class="card-action-btn view" data-id="${course.id}" data-slug="${course.slug}"><i class="fas fa-eye"></i> View</button>
                 <button class="card-more-btn" data-id="${course.id}"><i class="fas fa-ellipsis-h"></i></button>
             `;
         } else if (isDraft) {
             footerHtml = `
                 <span class="last-updated">Last edited ${this.formatRelative(course.lastUpdated)}</span>
-                <button class="card-action-btn preview" data-id="${course.id}"><i class="fas fa-eye"></i> Preview</button>
+                <button class="card-action-btn edit" data-id="${course.id}" data-slug="${course.slug}"><i class="fas fa-pen"></i> Edit</button>
                 <button class="card-more-btn" data-id="${course.id}"><i class="fas fa-ellipsis-h"></i></button>
             `;
         } else if (isReadyForReview) {
             footerHtml = `
                 <span class="last-updated">Ready ${this.formatRelative(course.lastUpdated)}</span>
-                <button class="card-action-btn preview" data-id="${course.id}"><i class="fas fa-eye"></i> Preview</button>
+                <button class="card-action-btn preview" data-id="${course.id}" data-slug="${course.slug}"><i class="fas fa-eye"></i> Preview</button>
                 <button class="card-more-btn" data-id="${course.id}"><i class="fas fa-ellipsis-h"></i></button>
             `;
         } else if (isUnderReview) {
             footerHtml = `
                 <span class="last-updated">In review</span>
-                <button class="card-action-btn preview" data-id="${course.id}"><i class="fas fa-eye"></i> Preview</button>
+                <button class="card-action-btn preview" data-id="${course.id}" data-slug="${course.slug}"><i class="fas fa-eye"></i> Preview</button>
                 <button class="card-more-btn" data-id="${course.id}"><i class="fas fa-ellipsis-h"></i></button>
             `;
         } else if (isArchived) {
@@ -443,24 +640,39 @@ class InstructorCoursesPage {
                 const id = parseInt(cb.dataset.id);
                 cb.checked ? this.selectedCourses.add(id) : this.selectedCourses.delete(id);
                 cb.closest('.course-card-instructor')?.classList.toggle('selected', cb.checked);
-
             });
         });
 
         container.querySelectorAll('.card-action-btn.view').forEach(b => {
-            b.addEventListener('click', (e) => { e.stopPropagation(); window.open(`/course/${this.allCourses.find(c => c.id === parseInt(b.dataset.id))?.slug}`, '_blank'); });
+            b.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const slug = b.dataset.slug;
+                window.open(`/course/${slug}`, '_blank');
+            });
         });
 
         container.querySelectorAll('.card-action-btn.edit, .card-action-btn.draft-edit').forEach(b => {
-            b.addEventListener('click', (e) => { e.stopPropagation(); window.location.href = `/instructor/courses/${b.dataset.id}/edit`; });
+            b.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = b.dataset.id;
+                const slug = b.dataset.slug;
+                window.location.href = `/instructor/courses/${slug}/${id}/edit`;
+            });
         });
 
         container.querySelectorAll('.card-action-btn.preview').forEach(b => {
-            b.addEventListener('click', (e) => { e.stopPropagation(); this.showToast('Preview would open in new tab'); });
+            b.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const slug = b.dataset.slug;
+                window.open(`/course/${slug}`, '_blank');
+            });
         });
 
         container.querySelectorAll('.card-more-btn').forEach(b => {
-            b.addEventListener('click', (e) => { e.stopPropagation(); this.toggleActionMenu(parseInt(b.dataset.id), b); });
+            b.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleActionMenu(parseInt(b.dataset.id), b);
+            });
         });
     }
 
@@ -468,13 +680,11 @@ class InstructorCoursesPage {
         const start = (this.currentPage - 1) * this.perPage;
         const page = this.filteredCourses.slice(start, start + this.perPage);
         page.forEach(c => checked ? this.selectedCourses.add(c.id) : this.selectedCourses.delete(c.id));
-        document.querySelectorAll('.card-select-checkbox').forEach(cb => { cb.checked = checked; cb.closest('.course-card-instructor')?.classList.toggle('selected', checked); });
-
+        document.querySelectorAll('.card-select-checkbox').forEach(cb => {
+            cb.checked = checked;
+            cb.closest('.course-card-instructor')?.classList.toggle('selected', checked);
+        });
     }
-
-
-
-
 
     toggleActionMenu(id, btn) {
         if (this.openActionMenu === id) { this.closeActionMenu(); return; }
@@ -488,13 +698,13 @@ class InstructorCoursesPage {
 
         let items = '';
         // Edit (all except archived)
+
         if (course.status !== 'archived') {
-            items += `<button class="action-item" data-action="edit" data-id="${id}"><i class="fas fa-pen"></i> Edit Course</button>`;
+            items += `<button class="action-item" data-action="edit" data-id="${id}" data-slug="${course.slug}"><i class="fas fa-pen"></i> Edit Course</button>`;
         }
 
         // Preview (all)
-        items += `<button class="action-item" data-action="preview" data-id="${id}"><i class="fas fa-eye"></i> Preview</button>`;
-
+        items += `<button class="action-item" data-action="preview" data-id="${id}" data-slug="${course.slug}"><i class="fas fa-eye"></i> Preview</button>`;
 
         // Publish (draft, ready_for_review, under_review)
         if (course.status == 'draft' && course.reviewStatus == "approved") {
@@ -502,7 +712,7 @@ class InstructorCoursesPage {
         }
 
         // Submit for Review (draft)
-        if (course.status === 'draft' && course.reviewStatus=="not_submitted") {
+        if (course.status === 'draft' && course.reviewStatus == "not_submitted") {
             items += `<button class="action-item" data-action="submit-review" data-id="${id}"><i class="fas fa-paper-plane"></i> Submit for Review</button>`;
         }
 
@@ -516,10 +726,9 @@ class InstructorCoursesPage {
             items += `<button class="action-item" data-action="restore" data-id="${id}"><i class="fas fa-undo"></i> Restore</button>`;
         }
 
-
         // Analytics (published, updated)
         if (['published', 'updated'].includes(course.status)) {
-            items += `<button class="action-item" data-action="analytics" data-id="${id}"><i class="fas fa-chart-bar"></i> Analytics</button>`;
+            items += `<button class="action-item" data-action="analytics" data-id="${id}" data-slug="${course.slug}"><i class="fas fa-chart-bar"></i> Analytics</button>`;
         }
 
         // Delete (draft only)
@@ -543,7 +752,8 @@ class InstructorCoursesPage {
 
     closeActionMenu() {
         this.openActionMenu = null;
-        document.getElementById('actionsDropdownPortal').style.display = 'none';
+        const portal = document.getElementById('actionsDropdownPortal');
+        if (portal) portal.style.display = 'none';
     }
 
     handleCourseAction(action, id) {
@@ -552,10 +762,10 @@ class InstructorCoursesPage {
 
         switch (action) {
             case 'edit':
-                window.location.href = `/instructor/courses/${id}/edit`;
+                window.location.href = `/instructor/courses/${course.slug}/${id}/edit`;
                 break;
             case 'preview':
-                this.showToast(`Previewing "${course.title}"...`);
+                window.open(`/course/${course.slug}`, '_blank');
                 break;
             case 'duplicate':
                 this.allCourses.push({
@@ -596,7 +806,6 @@ class InstructorCoursesPage {
                 this.applyFilters();
                 this.showToast(`"${course.title}" restored to drafts`);
                 break;
-
             case 'analytics':
                 window.location.href = `/instructor/analytics?course=${course.slug}`;
                 break;
@@ -634,17 +843,30 @@ class InstructorCoursesPage {
     renderPagination() {
         const total = Math.ceil(this.filteredCourses.length / this.perPage);
         const c = document.getElementById('pageNumbers');
-        if (total <= 1) { c.innerHTML = ''; document.getElementById('prevPage').disabled = true; document.getElementById('nextPage').disabled = true; return; }
+        if (total <= 1) {
+            c.innerHTML = '';
+            document.getElementById('prevPage').disabled = true;
+            document.getElementById('nextPage').disabled = true;
+            return;
+        }
         document.getElementById('prevPage').disabled = this.currentPage <= 1;
         document.getElementById('nextPage').disabled = this.currentPage >= total;
         c.innerHTML = Array.from({ length: total }, (_, i) => `<button class="page-number ${i + 1 === this.currentPage ? 'active' : ''}" data-page="${i + 1}">${i + 1}</button>`).join('');
-        c.querySelectorAll('.page-number').forEach(b => b.addEventListener('click', () => { this.currentPage = parseInt(b.dataset.page); this.renderCourseGrid(); this.renderPagination(); }));
+        c.querySelectorAll('.page-number').forEach(b => b.addEventListener('click', () => {
+            this.currentPage = parseInt(b.dataset.page);
+            this.renderCourseGrid();
+            this.renderPagination();
+        }));
     }
 
     changePage(d) {
         const total = Math.ceil(this.filteredCourses.length / this.perPage);
         const np = this.currentPage + d;
-        if (np >= 1 && np <= total) { this.currentPage = np; this.renderCourseGrid(); this.renderPagination(); }
+        if (np >= 1 && np <= total) {
+            this.currentPage = np;
+            this.renderCourseGrid();
+            this.renderPagination();
+        }
     }
 
     checkEmptyState() {
@@ -677,7 +899,10 @@ class InstructorCoursesPage {
         document.getElementById('coursesGrid').innerHTML = Array(6).fill('<div class="course-card-skeleton"><div class="skeleton-block" style="height:180px;"></div><div style="padding:16px;"><div class="skeleton-line"></div><div class="skeleton-line" style="width:50%;"></div></div></div>').join('');
     }
 
-    hideLoader() { document.getElementById('loadingOverlay')?.classList.add('hidden'); }
+    hideLoader() {
+        const loader = document.getElementById('loadingOverlay');
+        if (loader) loader.classList.add('hidden');
+    }
 
     capitalize(str) {
         if (!str) return '';
@@ -695,7 +920,6 @@ class InstructorCoursesPage {
     }
 
     formatRelative(d) {
-
         const diff = Math.floor((Date.now() - d) / 86400000);
         if (diff === 0) return 'today';
         if (diff === 1) return 'yesterday';
@@ -709,10 +933,18 @@ class InstructorCoursesPage {
         t.className = 'toast-popup';
         t.textContent = m;
         document.getElementById('toastContainer').appendChild(t);
-        requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateY(0)'; });
-        setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+        requestAnimationFrame(() => {
+            t.style.opacity = '1';
+            t.style.transform = 'translateY(0)';
+        });
+        setTimeout(() => {
+            t.style.opacity = '0';
+            setTimeout(() => t.remove(), 300);
+        }, 3000);
     }
 }
 
 let instructorCoursesPage;
-document.addEventListener('DOMContentLoaded', () => { instructorCoursesPage = new InstructorCoursesPage(); });
+document.addEventListener('DOMContentLoaded', () => {
+    instructorCoursesPage = new InstructorCoursesPage();
+});

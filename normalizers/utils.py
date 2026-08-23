@@ -117,7 +117,8 @@ def extract_array(
     field_name: str,
     fields_map: dict = None,
     value_key: str = None,
-) -> list:
+    from_field_name: str = None,
+) -> tuple[list, list]:
     """
     Extract array values from indexed QueryDict fields.
 
@@ -147,12 +148,17 @@ def extract_array(
         List of dictionaries
     """
     items = []
+    deleted_items_ids = []
 
     for i, _ in iterate_indexed(query_dict, field_name):
         item = {}
 
         if fields_map:
             # Complex case: extract multiple fields per item
+            deleted_item = query_dict.get(f"{field_name}[{i}].deleted")
+            if deleted_item:
+                deleted_items_ids.append(query_dict.get(f"{field_name}[{i}].id"))
+                continue
             for form_field, output_key in fields_map.items():
                 key = f"{field_name}[{i}].{form_field}"
                 value = query_dict.get(key, "")
@@ -176,41 +182,70 @@ def extract_array(
             if value and value != "null":
                 items.append({"description": value})
 
-    return items
+    return items, deleted_items_ids
 
 
-def extract_tags(query_dict: QueryDict, field_name: str = "tags") -> list:
+def extract_tags(query_dict: QueryDict, field_name: str = "tags") -> tuple[list, list]:
     """
     Extract tags with 'name' key.
     Now just a convenience wrapper around extract_array.
     """
-    return extract_array(query_dict, field_name, value_key="name")
+    tags, deleted_tags_ids = extract_array(
+        query_dict, field_name, fields_map={"id": "id", "name": "name"}
+    )
+    return tags, deleted_tags_ids
 
 
 def extract_attachments(
-    query_dict: QueryDict, base_key: str = "attachment_files"
-) -> list:
+    query_dict: QueryDict, base_key: str = "attachments", fields_map: dict = None
+) -> tuple[list, list]:
     """
     Extract file attachments from QueryDict.
+    delete attachment that deleted flag is true else prepare to create new attachment
+    Course Attachments come as indexed file fields:
+        base_key = attachments
+        existing course attachment:
+            attachments[0].id = <UploadedFile>
+            'attachments[0].deleted': ['true']
+        new course attachment:
+            attachments[0].file = <UploadedFile>
 
-    Attachments come as indexed file fields:
-        attachment_files[0] = <UploadedFile>
-        attachment_files[1] = <UploadedFile>
+        attachments[1] = <UploadedFile>
 
+    Course Attachments :
+        base_key = 'sections[0].lessons[4].content.attachments
+        existing course lesson attachment:
+
+            'sections[0].lessons[4].content.attachments[1].id': ['52']
+            'sections[0].lessons[4].content.attachments[0].deleted': ['true']
+        new course attachment:
+                    'sections[0].lessons[4].content.attachments[2].file': [<InMemoryUploadedFile: test.png (image/png)>]}>
     Args:
         query_dict: The QueryDict
         base_key: Base key for attachments
 
     Returns:
         List of {'file': UploadedFile} dictionaries
+        list of deleted attachments ids
     """
     attachments = []
+    deleted_attachments_ids = []
 
-    for i, _ in iterate_indexed(query_dict, base_key):
-        key = f"{base_key}[{i}]"
-        file_value = query_dict.get(key)
+    for _i, attachment_base_key in iterate_indexed(query_dict, base_key):
+        attachment = {}
 
-        if file_value and file_value != "null":
-            attachments.append({"file": file_value})
+        if get_value(query_dict, f"{attachment_base_key}.deleted"):
+            deleted_attachments_ids.append(
+                get_value(query_dict, f"{attachment_base_key}.id")
+            )
+            continue
+        if get_value(query_dict, f"{attachment_base_key}.file"):
+            for form_field, output_key in fields_map.items():
+                key = f"{attachment_base_key}.{form_field}"
+                value = query_dict.get(key, "")
+                if value and value != "null":
+                    attachment[output_key] = value
+            if attachment:
+                attachments.append(attachment)
 
-    return attachments
+    return attachments, deleted_attachments_ids

@@ -16,6 +16,7 @@ class ArticleContent(models.Model):
     body = models.TextField(
         _("Body"),
         help_text=_("The article content in Markdown or HTML format."),
+        blank=True,
     )
 
     estimated_read_time = models.PositiveSmallIntegerField(

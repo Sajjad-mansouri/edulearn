@@ -48,6 +48,27 @@ class CategoriesApiView(ListAPIView):
         return Category.objects.filter(parent=None)
 
 
+class CategoriesApiViewsV1(APIView):
+    def get(self, request, *args, **kwargs):
+        categories = Category.objects.filter(parent__isnull=True).prefetch_related(
+            "children"
+        )
+
+        data = [
+            {
+                "name": category.name,
+                "slug": category.slug,
+                "subcategories": [
+                    {"name": child.name, "slug": child.slug}
+                    for child in category.children.all()
+                ],
+            }
+            for category in categories
+        ]
+        print(data)
+        return Response(data)
+
+
 class SubcategoriesApiView(ListAPIView):
     serializer_class = CategorySerializer
 

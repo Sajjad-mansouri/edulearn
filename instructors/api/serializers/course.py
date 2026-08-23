@@ -5,6 +5,7 @@ from rest_framework import serializers
 from courses.models import (
     Category,
     Course,
+    CourseFeature,
     CourseFeedback,
     LearningOutcome,
     Prerequisite,
@@ -17,38 +18,50 @@ from .tag import TagSerializer
 User = get_user_model()
 
 
+class FeatureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseFeature
+        fields = ["icon", "text"]
+
+
 class LearningOutcomeSerializer(serializers.ModelSerializer):
     class Meta:
         model = LearningOutcome
-        fields = ["description"]
+        fields = ["id", "description"]
 
 
 class PrerequisiteSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+
     class Meta:
         model = Prerequisite
-        fields = ["description"]
+        fields = ["id", "description"]
 
 
 class TargetAudienceSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+
     class Meta:
         model = TargetAudience
-        fields = ["description"]
+        fields = ["id", "description"]
 
 
 class CourseSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
-    outcomes = LearningOutcomeSerializer(many=True)
+    learning_outcomes = LearningOutcomeSerializer(many=True)
     prerequisites = PrerequisiteSerializer(many=True)
-    targetAudience = TargetAudienceSerializer(many=True)
+    target_audiences = TargetAudienceSerializer(many=True)
     sections = SectionSerializer(many=True)
-    attachments = AttachmentSerializer(required=False, many=True)
+    attachments = AttachmentSerializer(many=True, required=False)
     category = serializers.SlugRelatedField(
-        slug_field="slug", queryset=Category.objects.all(), write_only=True
+        slug_field="slug", queryset=Category.objects.all()
     )
+    features = FeatureSerializer(many=True)
 
     class Meta:
         model = Course
         fields = [
+            "id",
             "title",
             "subtitle",
             "short_description",
@@ -70,12 +83,24 @@ class CourseSerializer(serializers.ModelSerializer):
             "seo_title",
             "seo_description",
             "tags",
-            "outcomes",
+            "learning_outcomes",
             "prerequisites",
-            "targetAudience",
+            "target_audiences",
+            "features",
             "sections",
             "attachments",
         ]
+
+    def to_representation(self, instance):
+        if isinstance(instance, Course):
+            data = super().to_representation(instance)
+            # Filter attachments in response
+
+            data["attachments"] = AttachmentSerializer(
+                instance.attachments.filter(lesson_content__isnull=True), many=True
+            ).data
+            return data
+        return super().to_representation(instance)
 
 
 class InstructorCourseSerializer(serializers.ModelSerializer):
@@ -98,6 +123,7 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
             "last_updated",
             "slug",
             "status",
+            "review_status",
         ]
 
     def get_revenue(self, obj):

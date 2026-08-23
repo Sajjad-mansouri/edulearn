@@ -7,6 +7,8 @@ from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
+from utils.fields import SequentialField
+
 from .category import Category
 from .tag import Tag
 
@@ -23,6 +25,7 @@ class Course(models.Model):
         PUBLISHED = "published", _("Published")
         UPDATED = "updated", _("Updated")
         ARCHIVED = "archived", _("Archived")
+        SUBMITTED = "submitted", _("Submitted")
 
     class ReviewStatus(models.TextChoices):
         NOT_SUBMITTED = "not_submitted", _("Not Submitted")
@@ -62,14 +65,10 @@ class Course(models.Model):
         unique=True,
     )
 
-    description = models.TextField(
-        _("Description"),
-    )
+    description = models.TextField(_("Description"), blank=True)
 
     thumbnail = models.ImageField(
-        _("Thumbnail"),
-        upload_to="courses/thumbnails/",
-        blank=True,
+        _("Thumbnail"), upload_to="courses/thumbnails/", blank=True, null=True
     )
 
     promotional_video = models.URLField(
@@ -82,6 +81,7 @@ class Course(models.Model):
         choices=LANGUAGE.choices,
         max_length=2,
         default=LANGUAGE.ENGLISH,
+        blank=True,
     )
 
     level = models.CharField(
@@ -89,6 +89,7 @@ class Course(models.Model):
         max_length=20,
         choices=Level.choices,
         default=Level.ALL_LEVELS,
+        blank=True,
     )
 
     status = models.CharField(
@@ -111,13 +112,10 @@ class Course(models.Model):
         max_length=20,
         choices=Visibility.choices,
         default=Visibility.PUBLIC,
+        blank=True,
     )
 
-    version = models.CharField(
-        _("Version"),
-        max_length=20,
-        default="1.0.0",
-    )
+    version = models.CharField(_("Version"), max_length=20, default="1.0.0", blank=True)
 
     published_at = models.DateTimeField(
         _("Published At"),
@@ -149,6 +147,8 @@ class Course(models.Model):
         on_delete=models.PROTECT,
         related_name="courses",
         verbose_name=_("Category"),
+        null=True,
+        blank=True,
     )
 
     short_description = models.CharField(
@@ -161,13 +161,13 @@ class Course(models.Model):
         help_text=_("Estimated duration of this Course."),
     )
     price_type = models.CharField(
-        _("Price Type"), choices=PriceType.choices, default=PriceType.FREE
+        _("Price Type"), choices=PriceType.choices, default=PriceType.FREE, blank=True
     )
     price = models.DecimalField(
-        _("Price"), max_digits=10, decimal_places=2, default=0.00
+        _("Price"), max_digits=10, decimal_places=2, default=0.00, null=True
     )
     price_discount = models.PositiveSmallIntegerField(
-        default=0, validators=[MinValueValidator(0), MaxValueValidator(100)]
+        default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True
     )
     course_trailer = models.URLField(
         _("Course Trailer"),
@@ -223,7 +223,8 @@ class Course(models.Model):
             self.seo_title = self.title[:60]
 
         if not self.seo_description:
-            self.seo_description = self.description[:160]
+            if self.description:
+                self.seo_description = self.description[:160]
         self.full_clean()
 
         super().save(*args, **kwargs)
@@ -252,10 +253,7 @@ class LearningOutcome(models.Model):
         verbose_name=_("Course"),
     )
 
-    order = models.PositiveSmallIntegerField(
-        _("Order"),
-        default=1,
-    )
+    order = SequentialField()
 
     description = models.CharField(
         _("Description"),
@@ -286,10 +284,7 @@ class Prerequisite(models.Model):
         verbose_name=_("Course"),
     )
 
-    order = models.PositiveSmallIntegerField(
-        _("Order"),
-        default=1,
-    )
+    order = SequentialField()
 
     description = models.CharField(
         _("Description"),
@@ -298,12 +293,7 @@ class Prerequisite(models.Model):
 
     class Meta:
         ordering = ("course", "order")
-        constraints = [
-            models.UniqueConstraint(
-                fields=["course", "order"],
-                name="unique_prerequisite_order_per_course",
-            )
-        ]
+
         indexes = [
             models.Index(fields=["course", "order"]),
         ]
@@ -325,19 +315,11 @@ class TargetAudience(models.Model):
         max_length=500,
     )
 
-    order = models.PositiveSmallIntegerField(
-        _("Order"),
-        default=1,
-    )
+    order = SequentialField()
 
     class Meta:
         ordering = ("course", "order")
-        constraints = [
-            models.UniqueConstraint(
-                fields=["course", "order"],
-                name="unique_target_audience_order_per_course",
-            )
-        ]
+
         indexes = [
             models.Index(fields=["course", "order"]),
         ]

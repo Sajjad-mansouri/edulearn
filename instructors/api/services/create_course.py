@@ -9,7 +9,15 @@ from assessments.models import (
     Question,
     QuizContent,
 )
-from courses.models import Category, Course, Tag
+from courses.models import (
+    Category,
+    Course,
+    CourseFeature,
+    LearningOutcome,
+    Prerequisite,
+    Tag,
+    TargetAudience,
+)
 from curriculums.models import (
     ArticleContent,
     Attachment,
@@ -33,6 +41,11 @@ class CourseService:
         self._add_tags(course, data)
         self._create_sections(course, data["sections"])
         self._create_course_attachments(course, data["attachments"])
+        self.create_features(course, data)
+        self._create_target_audiences(course, data)
+        self._create_prerequisites(course, data)
+        self._create_outcomes(course, data)
+
         return course
 
     def _create_course(self, data):
@@ -69,7 +82,8 @@ class CourseService:
     def _get_category_object(self, data):
         category = data.get("category", "")
         subcategory = data.get("subcategory", "")
-
+        if category == "":
+            return None
         if subcategory != "":
             category = subcategory
 
@@ -130,32 +144,30 @@ class CourseService:
 
             self._create_lesson_content_attachments(lesson, lesson_content, content)
             if content_type == "file":
-                self._create_file_content(lesson_content, content["file_content"])
+                self._create_file_content(lesson_content, content["file"])
             elif content_type == "article":
-                self._create_article_content(lesson_content, content["article_content"])
+                self._create_article_content(lesson_content, content["article"])
             elif content_type == "video":
-                self._create_video_content(lesson_content, content["video_content"])
+                self._create_video_content(lesson_content, content["video"])
             elif content_type == "quiz":
-                self._create_quiz_content(lesson_content, content["quiz_content"])
+                self._create_quiz_content(lesson_content, content["quiz"])
 
             elif content_type == "assignment":
-                self._create_assignment_content(
-                    lesson_content, content["assignment_content"]
-                )
+                self._create_assignment_content(lesson_content, content["assignment"])
 
     def _create_lesson_content_attachments(self, lesson, lesson_content, content):
         for attachment in content.get("attachments", []):
             Attachment.objects.create(
                 course=lesson.section.course,
                 lesson_content=lesson_content,
-                file=attachment["file"],
+                file=attachment.get("file"),
             )
 
     def _create_file_content(self, lesson_content, file_content):
         FileContent.objects.create(
             content=lesson_content,
-            file=file_content["file"],
-            file_url=file_content["file_url"],
+            file=file_content.get("file"),
+            file_url=file_content.get("file_url"),
         )
 
     def _create_article_content(self, lesson_content, article_content):
@@ -167,14 +179,14 @@ class CourseService:
         source = "file"
         if video_content["external_url"] != "":
             source = "url"
+        print(video_content)
         video_content_obj = VideoContent.objects.create(
             content=lesson_content,
             source=source,
-            video_file=video_content["video_file"],
-            external_url=video_content["external_url"],
-            text=video_content["text"],
-            duration=video_content["duration"],
-            transcript=video_content["transcript"],
+            video_file=video_content.get("video_file"),
+            external_url=video_content.get("external_url", ""),
+            text=video_content.get("text", ""),
+            transcript=video_content.get("transcript"),
         )
 
         self._create_video_captions(video_content_obj, video_content)
@@ -183,26 +195,26 @@ class CourseService:
         for caption_content in video_content["captions"]:
             VideoCaption.objects.create(
                 video=video_content_obj,
-                language=caption_content["language"],
-                label=caption_content["label"],
-                file=caption_content["file"],
-                file_format=caption_content["file_format"],
-                is_default=caption_content["is_default"],
+                language=caption_content.get("language"),
+                label=caption_content.get("label"),
+                file=caption_content.get("file"),
+                file_format=caption_content.get("file_format"),
+                is_default=caption_content.get("is_default"),
             )
 
     def _create_quiz_content(self, lesson_content, quiz_content):
         quiz = QuizContent.objects.create(
             content=lesson_content,
-            instructions=quiz_content["instructions"],
-            passing_score=quiz_content["passing_score"],
-            time_limit=quiz_content["time_limit"],
-            max_attempts=quiz_content["max_attempts"],
-            shuffle_questions=quiz_content["shuffle_questions"],
-            shuffle_choices=quiz_content["shuffle_choices"],
-            show_correct_answers=quiz_content["show_correct_answers"],
+            instructions=quiz_content.get("instructions"),
+            passing_score=quiz_content.get("passing_score"),
+            time_limit=quiz_content.get("time_limit"),
+            max_attempts=quiz_content.get("max_attempts"),
+            shuffle_questions=quiz_content.get("shuffle_questions"),
+            shuffle_choices=quiz_content.get("shuffle_choices"),
+            show_correct_answers=quiz_content.get("show_correct_answers"),
         )
 
-        self._create_quiz_questions(quiz, quiz_content["questions"])
+        self._create_quiz_questions(quiz, quiz_content.get("questions"))
 
     def _create_quiz_questions(self, quiz, question_contents):
         for question_index, question_content in enumerate(question_contents, start=1):
@@ -210,18 +222,18 @@ class CourseService:
 
             question = Question.objects.create(
                 quiz=quiz,
-                text=question_content["text"],
-                question_type=question_content["question_type"],
-                difficulty=question_content["difficulty"],
-                points=question_content["points"],
-                explanation=question_content["explanation"],
-                is_required=question_content["is_required"],
-                estimated_time=question_content["estimated_time"],
+                text=question_content.get("text"),
+                question_type=question_content.get("question_type"),
+                difficulty=question_content.get("difficulty"),
+                points=question_content.get("points"),
+                explanation=question_content.get("explanation"),
+                is_required=question_content.get("is_required"),
+                estimated_time=question_content.get("estimated_time"),
                 order=question_index,
             )
 
             if question_type in ["single_choice", "multiple_choice"]:
-                self._create_question_options(question, question_content["options"])
+                self._create_question_options(question, question_content["choices"])
             elif question_type == "true_false":
                 self._create_boolean_answer(
                     question, question_content["boolean_answer"]
@@ -261,3 +273,29 @@ class CourseService:
             accepted_file_types=assignment_content.get("accepted_file_types"),
             max_file_size_mb=assignment_content.get("max_file_size_mb"),
         )
+
+    def create_features(self, course, data):
+        for _index, feature in enumerate(data.get("features", [])):
+            CourseFeature.objects.create(
+                course=course, icon=feature["icon"], text=feature["text"]
+            )
+
+    def _create_target_audiences(self, course, data):
+        for index, target_audience_dict in enumerate(data.get("target_audiences", [])):
+            TargetAudience.objects.create(
+                course=course,
+                description=target_audience_dict.get("description"),
+                order=index,
+            )
+
+    def _create_prerequisites(self, course, data):
+        for index, prerequisite_dict in enumerate(data.get("prerequisites", [])):
+            Prerequisite.objects.create(
+                course=course, description=prerequisite_dict["description"], order=index
+            )
+
+    def _create_outcomes(self, course, data):
+        for _index, outcome_dict in enumerate(data.get("learning_outcomes", [])):
+            LearningOutcome.objects.get_or_create(
+                course=course, description=outcome_dict["description"]
+            )

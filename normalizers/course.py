@@ -11,6 +11,7 @@ This module orchestrates the normalization of all course components:
 
 from django.http import QueryDict
 
+from . import constants as C
 from .constants import (
     FIELD_CATEGORY,
     FIELD_COURSE_TRAILER,
@@ -43,7 +44,7 @@ from .section import normalize_sections
 from .utils import extract_array, extract_attachments, extract_tags, get_file, get_value
 
 
-def normalize_course_data(query_dict: QueryDict) -> dict:
+def normalize_course_data(query_dict: QueryDict) -> tuple[dict, dict]:
     """
     Normalize flat multipart/form-data into nested course structure.
 
@@ -81,27 +82,36 @@ def normalize_course_data(query_dict: QueryDict) -> dict:
     Returns:
         Fully normalized nested dict ready for serializer validation
     """
+    deleted_ids_dict = {}
 
-    print("Starting course data normalization")
     # Normalize basic text fields
     course_data = _normalize_basic_fields(query_dict)
 
-    # Normalize file uploads
+    # Normalize thumbnail uploads
     course_data.update(_normalize_file_fields(query_dict))
 
     # Normalize array fields (outcomes, prerequisites, etc.)
-    course_data.update(_normalize_array_fields(query_dict))
+    normalized_array, deleted_ids_dict = _normalize_array_fields(
+        query_dict, deleted_ids_dict
+    )
+    course_data.update(normalized_array)
 
     # Normalize SEO fields
     course_data.update(_normalize_seo_fields(query_dict))
 
     # Normalize nested sections (with lessons and content)
-    course_data["sections"] = normalize_sections(query_dict)
+    normalized_sections, deleted_ids_dict = normalize_sections(
+        query_dict, deleted_ids_dict
+    )
+    course_data["sections"] = normalized_sections
 
     # Normalize top-level attachments
-    course_data["attachments"] = extract_attachments(query_dict)
+    course_data["attachments"], deleted_attachments_ids = extract_attachments(
+        query_dict, fields_map={"file": "file"}
+    )
+    deleted_ids_dict.setdefault("attachments", []).extend(deleted_attachments_ids)
 
-    return course_data
+    return course_data, deleted_ids_dict
 
 
 def _normalize_basic_fields(query_dict: QueryDict) -> dict:
@@ -111,11 +121,15 @@ def _normalize_basic_fields(query_dict: QueryDict) -> dict:
     Simply extracts values from QueryDict and puts them in a dict.
     Empty values become empty strings for consistency.
     """
+    if get_value(query_dict, FIELD_SUBCATEGORY):
+        category = get_value(query_dict, FIELD_SUBCATEGORY)
+    else:
+        category = get_value(query_dict, FIELD_CATEGORY)
     return {
         "title": get_value(query_dict, FIELD_TITLE),
         "subtitle": get_value(query_dict, FIELD_SUBTITLE),
         "short_description": get_value(query_dict, FIELD_SHORT_DESCRIPTION),
-        "category": get_value(query_dict, FIELD_CATEGORY),
+        "category": category,
         "subcategory": get_value(query_dict, FIELD_SUBCATEGORY),
         "level": get_value(query_dict, FIELD_LEVEL),
         "language": get_value(query_dict, FIELD_LANGUAGE),
@@ -140,12 +154,17 @@ def _normalize_file_fields(query_dict: QueryDict) -> dict:
 
     Returns UploadedFile objects as-is (serializer will handle them).
     """
-    return {
-        "thumbnail": get_file(query_dict, FIELD_THUMBNAIL),
-    }
+    file = get_file(query_dict, FIELD_THUMBNAIL)
+    if file:
+        return {
+            "thumbnail": file,
+        }
+    return {}
 
 
-def _normalize_array_fields(query_dict: QueryDict) -> dict:
+def _normalize_array_fields(
+    query_dict: QueryDict, deleted_ids_dict: dict
+) -> tuple[dict, dict]:
     """
     Normalize array-type fields from indexed flat structure.
 
@@ -154,12 +173,44 @@ def _normalize_array_fields(query_dict: QueryDict) -> dict:
     Into:
         [{"description": "Learn X"}, {"description": "Build Y"}]
     """
-    return {
-        FIELD_OUTCOMES: extract_array(query_dict, FIELD_OUTCOMES),
-        FIELD_PREREQUISITES: extract_array(query_dict, FIELD_PREREQUISITES),
-        FIELD_TARGET_AUDIENCE: extract_array(query_dict, FIELD_TARGET_AUDIENCE),
-        FIELD_TAGS: extract_tags(query_dict, FIELD_TAGS),
+    outcomes, deleted_outcomes_ids = extract_array(
+        query_dict,
+        FIELD_OUTCOMES,
+        fields_map={"description": "description", "id": "id"},
+    )
+    prerequisites, deleted_prerequisites_ids = extract_array(
+        query_dict,
+        FIELD_PREREQUISITES,
+        fields_map={"description": "description", "id": "id"},
+    )
+    target_audiences, deleted_target_audiences_ids = extract_array(
+        query_dict,
+        FIELD_TARGET_AUDIENCE,
+        fields_map={"description": "description", "id": "id"},
+    )
+    features, deleted_features_ids = extract_array(
+        query_dict, C.FIELD_FEATURES, fields_map={"text": "text", "icon": "icon"}
+    )
+
+    tags, deleted_tags_ids = extract_tags(query_dict, FIELD_TAGS)
+    deleted_ids_dict = {
+        "outcomes": deleted_outcomes_ids,
+        "prerequisites": deleted_prerequisites_ids,
+        "target_audiences": deleted_target_audiences_ids,
+        "tags": deleted_tags_ids,
+        "features": features,
     }
+
+    return (
+        {
+            C.MODEL_FIELD_OUTCOMES: outcomes,
+            FIELD_PREREQUISITES: prerequisites,
+            C.MODEL_FIELD_TARGET_AUDIENCE: target_audiences,
+            FIELD_TAGS: tags,
+            C.FIELD_FEATURES: features,
+        },
+        deleted_ids_dict,
+    )
 
 
 def _normalize_seo_fields(query_dict: QueryDict) -> dict:

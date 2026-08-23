@@ -5,7 +5,12 @@ from django.contrib.auth import get_user_model
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView
+from rest_framework.generics import (
+    GenericAPIView,
+    ListAPIView,
+    RetrieveAPIView,
+    UpdateAPIView,
+)
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -22,7 +27,7 @@ from .serializers import (
     InstructorDashboardSerializer,
     InstructorFilterCoursesSerializer,
 )
-from .services import CourseService
+from .services import CourseService, CourseUpdateService
 
 User = get_user_model()
 
@@ -31,15 +36,55 @@ class CourseBuilder(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        course_data = normalize_course_data(request.data)
-        print("*******request.data****")
-        print(request.data)
-        print("*******end request.data****")
-        print("normalized data", course_data)
+        course_status = kwargs.get("course_status")
+        course_data, _ = normalize_course_data(request.data)
+
         serializer = CourseSerializer(data=course_data)
         serializer.is_valid(raise_exception=False)
-        print("serializer.errors", serializer.errors)
-        CourseService(instructor=request.user).create(serializer.validated_data)
+        course = CourseService(instructor=request.user).create(
+            serializer.validated_data
+        )
+        if course_status == Course.Status.SUBMITTED:
+            course.status = Course.Status.SUBMITTED
+            course.review_status = Course.ReviewStatus.PENDING
+            course.save()
+        return Response(serializer.data)
+
+
+class CourseUpdateApiView(GenericAPIView):
+    permission_classes = [AllowAny]
+
+    def patch(self, request, *args, **kwargs):
+        course_status = kwargs.get("course_status")
+        course_data, deleted_ids_dict = normalize_course_data(request.data)
+
+        course = self.get_object()
+        serializer = CourseSerializer(instance=course, data=course_data, partial=True)
+        serializer.is_valid(raise_exception=False)
+
+        course = CourseUpdateService(
+            course=course, deleted_ids_dict=deleted_ids_dict
+        ).update(serializer.validated_data)
+        if course_status == Course.Status.SUBMITTED:
+            course.status = Course.Status.SUBMITTED
+            course.review_status = Course.ReviewStatus.PENDING
+            course.save()
+        return Response(serializer.data)
+
+    def get_queryset(self):
+        return Course.objects.filter(owner=self.request.user)
+
+
+class CourseApiView(RetrieveAPIView):
+    serializer_class = CourseSerializer
+
+    def get_queryset(self):
+        return Course.objects.filter(owner=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
         return Response(serializer.data)
 
 

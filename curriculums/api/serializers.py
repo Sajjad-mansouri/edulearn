@@ -15,35 +15,45 @@ from curriculums.models import (
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+
     class Meta:
         model = Attachment
-        fields = ["file", "file_url"]
+        fields = ["id", "file", "file_url"]
 
 
 class ArticleContenttSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+
     class Meta:
         model = ArticleContent
-        fields = ["body", "estimated_read_time"]
+        fields = ["id", "body", "estimated_read_time"]
 
 
 class FileContentSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+
     class Meta:
         model = FileContent
-        fields = ["file", "file_url"]
+        fields = ["id", "file", "file_url"]
 
 
 class VideoCaptionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+
     class Meta:
         model = VideoCaption
-        fields = ["language", "label", "file", "file_format", "is_default"]
+        fields = ["id", "language", "label", "file", "file_format", "is_default"]
 
 
 class VideoContentSerializer(serializers.ModelSerializer):
     captions = VideoCaptionSerializer(required=False, many=True)
+    id = serializers.IntegerField(required=False)
 
     class Meta:
         model = VideoContent
         fields = [
+            "id",
             "source",
             "video_file",
             "external_url",
@@ -55,23 +65,25 @@ class VideoContentSerializer(serializers.ModelSerializer):
 
 
 class LessonContentSerializer(serializers.ModelSerializer):
-    assignment_content = AssignmentSerializer(required=False)
-    quiz_content = QuizContentSerializer(required=False)
-    article_content = ArticleContenttSerializer(required=False)
-    video_content = VideoContentSerializer(required=False)
-    file_content = FileContentSerializer(required=False)
+    id = serializers.IntegerField(required=False)
+    assignment = AssignmentSerializer(required=False)
+    quiz = QuizContentSerializer(required=False)
+    article = ArticleContenttSerializer(required=False)
+    video = VideoContentSerializer(required=False)
+    file = FileContentSerializer(required=False)
     attachments = AttachmentSerializer(required=False, many=True)
 
     class Meta:
         model = LessonContent
         fields = [
+            "id",
             "content_type",
-            "video_content",
-            "file_content",
-            "article_content",
+            "video",
+            "file",
+            "article",
             "attachments",
-            "quiz_content",
-            "assignment_content",
+            "quiz",
+            "assignment",
         ]
 
 
@@ -84,10 +96,12 @@ class CompletionCriteraSerializer(serializers.ModelSerializer):
 class LessonSerializer(serializers.ModelSerializer):
     contents = LessonContentSerializer(many=True)
     completion_criteria = CompletionCriteraSerializer()
+    id = serializers.IntegerField(required=False)
 
     class Meta:
         model = Lesson
         fields = [
+            "id",
             "title",
             "description",
             "duration",
@@ -100,7 +114,8 @@ class LessonSerializer(serializers.ModelSerializer):
 
 class SectionSerializer(serializers.ModelSerializer):
     lessons = LessonSerializer(many=True)
+    id = serializers.IntegerField(required=False)
 
     class Meta:
         model = Section
-        fields = ["title", "description", "duration", "lessons"]
+        fields = ["id", "title", "description", "duration", "lessons"]

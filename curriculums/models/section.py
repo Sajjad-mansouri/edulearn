@@ -43,12 +43,7 @@ class Section(models.Model):
             "course",
             "order",
         )
-        constraints = [
-            models.UniqueConstraint(
-                fields=["course", "order"],
-                name="unique_section_order_per_course",
-            )
-        ]
+
         indexes = [
             models.Index(fields=["course"]),
             models.Index(fields=["order"]),

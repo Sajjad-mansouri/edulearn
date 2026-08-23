@@ -13,29 +13,30 @@ from assessments.models import (
 class BooleanAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = BooleanAnswer
-        fields = ["answer"]
+        fields = ["id", "answer"]
 
 
 class AcceptedAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = AcceptedAnswer
-        fields = ["answer"]
+        fields = ["id", "answer"]
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = ["text", "is_correct"]
+        fields = ["id", "text", "is_correct"]
 
 
 class QuestionSerializer(serializers.ModelSerializer):
     boolean_answer = BooleanAnswerSerializer(required=False)
     accepted_answers = AcceptedAnswerSerializer(required=False, many=True)
-    options = ChoiceSerializer(required=False, many=True)
+    choices = ChoiceSerializer(required=False, many=True)
 
     class Meta:
         model = Question
         fields = [
+            "id",
             "text",
             "question_type",
             "difficulty",
@@ -45,7 +46,7 @@ class QuestionSerializer(serializers.ModelSerializer):
             "estimated_time",
             "boolean_answer",
             "accepted_answers",
-            "options",
+            "choices",
         ]
 
 
@@ -55,6 +56,7 @@ class QuizContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuizContent
         fields = [
+            "id",
             "instructions",
             "passing_score",
             "time_limit",
@@ -70,6 +72,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
         fields = [
+            "id",
             "instructions",
             "max_score",
             "due_date",

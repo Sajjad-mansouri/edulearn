@@ -55,13 +55,6 @@ class Lesson(models.Model):
             "order",
         )
 
-        constraints = [
-            models.UniqueConstraint(
-                fields=["section", "order"],
-                name="unique_lesson_order_per_section",
-            )
-        ]
-
         indexes = [
             models.Index(fields=["section"]),
             models.Index(fields=["is_published"]),

@@ -13,13 +13,10 @@ class Assignment(models.Model):
         verbose_name=_("Lesson Content"),
     )
 
-    instructions = models.TextField(
-        _("Instructions"),
-    )
+    instructions = models.TextField(_("Instructions"), blank=True)
 
     max_score = models.PositiveSmallIntegerField(
-        _("Maximum Score"),
-        default=100,
+        _("Maximum Score"), default=100, null=True
     )
 
     due_date = models.DateTimeField(

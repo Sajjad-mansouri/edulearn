@@ -12,4 +12,9 @@ urlpatterns = [
     ),
     path("students/", views.Students.as_view(), name="students"),
     path("assignments/", views.Assignments.as_view(), name="assignments"),
+    path(
+        "courses/<slug:slug>/<int:pk>/edit/",
+        views.CourseUpateTemplateView.as_view(),
+        name="update_course",
+    ),
 ]

@@ -22,6 +22,7 @@ class QuizContent(models.Model):
         _("Passing Score (%)"),
         default=70,
         help_text=_("Required score (0-100) to pass."),
+        null=True,
     )
 
     time_limit = models.PositiveIntegerField(
@@ -35,6 +36,7 @@ class QuizContent(models.Model):
         _("Maximum Attempts"),
         default=1,
         help_text=_("Set to 0 for unlimited attempts."),
+        null=True,
     )
 
     shuffle_questions = models.BooleanField(

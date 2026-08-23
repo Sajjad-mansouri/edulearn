@@ -3,9 +3,6 @@ def normalize_course_data(query_dict):
     Parse the flat QueryDict back into nested course structure
     """
     data = {}
-    print("****query dict ****\n\n\n")
-    print(query_dict)
-    print("\n\n\n**** ****\n\n\n")
 
     # Handle simple fields
     simple_fields = [
@@ -129,7 +126,7 @@ def extract_lessons(query_dict, section_index):
     """Extract lessons for a specific section"""
     lessons = []
     lesson_index = 0
-    print("query_dict\n\n", query_dict, "\n\n")
+
     while True:
         # Check if lesson exists
         lesson_id_key = f"sections[{section_index}].lessons[{lesson_index}].id"
@@ -173,7 +170,7 @@ def extract_lesson_content(query_dict, section_index, lesson_index):
     contents = []
     content = {}
     type = query_dict.get(f"sections[{section_index}].lessons[{lesson_index}].type", "")
-    print("query_dict\n\n", query_dict, "\n\n")
+
     content["content_type"] = type
     if type == "video":
         content["video_content"] = extract_video_content(
@@ -257,7 +254,7 @@ def extract_video_content(query_dict, section_index, lesson_index):
     video_file_key = (
         f"sections[{section_index}].lessons[{lesson_index}].content.videoFile"
     )
-    print("query_dict\n\n", query_dict, "\n\n")
+
     if video_file_key in query_dict:
         value = query_dict[video_file_key]
         if value and value != "null":
@@ -413,13 +410,6 @@ def extract_question_options(question_type, query_dict, base_key):
                 is_correct = False
 
         elif question_type == "single_choice":
-            print(
-                "option index",
-                option_index,
-                f"{base_key}.correct",
-                query_dict.get(f"{query_dict}.correct"),
-                str(option_index),
-            )
             is_correct = query_dict.get(f"{base_key}.correct") == str(option_index)
 
         options.append(
@@ -459,7 +449,7 @@ def extract_assignment_content(query_dict, section_index, lesson_index):
         "max_file_size_mb": query_dict.get(f"{base_name}.maxFileSizeMb"),
     }
     due_date = query_dict.get(f"{base_name}.dueDate")
-    print("due_date", due_date)
+
     if due_date != "null":
         assignment["due_date"] = due_date
     return assignment

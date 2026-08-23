@@ -17,52 +17,64 @@ logger = logging.getLogger(__name__)
 
 def normalize_video_content(
     query_dict: QueryDict, section_index: int, lesson_index: int
-) -> dict:
+) -> tuple[dict, dict]:
     """
     Normalize video lesson content from flat form data.
-
+    'sections[0].lessons[1].content.video.video_file': [<InMemoryUploadedFile: test.mp4 (video/mp4)>]
+    'sections[0].lessons[1].content.captions[0].file': [<InMemoryUploadedFile: >]
     Extracts video URL, file, captions, transcript, and text content.
     """
-    print("query_dict\n\n", query_dict, "\n\n")
+
     base = f"{C.PREFIX_SECTIONS}[{section_index}].{C.PREFIX_LESSONS}[{lesson_index}]"
-    content_base = f"{base}.{C.PREFIX_CONTENT}"
 
     # Normalize video captions/subtitles
     captions = []
-    captions_base = f"{content_base}.{C.CAPTIONS_PREFIX}"
+    captions_deleted_ids = []
+    captions_base = f"{base}.{C.PREFIX_CONTENT}.{C.CAPTIONS_PREFIX}"
 
-    for _i, cap_base in iterate_indexed(query_dict, captions_base, C.CAPTION_FILE):
-        captions.append(
-            {
+    for _i, cap_base in iterate_indexed(query_dict, captions_base):
+        caption_id = get_value(query_dict, f"{cap_base}.id")
+        deleted = get_value(query_dict, f"{cap_base}.deleted")
+        file = get_file(query_dict, f"{cap_base}.{C.CAPTION_FILE}")
+        if file is not None:
+            caption = {
+                "file": file,
                 "language": get_value(query_dict, f"{cap_base}.{C.CAPTION_LANGUAGE}"),
                 "label": get_value(query_dict, f"{cap_base}.{C.CAPTION_LABEL}"),
-                "file_name": get_value(query_dict, f"{cap_base}.{C.CAPTION_FILE_NAME}"),
-                "file_size": get_value(query_dict, f"{cap_base}.{C.CAPTION_FILE_SIZE}"),
                 "is_default": get_value(
                     query_dict, f"{cap_base}.{C.CAPTION_IS_DEFAULT}"
                 ),
-                "file": get_file(query_dict, f"{cap_base}.{C.CAPTION_FILE}"),
                 "file_format": get_value(query_dict, f"{cap_base}.{C.CAPTION_FORMAT}"),
             }
-        )
+            if caption_id:
+                caption["id"] = caption_id
 
-    return {
+            captions.append(caption)
+        if deleted:
+            captions_deleted_ids.append(caption_id)
+
+    video_base = f"{base}.{C.PREFIX_CONTENT}.{C.CONTENT_TYPE_VIDEO}"
+    file = get_file(query_dict, f"{video_base}.{C.CONTENT_VIDEO_FILE}")
+
+    content_id = get_value(query_dict, f"{base}.{C.PREFIX_CONTENT}.id")
+    content = {
         "content_type": C.CONTENT_TYPE_VIDEO,
-        "video_content": {
+        "video": {
             "external_url": get_value(
-                query_dict, f"{content_base}.{C.CONTENT_VIDEO_URL}"
+                query_dict, f"{video_base}.{C.CONTENT_VIDEO_URL}"
             ),
-            "duration": get_value(query_dict, f"{base}.{C.FIELD_LESSON_DURATION}"),
-            "text": get_value(query_dict, f"{content_base}.{C.CONTENT_TEXT_CONTENT}"),
-            "transcript": get_value(
-                query_dict, f"{content_base}.{C.CONTENT_TRANSCRIPT}"
-            ),
+            "text": get_value(query_dict, f"{video_base}.{C.CONTENT_TEXT_CONTENT}"),
+            "transcript": get_value(query_dict, f"{video_base}.{C.CONTENT_TRANSCRIPT}"),
             "captions": captions,
-            "video_file": get_file(
-                query_dict, f"{content_base}.{C.CONTENT_VIDEO_FILE}"
-            ),
         },
     }
+    if content_id:
+        content["id"] = content_id
+
+    if file is not None:
+        content["video"]["video_file"] = file
+
+    return content, captions_deleted_ids
 
 
 def normalize_article_content(
@@ -70,17 +82,28 @@ def normalize_article_content(
 ) -> dict:
     """
     Normalize article lesson content from flat form data.
+    'sections[0].lessons[0].content.id': ['92', '92']
+    'sections[0].lessons[0].content.article.id': ['129']
+    'sections[0].lessons[0].content.article.body'
 
     Article content is simple - just a text body.
     """
     content_base = f"{C.PREFIX_SECTIONS}[{section_index}].{C.PREFIX_LESSONS}[{lesson_index}].{C.PREFIX_CONTENT}"
-
-    return {
+    article_id = get_value(query_dict, f"{content_base}.{C.CONTENT_TYPE_ARTICLE}.id")
+    content = {
         "content_type": C.CONTENT_TYPE_ARTICLE,
-        "article_content": {
-            "body": get_value(query_dict, f"{content_base}.{C.CONTENT_TEXT}"),
+        "article": {
+            "body": get_value(
+                query_dict, f"{content_base}.{C.CONTENT_TYPE_ARTICLE}.body"
+            ),
         },
     }
+    content_id = get_value(query_dict, f"{content_base}.id")
+    if content_id:
+        content["id"] = content_id
+    if article_id:
+        content["article"]["id"] = article_id
+    return content
 
 
 def normalize_file_content(
@@ -92,14 +115,27 @@ def normalize_file_content(
     Handles both uploaded files and external file URLs.
     """
     content_base = f"{C.PREFIX_SECTIONS}[{section_index}].{C.PREFIX_LESSONS}[{lesson_index}].{C.PREFIX_CONTENT}"
+    file_content_base = f"{content_base}.{C.PREFIX_CONTENT_FILE}"
+    file = get_file(query_dict, f"{file_content_base}.{C.CONTENT_FILE}")
 
-    return {
+    file_content_id = get_value(query_dict, f"{file_content_base}.id")
+    content_id = get_value(query_dict, f"{content_base}.id")
+
+    content = {
         "content_type": C.CONTENT_TYPE_FILE,
-        "file_content": {
-            "file_url": get_value(query_dict, f"{content_base}.{C.CONTENT_FILE_URL}"),
-            "file": get_file(query_dict, f"{content_base}.{C.CONTENT_FILE}"),
+        "file": {
+            "file": file,
+            "file_url": get_value(
+                query_dict, f"{file_content_base}.{C.CONTENT_FILE_URL}"
+            ),
         },
     }
+
+    if file_content_id:
+        content["file"]["id"] = file_content_id
+    if content_id:
+        content["id"] = content_id
+    return content
 
 
 def normalize_quiz_content(
@@ -112,10 +148,12 @@ def normalize_quiz_content(
     """
     content_base = f"{C.PREFIX_SECTIONS}[{section_index}].{C.PREFIX_LESSONS}[{lesson_index}].{C.PREFIX_CONTENT}"
     quiz_base = f"{content_base}.{C.CONTENT_QUIZ_SETTINGS}"
-
-    return {
+    content_id = get_value(query_dict, f"{content_base}.id")
+    quiz_id = get_value(query_dict, f"{quiz_base}.id")
+    content = {
         "content_type": C.CONTENT_TYPE_QUIZ,
-        "quiz_content": {
+        "quiz": {
+            "id": get_value(query_dict, f"{quiz_base}.id"),
             "instructions": get_value(query_dict, f"{quiz_base}.{C.QUIZ_INSTRUCTIONS}"),
             "passing_score": get_value(
                 query_dict, f"{quiz_base}.{C.QUIZ_PASSING_SCORE}"
@@ -137,10 +175,17 @@ def normalize_quiz_content(
         },
     }
 
+    if content_id:
+        content["id"] = content_id
+    if quiz_id:
+        content["quiz"]["id"] = quiz_id
+    return content
+
 
 def _normalize_quiz_questions(query_dict: QueryDict, content_base: str) -> list:
     """
     Normalize quiz questions with type-specific data.
+    'sections[0].lessons[0].content.questions[0].id': ['34'],
 
     Different question types have different structures:
     - single_choice/multiple_choice: options with correct flags
@@ -154,7 +199,7 @@ def _normalize_quiz_questions(query_dict: QueryDict, content_base: str) -> list:
         query_dict, questions_base, C.QUESTION_TYPE
     ):
         question_type = get_value(query_dict, f"{question_base}.{C.QUESTION_TYPE}")
-
+        question_id = get_value(query_dict, f"{question_base}.id")
         question = {
             "text": get_value(query_dict, f"{question_base}.{C.QUESTION_TEXT}"),
             "question_type": question_type,
@@ -173,11 +218,15 @@ def _normalize_quiz_questions(query_dict: QueryDict, content_base: str) -> list:
             ),
             "order": get_value(query_dict, f"{question_base}.{C.QUESTION_ORDER}"),
         }
-
+        if question_id:
+            question["id"] = question_id
         # Add type-specific data
         if question_type in ("single_choice", "multiple_choice"):
-            question["options"] = _normalize_question_options(
-                query_dict, question_base, question_type
+            question["choices"] = _normalize_question_choices(
+                query_dict,
+                question_base,
+                question_type,
+                fields_map={"text": "text", "is_correct": "is_correct"},
             )
         elif question_type == "true_false":
             question["boolean_answer"] = {
@@ -185,7 +234,7 @@ def _normalize_quiz_questions(query_dict: QueryDict, content_base: str) -> list:
             }
         elif question_type == "short_answer":
             question["accepted_answers"] = _normalize_accepted_answers(
-                query_dict, question_base
+                query_dict, question_base, fields_map={"answer": "answer"}
             )
 
         questions.append(question)
@@ -193,8 +242,8 @@ def _normalize_quiz_questions(query_dict: QueryDict, content_base: str) -> list:
     return questions
 
 
-def _normalize_question_options(
-    query_dict: QueryDict, question_base: str, question_type: str
+def _normalize_question_choices(
+    query_dict: QueryDict, question_base: str, question_type: str, fields_map: dict
 ) -> list:
     """
     Normalize options for choice-based questions.
@@ -203,39 +252,28 @@ def _normalize_question_options(
     - single_choice: one correct option
     - multiple_choice: potentially multiple correct options
     """
-    options = []
-
-    # Collect correct answer indices
-    correct_indexes = set()
-    if question_type == "multiple_choice":
-        # Multiple correct answers possible
-        for i, _ in iterate_indexed(
-            query_dict, f"{question_base}.{C.QUESTION_CORRECT}"
-        ):
-            correct_value = get_value(
-                query_dict, f"{question_base}.{C.QUESTION_CORRECT}[{i}]"
-            )
-            if correct_value:
-                correct_indexes.add(correct_value)
-    elif question_type == "single_choice":
-        # Single correct answer
-        correct_value = get_value(query_dict, f"{question_base}.{C.QUESTION_CORRECT}")
-        if correct_value:
-            correct_indexes.add(correct_value)
+    choices = []
 
     # Build options list
-    for i, option_base in iterate_indexed(
-        query_dict, f"{question_base}.{C.QUESTION_OPTIONS}"
-    ):
-        option_text = get_value(query_dict, option_base)
-        is_correct = str(i) in correct_indexes
+    choices_base = f"{question_base}.{C.QUESTION_OPTIONS}"
+    for _i, option_base in iterate_indexed(query_dict, choices_base):
+        choice = {}
+        choice_id = query_dict.get(f"{option_base}.id", "")
+        for form_field, output_key in fields_map.items():
+            key = f"{option_base}.{form_field}"
+            value = query_dict.get(key, "")
+            if value and value != "null":
+                choice[output_key] = value
+        if choice_id:
+            choice["id"] = choice_id
+        if choice:
+            choices.append(choice)
+    return choices
 
-        options.append({"text": option_text, "is_correct": is_correct})
 
-    return options
-
-
-def _normalize_accepted_answers(query_dict: QueryDict, question_base: str) -> list:
+def _normalize_accepted_answers(
+    query_dict: QueryDict, question_base: str, fields_map: dict
+) -> list:
     """
     Normalize accepted answers for short answer questions.
 
@@ -245,10 +283,17 @@ def _normalize_accepted_answers(query_dict: QueryDict, question_base: str) -> li
     answers_base = f"{question_base}.{C.QUESTION_ACCEPTED_ANSWERS}"
 
     for _i, answer_base in iterate_indexed(query_dict, answers_base):
-        answer_text = get_value(query_dict, answer_base)
-        if answer_text:
-            answers.append({"answer": answer_text})
-
+        accepted = {}
+        answer_id = query_dict.get(f"{answers_base}.id")
+        for form_field, output_key in fields_map.items():
+            key = f"{answer_base}.{form_field}"
+            value = query_dict.get(key, "")
+            if value and value != "null":
+                accepted[output_key] = value
+        if answer_id:
+            accepted["id"] = answer_id
+        if accepted:
+            answers.append(accepted)
     return answers
 
 
@@ -261,33 +306,41 @@ def normalize_assignment_content(
     Includes instructions, scoring, submission rules, and due dates.
     """
     content_base = f"{C.PREFIX_SECTIONS}[{section_index}].{C.PREFIX_LESSONS}[{lesson_index}].{C.PREFIX_CONTENT}"
-
-    return {
+    content_id = get_value(query_dict, f"{content_base}.id")
+    assignment_id = get_value(query_dict, f"{content_base}.assignment.id")
+    content = {
         "content_type": C.CONTENT_TYPE_ASSIGNMENT,
-        "assignment_content": {
+        "assignment": {
             "instructions": get_value(
-                query_dict, f"{content_base}.{C.ASSIGNMENT_INSTRUCTIONS}"
+                query_dict, f"{content_base}.assignment.{C.ASSIGNMENT_INSTRUCTIONS}"
             ),
             "max_score": get_value(
-                query_dict, f"{content_base}.{C.ASSIGNMENT_MAX_SCORE}"
+                query_dict, f"{content_base}.assignment.{C.ASSIGNMENT_MAX_SCORE}"
             ),
             "allow_late_submission": get_value(
-                query_dict, f"{content_base}.{C.ASSIGNMENT_ALLOW_LATE}"
+                query_dict, f"{content_base}.assignment.{C.ASSIGNMENT_ALLOW_LATE}"
             ),
             "max_attempts": get_value(
-                query_dict, f"{content_base}.{C.ASSIGNMENT_MAX_ATTEMPTS}"
+                query_dict, f"{content_base}.assignment.{C.ASSIGNMENT_MAX_ATTEMPTS}"
             ),
             "accepted_file_types": get_value(
-                query_dict, f"{content_base}.{C.ASSIGNMENT_FILE_TYPES}"
+                query_dict, f"{content_base}.assignment.{C.ASSIGNMENT_FILE_TYPES}"
             ),
             "max_file_size_mb": get_value(
-                query_dict, f"{content_base}.{C.ASSIGNMENT_FILE_SIZE}"
+                query_dict, f"{content_base}.assignment.{C.ASSIGNMENT_FILE_SIZE}"
             ),
             "due_date": get_value(
-                query_dict, f"{content_base}.{C.ASSIGNMENT_DUE_DATE}"
+                query_dict, f"{content_base}.assignment.{C.ASSIGNMENT_DUE_DATE}"
             ),
         },
     }
+
+    if content_id:
+        content["id"] = content_id
+    if assignment_id:
+        content["assignment"]["id"] = assignment_id
+
+    return content
 
 
 # Registry mapping content types to their normalizers
@@ -302,12 +355,13 @@ CONTENT_NORMALIZERS = {
 
 def normalize_lesson_content(
     query_dict: QueryDict, section_index: int, lesson_index: int
-) -> list:
+) -> tuple[list, list]:
     """
     Normalize content for a single lesson based on its type.
 
     Dispatches to the appropriate content normalizer and adds attachments.
-
+            'sections[0].lessons[0].content.content_type': ['article']
+            'sections[0].lessons[1].content.article.body': ['article of lesson 2']
     Args:
         query_dict: The QueryDict
         section_index: Parent section index
@@ -317,26 +371,35 @@ def normalize_lesson_content(
         List containing the normalized content dict (wrapped in list for consistency)
     """
     base = f"{C.PREFIX_SECTIONS}[{section_index}].{C.PREFIX_LESSONS}[{lesson_index}]"
-    content_type = get_value(query_dict, f"{base}.{C.FIELD_LESSON_TYPE}")
+    content_type = get_value(
+        query_dict, f"{base}.{C.PREFIX_CONTENT}.{C.FIELD_LESSON_TYPE}"
+    )
 
     if not content_type:
         logger.warning(
             f"No content type specified for section {section_index}, lesson {lesson_index}"
         )
-        return []
+        return [], []
 
     normalizer = CONTENT_NORMALIZERS.get(content_type)
     if not normalizer:
         logger.warning(
             f"Unknown content type '{content_type}' for section {section_index}, lesson {lesson_index}"
         )
-        return []
+        return [], []
 
     # Normalize the content
+    deleted_attachments_ids = []
+    captions_deleted_ids = []
     content = normalizer(query_dict, section_index, lesson_index)
-
     # Add any file attachments to the content
+    # sections[0].lessons[4].content.attachments
     attachments_base = f"{base}.{C.PREFIX_CONTENT}.{C.FIELD_ATTACHMENT_FILES}"
-    content["attachments"] = extract_attachments(query_dict, attachments_base)
+    if content_type == C.CONTENT_TYPE_VIDEO:
+        content, captions_deleted_ids = content
 
-    return [content]
+    content["attachments"], deleted_attachments_ids = extract_attachments(
+        query_dict, attachments_base, {"file": "file"}
+    )
+
+    return [content], deleted_attachments_ids, captions_deleted_ids

@@ -4,7 +4,17 @@ from . import views
 
 app_name = "instructor_api"
 urlpatterns = [
-    path("courses/create/", views.CourseBuilder.as_view(), name="create_course"),
+    path(
+        "courses/create/<course_status>/",
+        views.CourseBuilder.as_view(),
+        name="create_course",
+    ),
+    path("courses/<int:pk>/", views.CourseApiView.as_view(), name="course_data"),
+    path(
+        "courses/<int:pk>/update/<course_status>/",
+        views.CourseUpdateApiView.as_view(),
+        name="update_course",
+    ),
     path(
         "courses/",
         views.InstructorCoursesApiView.as_view(),

@@ -56,9 +56,7 @@ class Attachment(models.Model):
     )
 
     file = models.FileField(
-        _("File"),
-        upload_to=attachment_upload_path,
-        blank=True,
+        _("File"), upload_to=attachment_upload_path, blank=True, null=True
     )
 
     file_url = models.URLField(

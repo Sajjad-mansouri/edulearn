@@ -13,8 +13,7 @@ class FileContent(models.Model):
     )
 
     file = models.FileField(
-        _("File"),
-        upload_to="courses/files/",
+        _("File"), upload_to="courses/files/", null=True, blank=True
     )
     file_url = models.URLField(
         blank=True,
