@@ -1,4 +1,6 @@
 def format_duration(duration):
+    if duration is None:
+        return ""
     total_seconds = int(duration.total_seconds())
 
     hours, remainder = divmod(total_seconds, 3600)

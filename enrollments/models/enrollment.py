@@ -17,6 +17,7 @@ class Enrollment(models.Model):
         COMPLETED = "completed", _("Completed")
         CANCELLED = "cancelled", _("Cancelled")
         SUSPENDED = "suspended", _("Suspended")
+        PENDING = "pending", _("Pending")
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -36,7 +37,7 @@ class Enrollment(models.Model):
         _("Status"),
         max_length=20,
         choices=Status.choices,
-        default=Status.ACTIVE,
+        default=Status.PENDING,
     )
 
     enrolled_at = models.DateTimeField(
@@ -69,6 +70,7 @@ class Enrollment(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text=_("Overall completion percentage of the course (0-100)."),
     )
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ("-enrolled_at",)

@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.generics import GenericAPIView, RetrieveAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from assessments.models import (
     AcceptedAnswer,
@@ -42,12 +43,21 @@ from .serializers import (
 class CurrentUserEnrollmentStatus(GenericAPIView):
     def get(self, request, *args, **kwargs):
         course_id = kwargs.get("course_id")
+        print("course_id", course_id)
         if course_id:
             course = get_object_or_404(Course, id=course_id)
-            is_enrolled = Enrollment.objects.filter(
+            enrollment = Enrollment.objects.filter(
                 course=course, user=request.user
-            ).exists()
-            return Response({"is_enrolled": is_enrolled})
+            ).first()
+            enrollment_id = None
+            is_enrolled = False
+            if enrollment:
+                enrollment_id = enrollment.id
+                is_enrolled = True
+
+            return Response(
+                {"is_enrolled": is_enrolled, "enrollment_id": enrollment_id}
+            )
 
         return Response({"is_enrolled": False})
 
@@ -1357,3 +1367,21 @@ class AssignmentSubmissionApiView(EnrollmentRequiredMixin, GenericAPIView):
                     return False
 
         return True
+
+
+class CourseEnrollment(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        course_id = kwargs.get("course_id")
+        course = get_object_or_404(Course, id=course_id)
+        if Enrollment.objects.filter(course=course, user=request.user).exists():
+            enrollment, _created = Enrollment.objects.get_or_create(
+                course=course, user=request.user
+            )
+
+        else:
+            enrollment = Enrollment.objects.get_or_create(
+                course=course, user=request.user
+            )
+        return Response({"enrollment_id": enrollment.id})

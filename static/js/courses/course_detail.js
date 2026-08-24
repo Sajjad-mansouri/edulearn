@@ -1,3 +1,5 @@
+// ==================== UTILITY FUNCTIONS ====================
+
 const auth = new Auth({
     "baseURL": window.location.origin + '/api/v1/account/auth',
     "onLogout": ()=>{}
@@ -5,7 +7,6 @@ const auth = new Auth({
 
 const baseUrl = window.location.origin;
 
-// ==================== UTILITY FUNCTIONS ====================
 function formatDateTime(dateTimeString) {
     if (!dateTimeString) return '';
 
@@ -220,7 +221,7 @@ class ApiService {
     static async checkEnrollment(courseId) {
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + `/api/v1/enrollments/user-enrollment-status/${courseId}/`,
+                baseUrl + `/api/v1/enrollment/user-enrollment-status/${courseId}/`,
                 {
                     method: "GET",
                 }
@@ -228,6 +229,7 @@ class ApiService {
 
             if (!response.ok) throw new Error('Failed to fetch enrollment status');
             const data = await response.json()
+            console.log("check enrollment", data)
             return data
 
         } catch (error) {
@@ -235,6 +237,33 @@ class ApiService {
         }
 
         return new Promise(resolve => resolve({ is_enrolled: false }));
+    }
+
+    static async enrollInCourse(courseId) {
+        const response = await auth.authenticatedRequest(
+            baseUrl + `/api/v1/enrollment/enroll/${courseId}/`,
+            {
+                method: "POST",
+            }
+        );
+
+        if (!response.ok) throw new Error('Failed to enroll in course');
+        const data = await response.json();
+        return data;
+    }
+
+    static async createEnrollmentCheckout(enrollmentId) {
+        const response = await auth.authenticatedRequest(
+            baseUrl + `/api/v1/payment/enrollments/${enrollmentId}/checkout/`,
+            {
+                method: "POST",
+            }
+        );
+
+        if (!response.ok) throw new Error('Failed to create checkout session');
+        const data = await response.json();
+        console.log(data)
+        return data;
     }
 }
 
@@ -473,6 +502,7 @@ class CourseDetailPage {
         this.processingHelpfulReviews = new Set();
         this.processingDeleteReviews = new Set();
         this.activeDropdown = null;
+        this.isEnrolling = false;
         this.init();
     }
 
@@ -545,7 +575,7 @@ class CourseDetailPage {
 
                 this.isEnrolled = enrollmentData.is_enrolled;
                 this.isWishlisted = wishlistData.is_wishlisted;
-
+                this.enrollment_id = enrollmentData.enrollment_id
                 this.updateWishlistButton();
             }
 
@@ -691,7 +721,7 @@ class CourseDetailPage {
                     </button>
                 `;
                 document.getElementById('goToCourseBtn')?.addEventListener('click', () => {
-                    window.location.href = `/course/${this.courseId}/learn/`;
+                    window.location.href = `/enrollment/${this.enrollment_id}/learn/`;
                 });
             } else {
                 enrollBtn.innerHTML = '<i class="fas fa-rocket"></i> Enroll Now';
@@ -1427,7 +1457,7 @@ populateInstructorTab() {
         }
     }
 
-    handleEnrollClick() {
+    async handleEnrollClick() {
         if (!this.userAuth || !this.userAuth.is_authenticated) {
             const currentUrl = encodeURIComponent(window.location.pathname);
             this.showToast('Please log in to enroll in this course', 'info');
@@ -1437,7 +1467,64 @@ populateInstructorTab() {
             return;
         }
 
-        window.location.href = `/course/${this.courseSlug}/enroll/`;
+        if (this.isEnrolling) return;
+
+        this.isEnrolling = true;
+        const enrollBtn = document.getElementById('enrollBtn');
+
+        if (enrollBtn) {
+            enrollBtn.disabled = true;
+            enrollBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        }
+
+        try {
+            // Check if the course is free
+            const coursePrice = parseFloat(this.courseData?.price) || 0;
+
+            if (coursePrice === 0) {
+                // Free course - enroll directly
+                const enrollData = await ApiService.enrollInCourse(this.courseId);
+
+                if (enrollData && enrollData.is_enrolled) {
+                    this.isEnrolled = true;
+                    console.log(enrollData)
+                    this.enrollment_id = enrollData.enrollment_id
+                    this.showToast('Successfully enrolled in course! 🎉');
+                    this.updateEnrollmentCard();
+                    this.populateCurriculumTab();
+                    this.populateReviewsTab();
+                } else {
+                    throw new Error('Enrollment failed');
+                }
+            } else {
+                // Paid course - first enroll, then redirect to checkout
+                const enrollData = await ApiService.enrollInCourse(this.courseId);
+
+                if (enrollData && enrollData.enrollment_id) {
+                    // Create checkout session
+                    const checkoutData = await ApiService.createEnrollmentCheckout(enrollData.enrollment_id);
+
+                    if (checkoutData && checkoutData.checkout_url) {
+                        // Redirect to checkout page
+                        window.location.href = checkoutData.checkout_url;
+                    } else {
+                        throw new Error('Failed to create checkout session');
+                    }
+                } else {
+                    throw new Error('Failed to create enrollment');
+                }
+            }
+        } catch (error) {
+            console.error('Failed to enroll:', error);
+            this.showToast('Failed to process enrollment. Please try again.', 'error');
+
+            if (enrollBtn) {
+                enrollBtn.disabled = false;
+                enrollBtn.innerHTML = '<i class="fas fa-rocket"></i> Enroll Now';
+            }
+        } finally {
+            this.isEnrolling = false;
+        }
     }
 
     handleWishlistClick() {

@@ -61,7 +61,7 @@ class Payment(models.Model):
         null=True,
         blank=True,
     )
-
+    stripe_checkout_url = models.URLField(max_length=500, blank=True, null=True)
     stripe_payment_intent_id = models.CharField(
         max_length=255,
         unique=True,

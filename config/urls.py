@@ -32,6 +32,8 @@ urlpatterns = [
     path("api/v1/courses/", include("courses.api.urls")),
     path("api/v1/instructor/", include("instructors.api.urls")),
     path("api/v1/enrollment/", include("enrollments.api.urls")),
+    path("api/v1/payment/", include("payments.api.urls")),
+    path("payment/", include("payments.urls")),
 ]
 
 if settings.DEBUG:

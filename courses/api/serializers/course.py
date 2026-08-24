@@ -141,7 +141,9 @@ class CourseDetailInfoSerializer(CourseSerializer):
         return list(obj.target_audiences.values_list("description", flat=True))
 
     def get_rating(self, obj):
-        return round(obj.rating, 1)
+        if obj.rating:
+            return round(obj.rating, 1)
+        return ""
 
 
 class CourseMetadataSerializer(serializers.Serializer):

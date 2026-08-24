@@ -43,4 +43,7 @@ class CourseInstructorSerializer(serializers.ModelSerializer):
         ]
 
     def get_rating(self, obj):
+        print("rating", obj.rating)
+        if obj.rating is None:
+            return ""
         return round(obj.rating, 1)
