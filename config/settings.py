@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "assessments",
     "certificates",
     "instructors",
+    "payments",
     # third party
     "rest_framework",
     "rest_framework_simplejwt",
@@ -215,3 +216,7 @@ GEOIP_PATH = BASE_DIR / "geoip"
 
 BEST_SELLERS_COUNT = config("BEST_SELLERS_COUNT", cast=int)
 NEW_COUSRE_RANGE = config("NEW_COUSRE_RANGE", cast=int)
+
+
+STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY")
