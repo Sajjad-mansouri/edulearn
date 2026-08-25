@@ -3,11 +3,7 @@
 // Works for both Catalog and Category pages
 // Supports category -> subcategory hierarchy
 // ============================================
-const auth = new Auth({
-    "baseURL": window.location.origin + '/api/v1/account/auth',
-    "onLogout": ()=>{window.location.href = baseUrl + '/account/auth/login'}
-})
-const baseUrl = window.location.origin;
+
 
 class FiltersLoader {
     constructor(options = {}) {

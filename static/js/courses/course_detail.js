@@ -1,12 +1,5 @@
 // ==================== UTILITY FUNCTIONS ====================
 
-const auth = new Auth({
-    "baseURL": window.location.origin + '/api/v1/account/auth',
-    "onLogout": ()=>{}
-});
-
-const baseUrl = window.location.origin;
-
 function formatDateTime(dateTimeString) {
     if (!dateTimeString) return '';
 
@@ -61,7 +54,7 @@ function formatLastUpdated(dateTimeString) {
 }
 
 // ==================== API SERVICE ====================
-class ApiService {
+class CourseApiService {
     static async fetchCourseDetail(courseId) {
         const response = await auth.authenticatedRequest(
             baseUrl + `/api/v1/courses/${courseId}/`,
@@ -565,12 +558,13 @@ class CourseDetailPage {
 
     async checkAuth() {
         try {
-            this.userAuth = await ApiService.checkAuth();
+            this.userAuth = await CourseApiService.checkAuth();
+            console.log("Course detail user auth data:", this.userAuth); // Debug log
 
             if (this.userAuth.is_authenticated) {
                 const [enrollmentData, wishlistData] = await Promise.all([
-                    ApiService.checkEnrollment(this.courseId),
-                    ApiService.checkWishlistStatus(this.courseId)
+                    CourseApiService.checkEnrollment(this.courseId),
+                    CourseApiService.checkWishlistStatus(this.courseId)
                 ]);
 
                 this.isEnrolled = enrollmentData.is_enrolled;
@@ -579,26 +573,11 @@ class CourseDetailPage {
                 this.updateWishlistButton();
             }
 
-            this.updateUIForAuth();
         } catch (error) {
             console.error('Failed to check auth:', error);
             this.userAuth = { is_authenticated: false };
             this.isEnrolled = false;
             this.isWishlisted = false;
-        }
-    }
-
-    updateUIForAuth() {
-        if (this.userAuth.is_authenticated) {
-            const authBtns = document.querySelector('.top-nav-right');
-            if (authBtns && this.userAuth.user_name) {
-                authBtns.innerHTML = `
-                    <div class="user-menu" style="display: flex; align-items: center; gap: 12px;">
-                        <span style="color: #374151; font-weight: 500;">Hi, ${this.escapeHtml(this.userAuth.user_name)}</span>
-                        <a href="/dashboard" style="color: #8B5CF6; text-decoration: none; font-weight: 500;">Dashboard</a>
-                    </div>
-                `;
-            }
         }
     }
 
@@ -618,10 +597,10 @@ class CourseDetailPage {
     async loadAllData() {
         try {
             const [courseData, instructorData, curriculumData, reviewsData] = await Promise.all([
-                ApiService.fetchCourseDetail(this.courseId),
-                ApiService.fetchInstructor(this.courseId),
-                ApiService.fetchCurriculum(this.courseId),
-                ApiService.fetchReviews(this.courseId, 1, 3)
+                CourseApiService.fetchCourseDetail(this.courseId),
+                CourseApiService.fetchInstructor(this.courseId),
+                CourseApiService.fetchCurriculum(this.courseId),
+                CourseApiService.fetchReviews(this.courseId, 1, 3)
             ]);
 
             this.courseData = courseData;
@@ -724,20 +703,29 @@ class CourseDetailPage {
                     window.location.href = `/enrollment/${this.enrollment_id}/learn/`;
                 });
             } else {
-                enrollBtn.innerHTML = '<i class="fas fa-rocket"></i> Enroll Now';
-                enrollBtn.onclick = () => this.handleEnrollClick();
+                // Check if user is an instructor
+                if (this.userAuth && this.userAuth.is_instructor) {
+                    enrollBtn.style.display = 'none';
+                } else {
+                    enrollBtn.innerHTML = '<i class="fas fa-rocket"></i> Enroll Now';
+                    enrollBtn.onclick = () => this.handleEnrollClick();
+                }
             }
         }
 
         if (wishlistBtn) {
-            wishlistBtn.style.display = this.isEnrolled ? 'none' : '';
-            if (!this.isEnrolled) {
-                this.updateWishlistButton();
+            if (this.userAuth && this.userAuth.is_instructor) {
+                wishlistBtn.style.display = 'none';
+            } else {
+                wishlistBtn.style.display = this.isEnrolled ? 'none' : '';
+                if (!this.isEnrolled) {
+                    this.updateWishlistButton();
+                }
             }
         }
 
         if (moneyBack) {
-            moneyBack.style.display = this.isEnrolled ? 'none' : '';
+            moneyBack.style.display = (this.isEnrolled || (this.userAuth && this.userAuth.is_instructor)) ? 'none' : '';
         }
 
         const featuresContainer = document.querySelector('.enrollment-features');
@@ -751,46 +739,46 @@ class CourseDetailPage {
         }
     }
 
-populateOverviewTab() {
-    const data = this.courseData;
+    populateOverviewTab() {
+        const data = this.courseData;
 
-    const outcomesContainer = document.getElementById('learningOutcomes');
-    if (outcomesContainer && data.learning_outcomes) {
-        outcomesContainer.innerHTML = data.learning_outcomes.map(outcome => `
-            <div class="outcome-item-pub"><i class="fas fa-check"></i> ${this.escapeHtml(outcome)}</div>
-        `).join('');
-    }
-
-    const descContainer = document.getElementById('courseDescription');
-    if (descContainer && data.description) {
-        let description = data.description;
-
-        // Remove "(updated)" prefix if present
-        if (description.startsWith('(updated)')) {
-            description = description.replace('(updated)', '').trim();
+        const outcomesContainer = document.getElementById('learningOutcomes');
+        if (outcomesContainer && data.learning_outcomes) {
+            outcomesContainer.innerHTML = data.learning_outcomes.map(outcome => `
+                <div class="outcome-item-pub"><i class="fas fa-check"></i> ${this.escapeHtml(outcome)}</div>
+            `).join('');
         }
 
-        // Replace literal \n with actual newlines
-        description = description.replace(/\\n/g, '\n');
+        const descContainer = document.getElementById('courseDescription');
+        if (descContainer && data.description) {
+            let description = data.description;
 
-        // Use textContent to safely set the text
-        descContainer.textContent = description;
-    }
+            // Remove "(updated)" prefix if present
+            if (description.startsWith('(updated)')) {
+                description = description.replace('(updated)', '').trim();
+            }
 
-    const prereqContainer = document.getElementById('prerequisitesList');
-    if (prereqContainer && data.prerequisites) {
-        prereqContainer.innerHTML = data.prerequisites.map(prereq => `
-            <li><i class="fas fa-check-circle"></i> ${this.escapeHtml(prereq)}</li>
-        `).join('');
-    }
+            // Replace literal \n with actual newlines
+            description = description.replace(/\\n/g, '\n');
 
-    const audienceContainer = document.getElementById('audienceTags');
-    if (audienceContainer && data.target_audience) {
-        audienceContainer.innerHTML = data.target_audience.map(audience => `
-            <span class="audience-tag">${this.escapeHtml(audience)}</span>
-        `).join('');
+            // Use textContent to safely set the text
+            descContainer.textContent = description;
+        }
+
+        const prereqContainer = document.getElementById('prerequisitesList');
+        if (prereqContainer && data.prerequisites) {
+            prereqContainer.innerHTML = data.prerequisites.map(prereq => `
+                <li><i class="fas fa-check-circle"></i> ${this.escapeHtml(prereq)}</li>
+            `).join('');
+        }
+
+        const audienceContainer = document.getElementById('audienceTags');
+        if (audienceContainer && data.target_audience) {
+            audienceContainer.innerHTML = data.target_audience.map(audience => `
+                <span class="audience-tag">${this.escapeHtml(audience)}</span>
+            `).join('');
+        }
     }
-}
 
     populateCurriculumTab() {
         const container = document.getElementById('curriculumSections');
@@ -908,44 +896,44 @@ populateOverviewTab() {
         if (btn) btn.textContent = allExpanded ? 'Expand All' : 'Collapse All';
     }
 
-populateInstructorTab() {
-    const container = document.getElementById('tabInstructor');
-    if (!container || !this.instructorData) return;
+    populateInstructorTab() {
+        const container = document.getElementById('tabInstructor');
+        if (!container || !this.instructorData) return;
 
-    const instructor = this.instructorData;
+        const instructor = this.instructorData;
 
-    // Process bio text - replace literal \n with actual newlines
-    let bioText = instructor.bio || '';
-    bioText = bioText.replace(/\\n/g, '\n');
+        // Process bio text - replace literal \n with actual newlines
+        let bioText = instructor.bio || '';
+        bioText = bioText.replace(/\\n/g, '\n');
 
-    container.innerHTML = `
-        <div class="instructor-profile-card">
-            <div class="instructor-profile-header">
-                <img src="${this.escapeHtml(instructor.avatar)}" alt="${this.escapeHtml(instructor.name)}" class="instructor-profile-avatar">
-                <div class="instructor-profile-info">
-                    <h3>${this.escapeHtml(instructor.name)}</h3>
-                    <p class="instructor-headline">${this.escapeHtml(instructor.headline)}</p>
-                    <div class="instructor-badges">
-                        ${instructor.is_verified ? '<span class="instructor-badge-pub"><i class="fas fa-check-circle"></i> Verified Instructor</span>' : ''}
-                        <span class="instructor-badge-pub"><i class="fas fa-star"></i> ${this.escapeHtml(String(instructor.rating))} Instructor Rating</span>
-                        <span class="instructor-badge-pub"><i class="fas fa-users"></i> ${this.escapeHtml(String(instructor.total_students))}+ Students</span>
-                        <span class="instructor-badge-pub"><i class="fas fa-book"></i> ${this.escapeHtml(String(instructor.total_courses))} Courses</span>
+        container.innerHTML = `
+            <div class="instructor-profile-card">
+                <div class="instructor-profile-header">
+                    <img src="${this.escapeHtml(instructor.avatar)}" alt="${this.escapeHtml(instructor.name)}" class="instructor-profile-avatar">
+                    <div class="instructor-profile-info">
+                        <h3>${this.escapeHtml(instructor.name)}</h3>
+                        <p class="instructor-headline">${this.escapeHtml(instructor.headline)}</p>
+                        <div class="instructor-badges">
+                            ${instructor.is_verified ? '<span class="instructor-badge-pub"><i class="fas fa-check-circle"></i> Verified Instructor</span>' : ''}
+                            <span class="instructor-badge-pub"><i class="fas fa-star"></i> ${this.escapeHtml(String(instructor.rating))} Instructor Rating</span>
+                            <span class="instructor-badge-pub"><i class="fas fa-users"></i> ${this.escapeHtml(String(instructor.total_students))}+ Students</span>
+                            <span class="instructor-badge-pub"><i class="fas fa-book"></i> ${this.escapeHtml(String(instructor.total_courses))} Courses</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="instructor-profile-body" id="instructorBio" style="white-space: pre-line;">
-                ${this.escapeHtml(bioText)}
-            </div>
-            ${instructor.social_links ? `
-                <div style="padding: 1rem 0; display: flex; gap: 10px;">
-                    ${instructor.social_links.twitter ? `<a href="${this.escapeHtml(instructor.social_links.twitter)}" target="_blank" class="share-icon-btn"><i class="fab fa-twitter"></i></a>` : ''}
-                    ${instructor.social_links.linkedin ? `<a href="${this.escapeHtml(instructor.social_links.linkedin)}" target="_blank" class="share-icon-btn"><i class="fab fa-linkedin-in"></i></a>` : ''}
-                    ${instructor.social_links.github ? `<a href="${this.escapeHtml(instructor.social_links.github)}" target="_blank" class="share-icon-btn"><i class="fab fa-github"></i></a>` : ''}
+                <div class="instructor-profile-body" id="instructorBio" style="white-space: pre-line;">
+                    ${this.escapeHtml(bioText)}
                 </div>
-            ` : ''}
-        </div>
-    `;
-}
+                ${instructor.social_links ? `
+                    <div style="padding: 1rem 0; display: flex; gap: 10px;">
+                        ${instructor.social_links.twitter ? `<a href="${this.escapeHtml(instructor.social_links.twitter)}" target="_blank" class="share-icon-btn"><i class="fab fa-twitter"></i></a>` : ''}
+                        ${instructor.social_links.linkedin ? `<a href="${this.escapeHtml(instructor.social_links.linkedin)}" target="_blank" class="share-icon-btn"><i class="fab fa-linkedin-in"></i></a>` : ''}
+                        ${instructor.social_links.github ? `<a href="${this.escapeHtml(instructor.social_links.github)}" target="_blank" class="share-icon-btn"><i class="fab fa-github"></i></a>` : ''}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
 
     populateReviewsTab() {
         if (!this.reviewsData) return;
@@ -1181,7 +1169,7 @@ populateInstructorTab() {
 
     async toggleHelpful(reviewId, button, originalCount, wasLiked) {
         try {
-            const result = await ApiService.toggleReviewHelpful(this.courseId, reviewId);
+            const result = await CourseApiService.toggleReviewHelpful(this.courseId, reviewId);
 
             if (result.helpful_count !== undefined) {
                 const countSpan = button.querySelector('.helpful-count');
@@ -1302,7 +1290,7 @@ populateInstructorTab() {
         }
 
         try {
-            await ApiService.deleteReview(this.courseId, reviewId);
+            await CourseApiService.deleteReview(this.courseId, reviewId);
 
             if (this.reviewsData && this.reviewsData.items) {
                 this.reviewsData.items = this.reviewsData.items.filter(r => r.id !== reviewId);
@@ -1354,7 +1342,7 @@ populateInstructorTab() {
 
         try {
             this.currentReviewPage++;
-            const moreReviews = await ApiService.fetchReviews(this.courseId, this.currentReviewPage, 3);
+            const moreReviews = await CourseApiService.fetchReviews(this.courseId, this.currentReviewPage, 3);
 
             if (this.userAuth && this.userAuth.is_authenticated && moreReviews.items) {
                 moreReviews.items = moreReviews.items.map(review => ({
@@ -1439,7 +1427,7 @@ populateInstructorTab() {
         }
 
         try {
-            await ApiService.submitReview(this.courseId, this.currentRating, comment);
+            await CourseApiService.submitReview(this.courseId, this.currentRating, comment);
             this.showToast('Review submitted successfully! 🎉');
 
             document.getElementById('reviewComment').value = '';
@@ -1447,7 +1435,7 @@ populateInstructorTab() {
             this.resetStars();
 
             this.currentReviewPage = 1;
-            this.reviewsData = await ApiService.fetchReviews(this.courseId, 1, 3);
+            this.reviewsData = await CourseApiService.fetchReviews(this.courseId, 1, 3);
 
             this.populateReviewsTab();
             this.updateReviewTabCount();
@@ -1458,6 +1446,12 @@ populateInstructorTab() {
     }
 
     async handleEnrollClick() {
+        // Check if user is instructor
+        if (this.userAuth && this.userAuth.is_instructor) {
+            this.showToast('Instructors cannot enroll in courses', 'info');
+            return;
+        }
+
         if (!this.userAuth || !this.userAuth.is_authenticated) {
             const currentUrl = encodeURIComponent(window.location.pathname);
             this.showToast('Please log in to enroll in this course', 'info');
@@ -1483,7 +1477,7 @@ populateInstructorTab() {
 
             if (coursePrice === 0) {
                 // Free course - enroll directly
-                const enrollData = await ApiService.enrollInCourse(this.courseId);
+                const enrollData = await CourseApiService.enrollInCourse(this.courseId);
 
                 if (enrollData && enrollData.is_enrolled) {
                     this.isEnrolled = true;
@@ -1498,11 +1492,11 @@ populateInstructorTab() {
                 }
             } else {
                 // Paid course - first enroll, then redirect to checkout
-                const enrollData = await ApiService.enrollInCourse(this.courseId);
+                const enrollData = await CourseApiService.enrollInCourse(this.courseId);
 
                 if (enrollData && enrollData.enrollment_id) {
                     // Create checkout session
-                    const checkoutData = await ApiService.createEnrollmentCheckout(enrollData.enrollment_id);
+                    const checkoutData = await CourseApiService.createEnrollmentCheckout(enrollData.enrollment_id);
 
                     if (checkoutData && checkoutData.checkout_url) {
                         // Redirect to checkout page
@@ -1528,6 +1522,12 @@ populateInstructorTab() {
     }
 
     handleWishlistClick() {
+        // Check if user is instructor
+        if (this.userAuth && this.userAuth.is_instructor) {
+            this.showToast('Instructors cannot add courses to wishlist', 'info');
+            return;
+        }
+
         if (!this.userAuth || !this.userAuth.is_authenticated) {
             const currentUrl = encodeURIComponent(window.location.pathname);
             this.showToast('Please log in to add courses to your wishlist', 'info');
@@ -1656,14 +1656,14 @@ populateInstructorTab() {
                                 style="flex: 1; background: #6B7280; color: white; border: none; padding: 0.75rem; border-radius: 8px; cursor: pointer; font-weight: 500;">
                             Close Preview
                         </button>
-                        ${!this.isEnrolled ? `
+                        ${!this.isEnrolled && !(this.userAuth && this.userAuth.is_instructor) ? `
                             <button onclick="this.closest('.preview-modal').remove(); courseDetailPage.stopVideo(); courseDetailPage.handleEnrollClick();"
                                     style="flex: 1; background: #8B5CF6; color: white; border: none; padding: 0.75rem; border-radius: 8px; cursor: pointer; font-weight: 500;">
                                 <i class="fas fa-rocket"></i> Enroll Now
                             </button>
                         ` : ''}
                     </div>
-                    ${!this.isEnrolled ? `
+                    ${!this.isEnrolled && !(this.userAuth && this.userAuth.is_instructor) ? `
                         <p style="text-align: center; margin-top: 1rem; color: #6B7280; font-size: 0.875rem;">
                             <i class="fas fa-lock"></i> Enroll to access the full course content
                         </p>
@@ -1749,7 +1749,7 @@ populateInstructorTab() {
         const btn = document.getElementById('wishlistBtn');
 
         try {
-            const result = await ApiService.toggleWishlist(this.courseId);
+            const result = await CourseApiService.toggleWishlist(this.courseId);
             this.isWishlisted = result.is_wishlisted;
 
             if (this.isWishlisted) {

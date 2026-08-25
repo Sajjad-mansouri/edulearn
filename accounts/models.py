@@ -21,17 +21,13 @@ class User(AbstractUser):
 
 
 class Role(models.Model):
-    ROLE_CHOICES = [
-        ("guest", "Guest"),
-        ("student", "Student"),
-        ("instructor", "Instructor"),
-        ("teaching assistant", "Teaching Assistant"),
-        ("moderator", "Moderator"),
-        ("support agent", "Support Agent"),
-        ("admin", "Admin"),
-    ]
+    class Roles(models.TextChoices):
+        STUDENT = "student", _("Student")
+        INSTRUCTOR = "instructor", _("Instructor")
+        # if needed add more
+
     users = models.ManyToManyField(User, related_name="roles", verbose_name=_("Users"))
-    name = models.CharField(_("Name"), choices=ROLE_CHOICES, max_length=18)
+    name = models.CharField(_("Name"), choices=Roles, max_length=18)
     description = models.TextField(_("Description"))
 
     def __str__(self):

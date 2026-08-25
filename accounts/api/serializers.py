@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
+from accounts.models import Role
+
 User = get_user_model()
 
 
@@ -46,10 +48,25 @@ class PasswordResetSerializer(serializers.Serializer):
 
 class CurrentUserSerializer(serializers.ModelSerializer):
     is_authenticated = serializers.SerializerMethodField()
+    is_instructor = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "is_authenticated")
+        fields = (
+            "id",
+            "username",
+            "email",
+            "is_authenticated",
+            "is_instructor",
+            "avatar",
+        )
 
     def get_is_authenticated(self, obj):
         return True
+
+    def get_is_instructor(self, obj):
+        return obj.roles.filter(name=Role.Roles.INSTRUCTOR).exists()
+
+    def get_avatar(self, obj):
+        return obj.avatar
