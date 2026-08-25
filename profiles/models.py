@@ -1,3 +1,6 @@
+import uuid
+from pathlib import Path
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -7,27 +10,24 @@ from django.utils.translation import gettext_lazy as _
 User = get_user_model()
 
 
+def profile_image_upload_to(instance, filename):
+    extension = Path(filename).suffix.lower()
+    filename = f"{uuid.uuid4()}{extension}"
+
+    return f"profiles/{instance.image_directory}/{instance.user_id}/{filename}"
+
+
 class Profile(models.Model):
+    image_directory = "avatar"
+    avatar = models.ImageField(
+        _("Avatar"),
+        upload_to=profile_image_upload_to,
+        blank=True,
+    )
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="profile", verbose_name=_("User")
     )
-    cover = models.ImageField(
-        _("Cover"),
-        upload_to="covers/",
-        blank=True,
-    )
-    avatar = models.ImageField(
-        _("Avatar"),
-        upload_to="avatars/",
-        blank=True,
-    )
-    biography = models.TextField(_("Biography"), blank=True)
-    headline = models.CharField(
-        _("Headline"),
-        max_length=255,
-        blank=True,
-        help_text="Short professional summary",
-    )
+
     website = models.URLField(_("Website"), blank=True)
 
     country = models.CharField(_("Country"), max_length=100, blank=True)
@@ -59,28 +59,52 @@ class Profile(models.Model):
         return self.avatar.url if self.avatar else ""
 
 
-class InstructorProfile(models.Model):
-    profile = models.OneToOneField(
-        Profile,
-        on_delete=models.CASCADE,
-        related_name="instructor_profile",
-        verbose_name=_("Profile"),
-    )
-
-    professional_title = models.CharField(_("Professional Title"), max_length=255)
-    organization = models.CharField(_("Organization"), max_length=255, blank=True)
-
-    is_verified = models.BooleanField(_("Is Verified"), default=False)
-
-    introduction_video = models.FileField(
-        _("Introduction Video"),
-        upload_to="instructors/introduction_videos/",
+class AbstractRoledProfile(models.Model):
+    cover = models.ImageField(
+        _("Cover"),
+        upload_to=profile_image_upload_to,
         blank=True,
     )
 
-    years_of_experience = models.PositiveSmallIntegerField(
-        _("Years of Experience"), default=0
+    headline = models.CharField(
+        _("Headline"),
+        max_length=255,
+        blank=True,
+        help_text="Short professional summary",
     )
+
+    biography = models.TextField(_("Instructor Biography"), blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class InstructorProfile(AbstractRoledProfile):
+    image_directory = "instructors/cover"
+    profile = models.OneToOneField(
+        Profile, on_delete=models.CASCADE, related_name="instructor_profile"
+    )
+    professional_title = models.CharField(_("Professional Title"), max_length=255)
+    organization = models.CharField(_("Organization"), max_length=255, blank=True)
+
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("pending", "Pending Review"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+    application_status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending"
+    )
+
+    is_verified = models.BooleanField(default=False)
+    verification_date = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
+
+    introduction_video = models.FileField(upload_to="instructors/videos/", blank=True)
+    resume = models.FileField(upload_to="instructors/resumes/", blank=True)
+
+    years_of_experience = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ["profile__user__username"]
@@ -93,7 +117,8 @@ class InstructorProfile(models.Model):
         return f"{self.profile.user.username} - {self.professional_title}"
 
 
-class StudentProfile(models.Model):
+class StudentProfile(AbstractRoledProfile):
+    image_directory = "students/cover"
     profile = models.OneToOneField(
         Profile,
         on_delete=models.CASCADE,

@@ -19,6 +19,7 @@ class ProfileApiView(generics.RetrieveAPIView):
     serializer_class = ProfileSerializer
 
     def get_object(self):
+        print(self.request.user.profile)
         return self.request.user.profile
 
 

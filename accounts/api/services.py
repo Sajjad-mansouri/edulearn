@@ -14,6 +14,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from user_agents import parse
 
 from accounts.models import LoginHistory, Role, UserSession
+from profiles.models import Education, Experience, InstructorProfile, Profile, Skill
 
 from ..tasks import send_email
 
@@ -206,3 +207,66 @@ def send_password_reset_email(request, email) -> None:
             send_email.delay(**email_kwargs)
         else:
             send_email(**email_kwargs)
+
+
+@transaction.atomic
+def register_instructor(
+    request,
+    educations_data,
+    experiences_data,
+    skills_data,
+    user_data,
+    profile_data,
+    instructor_data,
+):
+    if request.user.is_authenticated:
+        # Existing student → become / re-apply as instructor (same user)
+        user = request.user
+        profile = user.profile
+
+        # Optional: block if already approved
+        if hasattr(profile, "instructor_profile"):
+            existing = profile.instructor_profile
+            if existing.application_status == "approved":
+                raise ValidationError("You are already an approved instructor.")
+            elif existing.application_status == "pending":
+                raise ValidationError(
+                    "You are already registered. If approved, we will notify you."
+                )
+        # Update profile fields
+        for attr, value in profile_data.items():
+            setattr(profile, attr, value)
+        profile.save()
+
+        # Replace related objects
+        profile.skills.all().delete()
+        profile.educations.all().delete()
+        profile.experiences.all().delete()
+
+    else:
+        # Brand new user
+        user = User.objects.create_user(is_active=False, **user_data)
+        profile = Profile.objects.create(user=user, **profile_data)
+
+    # Create skills, educations, experiences
+    for skill_data in skills_data:
+        Skill.objects.create(profile=profile, **skill_data)
+
+    for education_data in educations_data:
+        Education.objects.create(profile=profile, **education_data)
+
+    for experience_data in experiences_data:
+        Experience.objects.create(profile=profile, **experience_data)
+
+    # Create or update InstructorProfile
+    instructor_profile, created = InstructorProfile.objects.update_or_create(
+        profile=profile,
+        defaults={
+            **instructor_data,
+            "application_status": "pending",
+            "is_verified": False,
+            "rejection_reason": "",
+        },
+    )
+
+    return profile, instructor_profile, created

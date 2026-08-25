@@ -3,24 +3,24 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from accounts.models import Role
+from profiles.models import InstructorProfile, Profile
 
 User = get_user_model()
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
+class UserRegisterationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["username", "email", "first_name", "last_name"]
+
+
+class StudentRegistrationSerializer(UserRegisterationSerializer):
     password1 = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
 
-    class Meta:
+    class Meta(UserRegisterationSerializer.Meta):
         model = User
-        fields = [
-            "first_name",
-            "last_name",
-            "email",
-            "username",
-            "password1",
-            "password2",
-        ]
+        fields = UserRegisterationSerializer.Meta.fields + ["password1", "password2"]
 
     def validate(self, attrs):
         password1 = attrs["password1"]
@@ -60,6 +60,8 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "is_authenticated",
             "is_instructor",
             "avatar",
+            "first_name",
+            "last_name",
         )
 
     def get_is_authenticated(self, obj):
@@ -70,3 +72,21 @@ class CurrentUserSerializer(serializers.ModelSerializer):
 
     def get_avatar(self, obj):
         return obj.avatar
+
+
+class UserRegisterProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ["website", "country", "linkedin", "github"]
+
+
+class InstructorProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InstructorProfile
+        fields = [
+            "headline",
+            "biography",
+            "professional_title",
+            "organization",
+            "years_of_experience",
+        ]

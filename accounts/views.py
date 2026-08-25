@@ -128,3 +128,7 @@ class PasswordResetConfirmView(DjangoPasswordResetConfirmView):
 
 class PasswordResetCompleteView(TemplateView):
     template_name = "accounts/password_reset_complete.html"
+
+
+class RegisterInstructorView(TemplateView):
+    template_name = "register/register_instructor.html"
