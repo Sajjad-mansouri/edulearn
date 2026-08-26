@@ -23,14 +23,12 @@
         <div class="top-nav-container">
             <div class="top-nav-left">
                 <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
-                <a href="/" class="brand-logo"><span class="brand-icon"><i class="fas fa-graduation-cap"></i></span><span class="brand-text">EduLearn</span></a>
+                <a href="/" class="brand-logo"><span class="brand-icon"><i class="fas fa-graduation-cap"></i></span><span class="brand-text">EduLearn</span><span class="student-brand-label">Student</span></a>
             </div>
             <div class="top-nav-center"><div class="global-search"><i class="fas fa-search search-prefix"></i><input type="text" class="global-search-input" placeholder="Search courses..."></div></div>
             <div class="top-nav-right">
-                <a href="/courses" class="top-nav-link desktop-only">Browse</a>
-                <a href="/teach" class="top-nav-link desktop-only">Teach</a>
-                <button class="icon-button"><i class="fas fa-bell"></i><span class="icon-badge"></span></button>
-                <button class="icon-button"><i class="fas fa-envelope"></i><span class="icon-badge"></span></button>
+
+                <button class="switch-role-btn" id="switchRoleBtn" onclick="switchToInstructor()"><i class="fas fa-exchange-alt"></i> Switch to Instructor</button>
                 <div class="user-menu-wrapper">
                     <button class="user-menu-btn" id="userMenuBtn"><img src="" alt="Avatar" class="user-avatar-img"><i class="fas fa-chevron-down user-chevron"></i></button>
                     <div class="user-dropdown-menu" id="userDropdown">
@@ -52,12 +50,23 @@
         <aside class="app-sidebar" id="appSidebar">
             <div class="sidebar-overlay" id="sidebarOverlay"></div>
             <nav class="sidebar-nav">
-                <div class="sidebar-group"><span class="sidebar-group-label">LEARNING</span>
+                <div class="sidebar-group"><span class="sidebar-group-label">MY LEARNING</span>
                     <a href="/student/dashboard" class="sidebar-link"><i class="fas fa-th-large"></i><span class="sidebar-link-text">Dashboard</span></a>
-                    <a href="/my-learning" class="sidebar-link"><i class="fas fa-book-open"></i><span class="sidebar-link-text">My Learning</span></a>
+                    <a href="/student/courses" class="sidebar-link"><i class="fas fa-book-open"></i><span class="sidebar-link-text">My Courses</span></a>
+                    <a href="/student/learning-path" class="sidebar-link"><i class="fas fa-route"></i><span class="sidebar-link-text">Learning Path</span></a>
+                    <a href="/student/assignments" class="sidebar-link"><i class="fas fa-tasks"></i><span class="sidebar-link-text">Assignments</span></a>
                     <a href="/wishlist" class="sidebar-link"><i class="fas fa-heart"></i><span class="sidebar-link-text">Wishlist</span></a>
                     <a href="/certificates" class="sidebar-link"><i class="fas fa-certificate"></i><span class="sidebar-link-text">Certificates</span></a>
+                </div>
+                <div class="sidebar-group"><span class="sidebar-group-label">MY PROGRESS</span>
+                    <a href="/student/achievements" class="sidebar-link"><i class="fas fa-trophy"></i><span class="sidebar-link-text">Achievements</span></a>
+                    <a href="/student/goals" class="sidebar-link"><i class="fas fa-bullseye"></i><span class="sidebar-link-text">My Goals</span></a>
+                    <a href="/student/portfolio" class="sidebar-link"><i class="fas fa-folder-open"></i><span class="sidebar-link-text">Portfolio</span></a>
+                </div>
+                <div class="sidebar-group"><span class="sidebar-group-label">COMMUNITY</span>
                     <a href="/messages" class="sidebar-link"><i class="fas fa-envelope"></i><span class="sidebar-link-text">Messages</span></a>
+                    <a href="/student/discussions" class="sidebar-link"><i class="fas fa-comments"></i><span class="sidebar-link-text">Discussions</span></a>
+                    <a href="/student/mentors" class="sidebar-link"><i class="fas fa-user-tie"></i><span class="sidebar-link-text">Find Mentors</span></a>
                 </div>
                 <div class="sidebar-group"><span class="sidebar-group-label">ACCOUNT</span>
                     <a href="/profile" class="sidebar-link active"><i class="fas fa-user"></i><span class="sidebar-link-text">Profile</span></a>
@@ -94,7 +103,7 @@
 
     <nav class="mobile-bottom-nav">
         <a href="/student/dashboard" class="mobile-nav-item"><i class="fas fa-th-large"></i><span>Home</span></a>
-        <a href="/my-learning" class="mobile-nav-item"><i class="fas fa-book-open"></i><span>Learning</span></a>
+        <a href="/student/courses" class="mobile-nav-item"><i class="fas fa-book-open"></i><span>Courses</span></a>
         <a href="/wishlist" class="mobile-nav-item"><i class="fas fa-heart"></i><span>Saved</span></a>
         <a href="/profile" class="mobile-nav-item active"><i class="fas fa-user"></i><span>Profile</span></a>
         <button class="mobile-nav-item" id="mobileMenuBtn"><i class="fas fa-bars"></i><span>Menu</span></button>
@@ -106,7 +115,11 @@
     <script src="{%static 'js/auth/auth.js' %}"></script>
     <script src="{%static 'js/profiles/topnav.js' %}"></script>
     <script src="{%static 'js/profiles/student/profile.js' %}"></script>
-
+    <script>
+    function switchToInstructor() {
+        window.location.href = "/instructor/profile";
+    }
+    </script>
 
 </body>
 </html>

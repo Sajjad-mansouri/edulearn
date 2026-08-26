@@ -9,7 +9,7 @@ from . import views
 
 app_name = "accounts-api"
 urlpatterns = [
-    path("current_user/", views.CurrentUserApiView.as_view(), name="current_user"),
+    path("current-user/", views.CurrentUserApiView.as_view(), name="current_user"),
     # jwt
     path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

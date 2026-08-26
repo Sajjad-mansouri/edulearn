@@ -9,5 +9,5 @@ class SocialLinkSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "platform",
-            "url",
+            "address",
         )

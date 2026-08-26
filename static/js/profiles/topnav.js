@@ -5,6 +5,7 @@ const auth = new Auth({
     "baseURL": window.location.origin + '/api/v1/account/auth',
     "onLogout": ()=>{window.location.href = baseUrl + '/account/auth/login'}
 })
+
 class TopNavController {
     constructor() {
         this.userData = null;
@@ -19,6 +20,8 @@ class TopNavController {
         await this.loadNotificationCount();
         await this.loadMessageCount();
         this.updateNavUI();
+        this.updateSwitchButton();
+        this.updateDropdownMenu();
 
         // Poll for new notifications every 60 seconds
         setInterval(() => this.loadNotificationCount(), 60000);
@@ -35,12 +38,12 @@ class TopNavController {
         const sidebar = document.getElementById('appSidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
         document.getElementById('hamburgerBtn')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.toggle('open'));
         document.getElementById('mobileMenuBtn')?.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('appSidebar')?.classList.toggle('open'); });
         document.getElementById('sidebarOverlay')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.remove('open'));
-        document.getElementById('userMenuBtn')?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('userDropdown')?.classList.toggle('open'); });
+        document.getElementById('userMenuBtn')?.addEventListener('click', (e) => { console.log("clicked"); e.stopPropagation(); console.log(document.getElementById('userDropdown')); document.getElementById('userDropdown')?.classList.toggle('open'); });
         document.addEventListener('click', (e) => { if (!e.target.closest('.user-menu-wrapper')) document.getElementById('userDropdown')?.classList.remove('open'); });
-
 
         // Highlight current page in dropdown
         this.highlightCurrentPage();
@@ -54,8 +57,12 @@ class TopNavController {
         // REAL API CALL
         // ==========================================
         try {
-            const response = await auth.authenticatedRequest(window.location.origin + "/api/v1/account/current-user/");
-            this.userData = await response.json()
+            const response = await auth.authenticatedRequest(window.location.origin + "/api/v1/account/auth/current-user/");
+            if (!response.ok) {
+                this.userData = null;
+                return;
+            }
+            this.userData = await response.json();
         } catch (error) {
             console.error('Failed to load user data:', error);
         }
@@ -69,7 +76,9 @@ class TopNavController {
         //     last_name: 'Doe',
         //     email: 'john.doe@email.com',
         //     avatar_url: null, // Will use UI Avatars fallback
-        //     role: 'student'
+        //     role: 'student',
+        //     is_instructor: true,
+        //     is_student: true
         // };
     }
 
@@ -117,6 +126,8 @@ class TopNavController {
         this.updateUserInfo();
         this.updateNotificationBadge();
         this.updateMessageBadge();
+        this.updateSwitchButton();
+        this.updateDropdownMenu();
     }
 
     updateAvatar() {
@@ -154,6 +165,19 @@ class TopNavController {
         }
     }
 
+    updateSwitchButton() {
+        const switchBtn = document.getElementById('switchRoleBtn');
+
+        if (switchBtn) {
+            if (this.userData && this.userData.is_instructor && this.userData.is_student) {
+                // Show switch button only if user is both student and instructor
+                switchBtn.style.display = 'flex';
+            } else {
+                switchBtn.style.display = 'none';
+            }
+        }
+    }
+
     updateNotificationBadge() {
         const badge = document.querySelector('.icon-button .fa-bell')?.parentElement?.querySelector('.icon-badge');
         // More reliable selector
@@ -187,6 +211,108 @@ class TopNavController {
     }
 
     // ============================================
+    // DROPDOWN MENU UPDATE BASED ON USER ROLE
+    // ============================================
+    updateDropdownMenu() {
+        const dropdown = document.getElementById('userDropdown');
+        if (!dropdown || !this.userData) return;
+        console.log(this.userData)
+        const isStudent = this.userData.is_student || this.userData.role === 'student';
+        const isInstructor = this.userData.is_instructor || this.userData.role === 'instructor';
+
+        let menuHTML = '';
+
+        // User info card
+        menuHTML += `
+            <div class="dropdown-user-card">
+                <img src="${this.userData.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(this.userData.first_name || '')}+${encodeURIComponent(this.userData.last_name || '')}&background=4F46E5&color=fff&size=88`}"
+                     alt="Avatar" class="dropdown-user-avatar">
+                <div>
+                    <span class="dropdown-user-name">${this.userData.first_name || ''} ${this.userData.last_name || ''}</span>
+                    <span class="dropdown-user-email">${this.userData.email || ''}</span>
+                </div>
+            </div>
+            <div class="dropdown-separator"></div>
+        `;
+
+        // If user is both student and instructor
+        if (isStudent && isInstructor) {
+            menuHTML += `
+                <a href="/student/profile" class="dropdown-item" data-role="student-profile">
+                    <i class="fas fa-user-graduate"></i> Student Profile
+                </a>
+                <a href="/student/dashboard" class="dropdown-item" data-role="student-dashboard">
+                    <i class="fas fa-th-large"></i> Student Dashboard
+                </a>
+                <div class="dropdown-separator"></div>
+                <a href="/instructor/profile" class="dropdown-item" data-role="instructor-profile">
+                    <i class="fas fa-chalkboard-user"></i> Instructor Profile
+                </a>
+                <a href="/instructor/dashboard" class="dropdown-item" data-role="instructor-dashboard">
+                    <i class="fas fa-chalkboard"></i> Instructor Dashboard
+                </a>
+            `;
+        }
+        // If user is only student
+        else if (isStudent) {
+            menuHTML += `
+                <a href="/student/profile" class="dropdown-item active" data-role="student-profile">
+                    <i class="fas fa-user"></i> View Profile
+                </a>
+                <a href="/student/dashboard" class="dropdown-item" data-role="student-dashboard">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+            `;
+        }
+        // If user is only instructor
+        else if (isInstructor) {
+            menuHTML += `
+                <a href="/instructor/profile" class="dropdown-item active" data-role="instructor-profile">
+                    <i class="fas fa-user"></i> View Profile
+                </a>
+                <a href="/instructor/dashboard" class="dropdown-item" data-role="instructor-dashboard">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+            `;
+        }
+
+        // Settings and Help
+        menuHTML += `
+            <div class="dropdown-separator"></div>
+            <a href="/account/settings" class="dropdown-item">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+            <a href="/help" class="dropdown-item">
+                <i class="fas fa-circle-question"></i> Help
+            </a>
+            <div class="dropdown-separator"></div>
+            <a href="/logout" class="dropdown-item logout-item">
+                <i class="fas fa-right-from-bracket"></i> Logout
+            </a>
+        `;
+
+        dropdown.innerHTML = menuHTML;
+
+        // Re-highlight current page
+        this.highlightCurrentPage();
+    }
+
+    // ============================================
+    // SWITCH ROLE
+    // ============================================
+    switchToInstructor() {
+        if (this.userData && this.userData.is_instructor) {
+            window.location.href = '/instructor/dashboard';
+        }
+    }
+
+    switchToStudent() {
+        if (this.userData && this.userData.is_student) {
+            window.location.href = '/student/dashboard';
+        }
+    }
+
+    // ============================================
     // HELPER: HIGHLIGHT CURRENT PAGE IN DROPDOWN
     // ============================================
     highlightCurrentPage() {
@@ -206,7 +332,10 @@ class TopNavController {
     // PUBLIC METHODS (can be called from other scripts)
     // ============================================
     refreshAll() {
-        this.loadUserData();
+        this.loadUserData().then(() => {
+            this.updateNavUI();
+            this.updateDropdownMenu();
+        });
         this.loadNotificationCount();
         this.loadMessageCount();
     }

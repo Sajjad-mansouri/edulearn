@@ -39,7 +39,7 @@ function mapProfile(data) {
     social_links: (data.social_links || []).map(item => ({
       id: item.id,
       platform: item.platform,
-      url: item.url
+      address: item.address
     })),
 
     languages: (data.languages || []).map(item => ({
@@ -101,7 +101,7 @@ class ProfilePage {
     // ============================================
     async loadProfile() {
         try {
-            const response = await auth.authenticatedRequest(baseUrl + "/api/v1/account/profile/");
+            const response = await auth.authenticatedRequest(baseUrl + "/api/v1/account/student/profile/");
             const data = await response.json();
             this.profile = mapProfile(data);
             this.renderAll();
@@ -312,10 +312,11 @@ class ProfilePage {
             container.innerHTML = '<p class="no-items">No social links yet.</p>';
             return;
         }
+        console.log(links)
         container.innerHTML = links.map(link => `
             <div class="social-link-item">
                 <span class="social-platform-icon ${link.platform}"><i class="fab fa-${link.platform}"></i></span>
-                <span class="social-link-url">${link.url}</span>
+                <span class="social-link-url">${link.address}</span>
                 <div class="item-actions">
                     <button class="item-action-btn" data-action="edit" data-id="${link.id}" data-type="social"><i class="fas fa-pen"></i></button>
                     <button class="item-action-btn delete" data-action="delete" data-id="${link.id}" data-type="social"><i class="fas fa-trash-alt"></i></button>
@@ -401,7 +402,7 @@ class ProfilePage {
         } else if (type === 'social') {
             body.innerHTML = `
                 <div class="form-group"><label>Platform</label><select id="modalPlatform" class="form-input"><option value="linkedin" ${data?.platform === 'linkedin' ? 'selected' : ''}>LinkedIn</option><option value="github" ${data?.platform === 'github' ? 'selected' : ''}>GitHub</option><option value="twitter" ${data?.platform === 'twitter' ? 'selected' : ''}>Twitter</option><option value="website" ${data?.platform === 'website' ? 'selected' : ''}>Website</option></select></div>
-                <div class="form-group"><label>URL</label><input type="url" id="modalUrl" class="form-input" value="${data?.url || ''}" placeholder="https://..."></div>
+                <div class="form-group"><label>URL</label><input type="url" id="modalUrl" class="form-input" value="${data?.address || ''}" placeholder="https://..."></div>
             `;
         } else if (type === 'language') {
             body.innerHTML = `
@@ -450,9 +451,9 @@ class ProfilePage {
         } else if (type === 'social') {
             item = {
                 platform: document.getElementById('modalPlatform').value,
-                url: document.getElementById('modalUrl').value.trim()
+                address: document.getElementById('modalUrl').value.trim()
             };
-            if (!item.url) { this.showToast('Please enter a URL'); return; }
+            if (!item.address) { this.showToast('Please enter a URL'); return; }
 
             url = baseUrl + '/api/v1/account/social-links/';
             if (this.currentEditId) {
@@ -524,7 +525,7 @@ class ProfilePage {
             item = {
                 ...item,
                 platform: document.getElementById('modalPlatform').value,
-                url: document.getElementById('modalUrl').value.trim()
+                address: document.getElementById('modalUrl').value.trim()
             };
             if (this.currentEditId) {
                 const idx = this.profile.social_links.findIndex(i => i.id === this.currentEditId);
@@ -569,7 +570,7 @@ class ProfilePage {
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/basic-info/update/",
+                baseUrl + "/api/v1/account/profile/student/update/",
                 {
                     method: 'PATCH',
                     body: body
@@ -578,6 +579,7 @@ class ProfilePage {
 
             if (response.ok) {
                 const data = await response.json();
+                console.log(data)
                 this.profile = mapProfile(data);
                 document.getElementById('displayName').textContent = `${this.profile.first_name} ${this.profile.last_name}`;
                 this.updatePreview();
@@ -603,8 +605,9 @@ class ProfilePage {
         formData.append('avatar', file);
 
         try {
+
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/basic-info/update/",
+                baseUrl + "/api/v1/account/profile/student/update/",
                 {
                     method: 'PATCH',
                     body: formData
@@ -679,7 +682,7 @@ class ProfilePage {
         document.getElementById('previewSkills').innerHTML = (p.skills || []).map(s => `<span class="preview-skill-tag">${s}</span>`).join('');
         document.getElementById('previewEducation').innerHTML = (p.education || []).map(e => `<p>${e.degree} at ${e.school} · ${this.formatDateRange(e.startDate, e.endDate)}</p>`).join('');
         document.getElementById('previewExperience').innerHTML = (p.experience || []).map(e => `<p>${e.title} at ${e.company} · ${this.formatDateRange(e.startDate, e.endDate)}</p>`).join('');
-        document.getElementById('previewLinks').innerHTML = (p.social_links || []).map(l => `<p><i class="fab fa-${l.platform}"></i> <a href="${l.url}" target="_blank">${l.url}</a></p>`).join('');
+        document.getElementById('previewLinks').innerHTML = (p.social_links || []).map(l => `<p><i class="fab fa-${l.platform}"></i> <a href="${l.address}" target="_blank">${l.address}</a></p>`).join('');
         document.getElementById('previewLanguages').innerHTML = (p.languages || []).map(l => `<p>${l.language} (${l.proficiency})</p>`).join('');
     }
 

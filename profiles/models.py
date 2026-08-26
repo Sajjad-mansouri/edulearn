@@ -13,8 +13,11 @@ User = get_user_model()
 def profile_image_upload_to(instance, filename):
     extension = Path(filename).suffix.lower()
     filename = f"{uuid.uuid4()}{extension}"
-
-    return f"profiles/{instance.image_directory}/{instance.user_id}/{filename}"
+    if hasattr(instance, "profile"):
+        user_id = instance.profile.user_id
+    elif hasattr(instance, "user"):
+        user_id = instance.user_id
+    return f"profiles/{instance.image_directory}/{user_id}/{filename}"
 
 
 class Profile(models.Model):
@@ -101,7 +104,7 @@ class InstructorProfile(AbstractRoledProfile):
     verification_date = models.DateTimeField(null=True, blank=True)
     rejection_reason = models.TextField(blank=True)
 
-    introduction_video = models.FileField(upload_to="instructors/videos/", blank=True)
+    introduction_video = models.URLField(blank=True)
     resume = models.FileField(upload_to="instructors/resumes/", blank=True)
 
     years_of_experience = models.PositiveSmallIntegerField(default=0)

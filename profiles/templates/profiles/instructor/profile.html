@@ -1,0 +1,223 @@
+{%extends 'profiles/instructor/base_account.html'%}
+{%load static%}
+{%block style%}
+    <link rel="stylesheet" href="{%static 'css/profiles/instructor/profile.css' %}">
+{%endblock%}
+
+{%block main_content%}
+        <main class="content-main" id="contentMain">
+            <header class="page-header">
+                <h1 class="page-header-title">Instructor Profile</h1>
+                <p class="page-header-desc">Manage your public profile and professional identity</p>
+            </header>
+
+            <div class="profile-layout">
+                <!-- Left: Editor -->
+                <div class="profile-editor">
+                    <!-- Cover & Avatar -->
+                    <div class="profile-section cover-section" id="coverSection">
+                        <div class="cover-wrapper" id="coverWrapper">
+                            <img src="" alt="Cover" class="cover-img" id="coverImage">
+                            <div class="cover-overlay">
+                                <button class="cover-upload-btn" id="coverUploadBtn">
+                                    <i class="fas fa-camera"></i> Change Cover
+                                </button>
+                            </div>
+                            <input type="file" id="coverFileInput" accept="image/*" style="display:none;">
+                        </div>
+                        <div class="avatar-row">
+                            <div class="avatar-wrapper" id="avatarWrapper">
+                                <img src="https://ui-avatars.com/api/?name=Sarah+Chen&background=8B5CF6&color=fff&size=160" alt="Avatar" class="profile-avatar" id="profileAvatar">
+                                <button class="avatar-upload-btn" id="avatarUploadBtn"><i class="fas fa-camera"></i></button>
+                            </div>
+                            <input type="file" id="avatarFileInput" accept="image/*" style="display:none;">
+                            <div class="avatar-info">
+                                <h2 class="display-name" id="displayName">Dr. Sarah Chen</h2>
+                                <span class="verified-badge-inline" id="verifiedBadge">✅ Verified Instructor</span>
+                                <span class="org-inline" id="orgInline">MIT</span>
+                                <div class="application-status" id="applicationStatus"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Basic Information -->
+                    <div class="profile-section">
+                        <h3 class="section-title"><i class="fas fa-user"></i> Basic Information</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>First Name *</label>
+                                <input type="text" id="firstName" class="form-input" placeholder="First name">
+                            </div>
+                            <div class="form-group">
+                                <label>Last Name *</label>
+                                <input type="text" id="lastName" class="form-input" placeholder="Last name">
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="email" class="form-input" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>Professional Title *</label>
+                                <input type="text" id="professionalTitle" class="form-input" placeholder="e.g. Senior Data Scientist">
+                            </div>
+                            <div class="form-group">
+                                <label>Organization</label>
+                                <input type="text" id="organization" class="form-input" placeholder="e.g. MIT, TechCorp">
+                            </div>
+                            <div class="form-group">
+                                <label>Years of Experience</label>
+                                <input type="number" id="yearsExperience" class="form-input" placeholder="e.g. 12" min="0" max="60">
+                            </div>
+                            <div class="form-group">
+                                <label>Company</label>
+                                <input type="text" id="company" class="form-input" placeholder="Company name">
+                            </div>
+                            <div class="form-group">
+                                <label>Job Title</label>
+                                <input type="text" id="jobTitle" class="form-input" placeholder="Job title">
+                            </div>
+                            <div class="form-group">
+                                <label>Country</label>
+                                <input type="text" id="country" class="form-input" placeholder="Country">
+                            </div>
+                            <div class="form-group">
+                                <label>Timezone</label>
+                                <input type="text" id="timezone" class="form-input" placeholder="e.g. UTC-5">
+                            </div>
+                            <div class="form-group">
+                                <label>Language</label>
+                                <input type="text" id="language" class="form-input" placeholder="Primary language">
+                            </div>
+                            <div class="form-group">
+                                <label>Website</label>
+                                <input type="url" id="website" class="form-input" placeholder="https://...">
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Headline</label>
+                                <input type="text" id="headline" class="form-input" placeholder="Short professional summary" maxlength="255">
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Biography</label>
+                                <textarea id="bio" class="form-input form-textarea" rows="5" placeholder="Tell students about yourself..." maxlength="2000"></textarea>
+                                <span class="char-count" id="bioCount">0/2000</span>
+                            </div>
+                        </div>
+                        <button class="save-btn" id="saveBasicInfo"><i class="fas fa-check"></i> Save Changes</button>
+                    </div>
+
+                    <!-- Areas of Expertise -->
+                    <div class="profile-section">
+                        <div class="section-header-row">
+                            <h3 class="section-title"><i class="fas fa-star"></i> Areas of Expertise</h3>
+                        </div>
+                        <div class="tags-container" id="skillsContainer"></div>
+                        <div class="add-tag-row">
+                            <input type="text" id="skillInput" class="form-input" placeholder="Add expertise...">
+                            <button class="add-btn" id="addSkillBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                    </div>
+
+                    <!-- Education -->
+                    <div class="profile-section">
+                        <div class="section-header-row">
+                            <h3 class="section-title"><i class="fas fa-graduation-cap"></i> Education</h3>
+                            <button class="add-btn" id="addEducationBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div class="items-list" id="educationList"></div>
+                    </div>
+
+                    <!-- Experience -->
+                    <div class="profile-section">
+                        <div class="section-header-row">
+                            <h3 class="section-title"><i class="fas fa-briefcase"></i> Work Experience</h3>
+                            <button class="add-btn" id="addExperienceBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div class="items-list" id="experienceList"></div>
+                    </div>
+
+                    <!-- Social Links -->
+                    <div class="profile-section">
+                        <div class="section-header-row">
+                            <h3 class="section-title"><i class="fas fa-share-nodes"></i> Social Links</h3>
+                            <button class="add-btn" id="addSocialBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div class="items-list" id="socialList"></div>
+                    </div>
+
+                    <!-- Languages -->
+                    <div class="profile-section">
+                        <div class="section-header-row">
+                            <h3 class="section-title"><i class="fas fa-language"></i> Languages</h3>
+                            <button class="add-btn" id="addLanguageBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div class="items-list" id="languagesList"></div>
+                    </div>
+
+                    <!-- Introduction Video & Resume -->
+                    <div class="profile-section">
+                        <h3 class="section-title"><i class="fas fa-video"></i> Introduction & Resume</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Introduction Video URL</label>
+                                <input type="url" id="introductionVideo" class="form-input" placeholder="https://youtube.com/watch?v=...">
+                            </div>
+                            <div class="form-group">
+                                <label>Resume Upload</label>
+                                <input type="file" id="resumeInput" class="form-input" accept=".pdf,.doc,.docx">
+                                <div id="resumeStatus" class="file-status"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verification -->
+                    <div class="profile-section" id="verificationSection">
+                        <h3 class="section-title"><i class="fas fa-shield-check"></i> Verification</h3>
+                        <div id="verificationBody"></div>
+                    </div>
+                </div>
+
+                <!-- Right: Public Preview -->
+                <div class="profile-preview desktop-only" id="profilePreview">
+                    <h3 class="preview-title"><i class="fas fa-eye"></i> Public Preview</h3>
+                    <div class="preview-card">
+                        <div class="preview-cover" id="previewCover"></div>
+                        <div class="preview-body">
+                            <img src="https://ui-avatars.com/api/?name=Sarah+Chen&background=8B5CF6&color=fff&size=160" alt="" class="preview-avatar" id="previewAvatar">
+                            <h3 class="preview-name" id="previewName"></h3>
+                            <p class="preview-headline" id="previewHeadline"></p>
+                            <p class="preview-title-text" id="previewProfessionalTitle"></p>
+                            <span class="preview-verified" id="previewVerified"></span>
+                            <p class="preview-org" id="previewOrg"></p>
+                            <p class="preview-bio" id="previewBio"></p>
+                            <div class="preview-tags" id="previewSkills"></div>
+                            <div class="preview-divider"></div>
+                            <div class="preview-block">
+                                <h4>🎓 Education</h4>
+                                <div id="previewEducation"></div>
+                            </div>
+                            <div class="preview-block">
+                                <h4>💼 Experience</h4>
+                                <div id="previewExperience"></div>
+                            </div>
+                            <div class="preview-block">
+                                <h4>🌐 Links</h4>
+                                <div id="previewLinks"></div>
+                            </div>
+                            <div class="preview-block">
+                                <h4>🌍 Languages</h4>
+                                <div id="previewLanguages"></div>
+                            </div>
+                            <div class="preview-block" id="previewVideoBlock">
+                                <h4>🎥 Introduction Video</h4>
+                                <div id="previewVideo"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+{%endblock%}
+    {%block script%}
+    <script src="{%static 'js/profiles/instructor/profile.js' %}"></script>
+    {%endblock%}

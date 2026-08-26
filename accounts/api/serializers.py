@@ -49,6 +49,7 @@ class PasswordResetSerializer(serializers.Serializer):
 class CurrentUserSerializer(serializers.ModelSerializer):
     is_authenticated = serializers.SerializerMethodField()
     is_instructor = serializers.SerializerMethodField()
+    is_student = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
 
     class Meta:
@@ -59,6 +60,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "email",
             "is_authenticated",
             "is_instructor",
+            "is_student",
             "avatar",
             "first_name",
             "last_name",
@@ -69,6 +71,9 @@ class CurrentUserSerializer(serializers.ModelSerializer):
 
     def get_is_instructor(self, obj):
         return obj.roles.filter(name=Role.Roles.INSTRUCTOR).exists()
+
+    def get_is_student(self, obj):
+        return obj.roles.filter(name=Role.Roles.STUDENT).exists()
 
     def get_avatar(self, obj):
         return obj.avatar
