@@ -4,19 +4,22 @@
 const baseUrl = window.location.origin;
 
 function mapProfile(data) {
-  return {
-    id: data.id,
-    first_name: data.first_name,
-    last_name: data.last_name,
-    email: data.email,
-    headline: data.headline,
-    bio: data.bio || data.biography || "",
-    website: data.website,
-    avatar_url: data.avatar || "",
-    cover_url: data.cover || data.cover_url || "",
-    skills: (data.skills || []).map(item => typeof item === 'string' ? item : item.name),
+  // Extract profile data from nested structure
+  const profileData = data.profile || data;
 
-    education: (data.educations || data.education || []).map(item => ({
+  return {
+    id: profileData.id,
+    first_name: profileData.first_name,
+    last_name: profileData.last_name,
+    email: profileData.email,
+    headline: data.headline || "",
+    bio: data.biography || "",
+    website: profileData.website || "",
+    avatar_url: profileData.avatar || "",
+    cover_url: data.cover || "",
+    skills: (profileData.skills || []).map(item => typeof item === 'string' ? item : item.name),
+
+    education: (profileData.educations || []).map(item => ({
       id: item.id,
       school: item.institution || item.school,
       degree: item.degree,
@@ -26,7 +29,7 @@ function mapProfile(data) {
       description: item.description
     })),
 
-    experience: (data.experiences || data.experience || []).map(item => ({
+    experience: (profileData.experiences || []).map(item => ({
       id: item.id,
       title: item.position || item.title,
       company: item.company,
@@ -36,13 +39,13 @@ function mapProfile(data) {
       description: item.description
     })),
 
-    social_links: (data.social_links || []).map(item => ({
+    social_links: (profileData.social_links || []).map(item => ({
       id: item.id,
       platform: item.platform,
       address: item.address
     })),
 
-    languages: (data.languages || []).map(item => ({
+    languages: (profileData.languages || []).map(item => ({
       id: item.id,
       language: item.language || item.lang || item.name,
       proficiency: item.proficiency || item.level
@@ -175,8 +178,9 @@ class ProfilePage {
             );
             if (response.ok) {
                 const data = await response.json();
-
-                this.profile.skills.push(data.name);
+                // Handle both direct array response and nested response
+                const skillName = data.name || data;
+                this.profile.skills.push(typeof skillName === 'string' ? skillName : skill);
                 input.value = '';
                 this.renderSkills();
                 this.updatePreview();
@@ -207,7 +211,6 @@ class ProfilePage {
                 }
             );
             if (response.ok) {
-
                 this.profile.skills = this.profile.skills.filter(item => item !== skillName)
                 this.renderSkills();
                 this.updatePreview();
@@ -312,7 +315,6 @@ class ProfilePage {
             container.innerHTML = '<p class="no-items">No social links yet.</p>';
             return;
         }
-        console.log(links)
         container.innerHTML = links.map(link => `
             <div class="social-link-item">
                 <span class="social-platform-icon ${link.platform}"><i class="fab fa-${link.platform}"></i></span>
@@ -407,7 +409,7 @@ class ProfilePage {
         } else if (type === 'language') {
             body.innerHTML = `
                 <div class="form-group"><label>Language</label><input type="text" id="modalLanguage" class="form-input" value="${data?.language || ''}" placeholder="e.g. French"></div>
-                <div class="form-group"><label>Proficiency</label><select id="modalProficiency" class="form-input"><option value="na" ${data?.proficiency === 'Native' ? 'selected' : ''}>Native</option><option value="C2" ${data?.proficiency === 'C2' ? 'selected' : ''}>C2 - Proficient</option><option value="C1" ${data?.proficiency === 'C1' ? 'selected' : ''}>C1 - Advanced</option><option value="B2" ${data?.proficiency === 'B2' ? 'selected' : ''}>B2 - Upper Intermediate</option><option value="B1" ${data?.proficiency === 'B1' ? 'selected' : ''}>B1 - Intermediate</option><option value="A2" ${data?.proficiency === 'A2' ? 'selected' : ''}>A2 - Elementary</option><option value="A1" ${data?.proficiency === 'A1' ? 'selected' : ''}>A1 - Beginner</option></select></div>
+                <div class="form-group"><label>Proficiency</label><select id="modalProficiency" class="form-input"><option value="Native" ${data?.proficiency === 'Native' ? 'selected' : ''}>Native</option><option value="C2" ${data?.proficiency === 'C2' ? 'selected' : ''}>C2 - Proficient</option><option value="C1" ${data?.proficiency === 'C1' ? 'selected' : ''}>C1 - Advanced</option><option value="B2" ${data?.proficiency === 'B2' ? 'selected' : ''}>B2 - Upper Intermediate</option><option value="B1" ${data?.proficiency === 'B1' ? 'selected' : ''}>B1 - Intermediate</option><option value="A2" ${data?.proficiency === 'A2' ? 'selected' : ''}>A2 - Elementary</option><option value="A1" ${data?.proficiency === 'A1' ? 'selected' : ''}>A1 - Beginner</option></select></div>
             `;
         }
 
@@ -437,7 +439,7 @@ class ProfilePage {
                 description: document.getElementById('modalDesc').value.trim()
             };
 
-            if (!item[isEdu ? 'institution' : 'company'] || !item[isEdu ? 'degree' : 'position'] || !item[isEdu?"field_of_study":"position"]) {
+            if (!item[isEdu ? 'institution' : 'company'] || !item[isEdu ? 'degree' : 'position']) {
                 this.showToast('Please fill required fields');
                 return;
             }
@@ -570,7 +572,7 @@ class ProfilePage {
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/profile/student/update/",
+                baseUrl + "/api/v1/account/student/profile/update/",
                 {
                     method: 'PATCH',
                     body: body
@@ -579,7 +581,6 @@ class ProfilePage {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log(data)
                 this.profile = mapProfile(data);
                 document.getElementById('displayName').textContent = `${this.profile.first_name} ${this.profile.last_name}`;
                 this.updatePreview();
@@ -605,19 +606,18 @@ class ProfilePage {
         formData.append('avatar', file);
 
         try {
-
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/profile/student/update/",
+                baseUrl + "/api/v1/account/student/profile/update/",
                 {
                     method: 'PATCH',
                     body: formData
-                    // Note: Do NOT set Content-Type header for FormData
                 }
             );
 
             if (response.ok) {
                 const data = await response.json();
-                const avatarUrl = data.avatar_url || data.avatar;
+                // Get avatar from nested profile structure
+                const avatarUrl = data.profile?.avatar || data.avatar || data.avatar_url;
                 document.getElementById('profileAvatar').src = avatarUrl;
                 document.getElementById('previewAvatar').src = avatarUrl;
                 this.profile.avatar_url = avatarUrl;
@@ -643,16 +643,16 @@ class ProfilePage {
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/basic-info/update/",
+                baseUrl + "/api/v1/account/student/profile/update/",
                 {
-                    method: 'Patch',
+                    method: 'PATCH',
                     body: formData
                 }
             );
 
             if (response.ok) {
                 const data = await response.json();
-                const coverUrl = data.cover_url || data.cover;
+                const coverUrl = data.cover || data.cover_url;
                 document.getElementById('coverImage').src = coverUrl;
                 document.getElementById('previewCover').style.backgroundImage = `url(${coverUrl})`;
                 this.profile.cover_url = coverUrl;
@@ -693,7 +693,6 @@ class ProfilePage {
         const fmt = (d) => {
             if (!d) return 'Present';
             const dateStr = String(d);
-            // Handle both "YYYY-MM" and "YYYY-MM-DD" formats
             const parts = dateStr.split('-');
             const year = parts[0];
             const month = parts[1] ? new Date(parseInt(year), parseInt(parts[1]) - 1).toLocaleDateString('en-US', { month: 'short' }) : '';

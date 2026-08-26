@@ -45,13 +45,12 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class StudentProfileSerializer(ProfileSerializer):
-    cover = serializers.ImageField(source="student_profile.cover")
-    biography = serializers.CharField(source="student_profile.biography")
-    headline = serializers.CharField(source="student_profile.headline")
+    profile = ProfileSerializer(read_only=True)
 
-    class Meta(ProfileSerializer.Meta):
+    class Meta:
         model = StudentProfile
-        fields = ProfileSerializer.Meta.fields + [
+        fields = [
+            "profile",
             "cover",
             "biography",
             "headline",

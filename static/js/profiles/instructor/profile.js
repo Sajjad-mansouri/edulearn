@@ -974,7 +974,7 @@ class InstructorProfilePage {
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/profile/instructor/update/",
+                baseUrl + "/api/v1/account/instructor/profile/update/",
                 {
                     method: 'PATCH',
                     body: body
@@ -1012,7 +1012,7 @@ class InstructorProfilePage {
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/profile/instructor/update/",
+                baseUrl + "/api/v1/account/instructor/profile/update/",
                 {
                     method: 'PATCH',
                     body: formData
@@ -1046,7 +1046,7 @@ class InstructorProfilePage {
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/profile/instructor/update/",
+                baseUrl + "/api/v1/account/instructor/profile/update/",
                 {
                     method: 'PATCH',
                     body: formData
@@ -1080,7 +1080,7 @@ class InstructorProfilePage {
 
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/profile/instructor/update/",
+                baseUrl + "/api/v1/account/instructor/profile/update/",
                 {
                     method: 'PATCH',
                     body: formData

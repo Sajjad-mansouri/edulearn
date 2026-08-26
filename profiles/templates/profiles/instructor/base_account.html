@@ -69,13 +69,11 @@
             <nav class="sidebar-nav">
                 <div class="sidebar-group">
                     <span class="sidebar-group-label">TEACHING</span>
-                    <a href="/instructor/dashboard" class="sidebar-link"><i class="fas fa-th-large"></i><span class="sidebar-link-text">Dashboard</span></a>
-                    <a href="/instructor/courses" class="sidebar-link"><i class="fas fa-book"></i><span class="sidebar-link-text">My Courses</span></a>
-                    <a href="/instructor/courses/create" class="sidebar-link"><i class="fas fa-plus-circle"></i><span class="sidebar-link-text">Create Course</span></a>
-                    <a href="/instructor/students" class="sidebar-link"><i class="fas fa-users"></i><span class="sidebar-link-text">Students</span></a>
-                    <a href="/instructor/assignments" class="sidebar-link"><i class="fas fa-tasks"></i><span class="sidebar-link-text">Assignments</span></a>
-                    <a href="/instructor/discussions" class="sidebar-link"><i class="fas fa-comments"></i><span class="sidebar-link-text">Discussions</span></a>
-                    <a href="/instructor/reviews" class="sidebar-link"><i class="fas fa-star"></i><span class="sidebar-link-text">Reviews</span></a>
+                    <a href="/instructor/dashboard" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span class="sidebar-link-text">Dashboard</span></a>
+                    <a href="/instructor/courses/" class="sidebar-link" data-nav="/instructor/courses/"><i class="fas fa-book"></i><span class="sidebar-link-text">My Courses</span></a>
+                    <a href="/instructor/students/" class="sidebar-link" data-nav="/instructor/students/"><i class="fas fa-users"></i><span class="sidebar-link-text">Students</span></a>
+                    <a href="/instructor/assignments" class="sidebar-link" data-nav="/instructor/assignments"><i class="fas fa-tasks"></i><span class="sidebar-link-text">Assignments</span></a>
+                    <a href="/instructor/reviews" class="sidebar-link" data-nav="reviews"><i class="fas fa-star"></i><span class="sidebar-link-text">Reviews</span></a>
                 </div>
                 <div class="sidebar-group">
                     <span class="sidebar-group-label">ANALYTICS & EARNINGS</span>
@@ -85,7 +83,7 @@
                 </div>
                 <div class="sidebar-group">
                     <span class="sidebar-group-label">ACCOUNT</span>
-                    <a href="/instructor/profile" class="sidebar-link active"><i class="fas fa-user"></i><span class="sidebar-link-text">Profile</span></a>
+                    <a href="/account/instructor/profile/" class="sidebar-link " data-nav="/account/instructor/profile/"><i class="fas fa-user"></i><span class="sidebar-link-text">Profile</span></a>
                     <a href="/account/settings" class="sidebar-link"><i class="fas fa-cog"></i><span class="sidebar-link-text">Settings</span></a>
                     <a href="/notifications" class="sidebar-link"><i class="fas fa-bell"></i><span class="sidebar-link-text">Notifications</span></a>
                     <a href="/privacy" class="sidebar-link"><i class="fas fa-shield-halved"></i><span class="sidebar-link-text">Privacy</span></a>
@@ -133,10 +131,12 @@
     <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><p class="loading-text">Loading profile...</p></div>
     <div class="toast-container" id="toastContainer"></div>
 
+    <script src="{%static 'js/profiles/active_nav.js' %}"></script>
     <script src="{%static 'js/auth/auth.js' %}"></script>
     <script src="{%static 'js/profiles/topnav.js' %}"></script>
 
     {%block script%}
     {%endblock%}
+
 </body>
 </html>

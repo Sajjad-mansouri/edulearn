@@ -51,29 +51,16 @@
             <div class="sidebar-overlay" id="sidebarOverlay"></div>
             <nav class="sidebar-nav">
                 <div class="sidebar-group"><span class="sidebar-group-label">MY LEARNING</span>
-                    <a href="/student/dashboard" class="sidebar-link"><i class="fas fa-th-large"></i><span class="sidebar-link-text">Dashboard</span></a>
-                    <a href="/student/courses" class="sidebar-link"><i class="fas fa-book-open"></i><span class="sidebar-link-text">My Courses</span></a>
-                    <a href="/student/learning-path" class="sidebar-link"><i class="fas fa-route"></i><span class="sidebar-link-text">Learning Path</span></a>
+                    <a href="/student/dashboard" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span class="sidebar-link-text">Dashboard</span></a>
+                    <a href="/student/courses" class="sidebar-link" data-nav="dashboard"><i class="fas fa-book-open"></i><span class="sidebar-link-text">My Courses</span></a>
                     <a href="/student/assignments" class="sidebar-link"><i class="fas fa-tasks"></i><span class="sidebar-link-text">Assignments</span></a>
                     <a href="/wishlist" class="sidebar-link"><i class="fas fa-heart"></i><span class="sidebar-link-text">Wishlist</span></a>
                     <a href="/certificates" class="sidebar-link"><i class="fas fa-certificate"></i><span class="sidebar-link-text">Certificates</span></a>
                 </div>
-                <div class="sidebar-group"><span class="sidebar-group-label">MY PROGRESS</span>
-                    <a href="/student/achievements" class="sidebar-link"><i class="fas fa-trophy"></i><span class="sidebar-link-text">Achievements</span></a>
-                    <a href="/student/goals" class="sidebar-link"><i class="fas fa-bullseye"></i><span class="sidebar-link-text">My Goals</span></a>
-                    <a href="/student/portfolio" class="sidebar-link"><i class="fas fa-folder-open"></i><span class="sidebar-link-text">Portfolio</span></a>
-                </div>
-                <div class="sidebar-group"><span class="sidebar-group-label">COMMUNITY</span>
-                    <a href="/messages" class="sidebar-link"><i class="fas fa-envelope"></i><span class="sidebar-link-text">Messages</span></a>
-                    <a href="/student/discussions" class="sidebar-link"><i class="fas fa-comments"></i><span class="sidebar-link-text">Discussions</span></a>
-                    <a href="/student/mentors" class="sidebar-link"><i class="fas fa-user-tie"></i><span class="sidebar-link-text">Find Mentors</span></a>
-                </div>
+
                 <div class="sidebar-group"><span class="sidebar-group-label">ACCOUNT</span>
                     <a href="/profile" class="sidebar-link active"><i class="fas fa-user"></i><span class="sidebar-link-text">Profile</span></a>
                     <a href="/settings" class="sidebar-link"><i class="fas fa-cog"></i><span class="sidebar-link-text">Settings</span></a>
-                    <a href="/privacy" class="sidebar-link"><i class="fas fa-shield-halved"></i><span class="sidebar-link-text">Privacy</span></a>
-                    <a href="/notifications" class="sidebar-link"><i class="fas fa-bell"></i><span class="sidebar-link-text">Notifications</span></a>
-                    <a href="/security" class="sidebar-link"><i class="fas fa-lock"></i><span class="sidebar-link-text">Security</span></a>
                 </div>
                 <div class="sidebar-group"><a href="/logout" class="sidebar-link logout-link"><i class="fas fa-right-from-bracket"></i><span class="sidebar-link-text">Logout</span></a></div>
             </nav>
@@ -111,10 +98,12 @@
 
     <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><p class="loading-text">Loading profile...</p></div>
     <div class="toast-container" id="toastContainer"></div>
+    <script src="{%static 'js/profiles/active_nav.js' %}"></script>
 
     <script src="{%static 'js/auth/auth.js' %}"></script>
     <script src="{%static 'js/profiles/topnav.js' %}"></script>
-    <script src="{%static 'js/profiles/student/profile.js' %}"></script>
+    {%block script%}
+    {%endblock%}
     <script>
     function switchToInstructor() {
         window.location.href = "/instructor/profile";

@@ -1,5 +1,5 @@
  {%extends 'profiles/student/base_account.html'%}
-
+{%load static%}
  {%block main_content%}
         <main class="content-main" id="contentMain">
             <header class="page-header">
@@ -115,4 +115,10 @@
                 </div>
             </div>
         </main>
+}
+{%endblock%}
+
+{%block script%}
+    <script src="{%static 'js/profiles/student/profile.js' %}"></script>
+
 {%endblock%}

@@ -24,7 +24,7 @@ urlpatterns += [
     ),
     path("current-user/", views.CurrentUserApiView.as_view(), name="current_user"),
     path(
-        "profile/student/update/",
+        "student/profile/update/",
         views.StudentProfileUpdateView.as_view(),
         name="update_student_profile",
     ),
@@ -34,7 +34,7 @@ urlpatterns += [
         name="instructor_profile",
     ),
     path(
-        "profile/instructor/update/",
+        "instructor/profile/update/",
         views.InstructorProfileUpdateView.as_view(),
         name="update_instructor_profile",
     ),
