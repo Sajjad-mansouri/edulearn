@@ -1,6 +1,7 @@
 // ============================================
 // TOP NAVIGATION CONTROLLER
 // ============================================
+const baseUrl = window.location.origin;
 const auth = new Auth({
     "baseURL": window.location.origin + '/api/v1/account/auth',
     "onLogout": ()=>{window.location.href = baseUrl + '/account/auth/login'}

@@ -6,6 +6,7 @@ from .assignment import (
 from .course import EnrollmentCourseSerializer
 from .lesson_contents import AttachmentSerializer
 from .quiz import QuizSerializer, QuizSubmission
+from .student import StudentCourseSerializer
 
 __all__ = [
     "EnrollmentCourseSerializer",
@@ -15,4 +16,5 @@ __all__ = [
     "AssignmentSerializer",
     "AssignmentSubmissionSerializer",
     "AssignmentSubmissionFileSerializer",
+    "StudentCourseSerializer",
 ]

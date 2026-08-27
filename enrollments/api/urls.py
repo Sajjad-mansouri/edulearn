@@ -64,4 +64,9 @@ urlpatterns = [
         views.CourseEnrollment.as_view(),
         name="enroll_course",
     ),
+    path(
+        "courses/",
+        views.StudentCoursesApiView.as_view(),
+        name="student_courses",
+    ),
 ]

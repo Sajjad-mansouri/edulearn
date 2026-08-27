@@ -1,8 +1,13 @@
 from django.db import transaction
-from django.db.models import Count, Exists, OuterRef, Prefetch, Q, Subquery
+from django.db.models import Avg, Count, Exists, OuterRef, Prefetch, Q, Subquery
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.generics import GenericAPIView, RetrieveAPIView, get_object_or_404
+from rest_framework.generics import (
+    GenericAPIView,
+    ListAPIView,
+    RetrieveAPIView,
+    get_object_or_404,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -37,6 +42,7 @@ from .serializers import (
     EnrollmentCourseSerializer,
     QuizSerializer,
     QuizSubmission,
+    StudentCourseSerializer,
 )
 
 
@@ -1385,3 +1391,27 @@ class CourseEnrollment(APIView):
                 course=course, user=request.user
             )
         return Response({"enrollment_id": enrollment.id})
+
+
+# **********
+class StudentCoursesApiView(ListAPIView):
+    serializer_class = StudentCourseSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        enrollment = Enrollment.objects.filter(course=OuterRef("pk"), user=user)
+        return (
+            Course.objects.prefetch_related("enrollments")
+            .filter(enrollments__user=user)
+            .annotate(
+                rating=Avg("enrollments__feedback__rating"),
+                enrollment_id=Subquery(enrollment.values("id")[:1]),
+                progress=Subquery(enrollment.values("progress")[:1]),
+                enrollment_status=Subquery(enrollment.values("status")[:1]),
+                last_accessed=Subquery(enrollment.values("last_activity_at")[:1]),
+                enrolled_at=Subquery(enrollment.values("enrolled_at")[:1]),
+            )
+            .select_related("category", "owner")
+            .distinct()
+            .order_by("-enrolled_at")
+        )

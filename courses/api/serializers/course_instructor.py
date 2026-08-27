@@ -7,9 +7,8 @@ User = get_user_model()
 
 
 class CourseInstructorSerializer(serializers.ModelSerializer):
-    bio = serializers.CharField(source="profile.biography")
+    bio = serializers.CharField(source="biography")
     avatar = serializers.ImageField(source="profile.avatar")
-    headline = serializers.CharField(source="profile.headline")
     rating = serializers.SerializerMethodField()
     total_students = serializers.IntegerField(read_only=True)
     total_courses = serializers.IntegerField(read_only=True)

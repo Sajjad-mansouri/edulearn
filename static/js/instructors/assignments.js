@@ -1,7 +1,7 @@
 // ============================================
 // INSTRUCTOR ASSIGNMENTS PAGE CONTROLLER
 // ============================================
-const baseUrl = window.location.origin;
+
 
 class InstructorAssignmentsPage {
     constructor() {

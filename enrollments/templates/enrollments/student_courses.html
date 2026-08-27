@@ -1,0 +1,94 @@
+ {%extends 'profiles/student/base_account.html'%}
+{%load static%}
+
+    {%block style%}
+    <link rel="stylesheet" href="{% static 'css/enrollments/student_courses.css' %}">
+    {%endblock%}
+
+ {%block main_content%}
+         <main class="content-main" id="contentMain">
+
+            <!-- Page Header -->
+            <header class="page-header">
+                <h1 class="page-header-title">My Learning</h1>
+                <p class="page-header-desc">Manage your enrolled courses and continue learning</p>
+            </header>
+
+            <!-- ==================== TAB NAVIGATION ==================== -->
+            <div class="learning-tabs" id="learningTabs">
+                <button class="learning-tab active" data-tab="all">
+                    All Courses
+                    <span class="tab-count" id="countAll">9</span>
+                </button>
+
+            </div>
+
+            <!-- ==================== SEARCH & FILTERS ==================== -->
+
+
+            <!-- ==================== ACTIVE FILTER CHIPS ==================== -->
+            <div class="active-filters" id="activeFilters" style="display:none;">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- ==================== RESULTS COUNT ==================== -->
+            <div class="results-info" id="resultsInfo">
+                Showing <strong id="showingCount">9</strong> of <strong id="totalCount">9</strong> courses
+            </div>
+
+            <!-- ==================== COURSE GRID ==================== -->
+            <div class="course-grid" id="courseGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- ==================== EMPTY STATE ==================== -->
+            <div class="empty-learning-state" id="emptyState" style="display:none;">
+                <!-- Populated by JavaScript based on active tab -->
+            </div>
+
+            <!-- ==================== PAGINATION ==================== -->
+            <div class="pagination" id="pagination">
+                <button class="page-btn" id="prevPage" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <div class="page-numbers" id="pageNumbers">
+                    <!-- Populated by JavaScript -->
+                </div>
+                <button class="page-btn" id="nextPage">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+        </main>
+ {%endblock%}
+
+{%block extra_content%}
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-bottom-nav">
+        <a href="/student/dashboard" class="mobile-nav-item"><i class="fas fa-th-large"></i><span>Home</span></a>
+        <a href="/my-learning" class="mobile-nav-item active"><i class="fas fa-book-open"></i><span>Learning</span></a>
+        <a href="/wishlist" class="mobile-nav-item"><i class="fas fa-heart"></i><span>Saved</span></a>
+        <a href="/profile" class="mobile-nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+        <button class="mobile-nav-item" id="mobileMenuBtn"><i class="fas fa-bars"></i><span>Menu</span></button>
+    </nav>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading your courses...</p>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Course Actions Dropdown (Portal) -->
+    <div class="actions-dropdown-portal" id="actionsDropdownPortal" style="display:none;">
+        <div class="course-actions-menu" id="courseActionsMenu">
+            <!-- Populated dynamically -->
+        </div>
+    </div>
+{%endblock%}
+{%block script%}
+    <script src="{%static 'js/enrollments/student_courses.js' %}"></script>
+
+{%endblock%}
