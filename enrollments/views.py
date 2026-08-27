@@ -11,3 +11,7 @@ class CourseLearningView(EnrollmentRequiredMixin, TemplateView):
 
 class StudentCoursesView(LoginRequiredMixin, TemplateView):
     template_name = "enrollments/student_courses.html"
+
+
+class StudentWishlistView(LoginRequiredMixin, TemplateView):
+    template_name = "enrollments/wishlist.html"

@@ -7,6 +7,7 @@ from .models import (
     CourseFeature,
     CourseFeedback,
     CourseFeedbackInteraction,
+    CourseWishlist,
     LearningOutcome,
     Prerequisite,
     TargetAudience,
@@ -20,3 +21,4 @@ admin.site.register(Prerequisite)
 admin.site.register(TargetAudience)
 admin.site.register(CourseFeature)
 admin.site.register(CourseFeedbackInteraction)
+admin.site.register(CourseWishlist)

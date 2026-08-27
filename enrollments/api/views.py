@@ -23,7 +23,7 @@ from assessments.models import (
     QuizAttempt,
     QuizContent,
 )
-from courses.models import Course
+from courses.models import Course, CourseWishlist
 from curriculums.models import Attachment, Lesson, LessonContent, Section
 from enrollments.mixins import EnrollmentRequiredMixin
 from enrollments.models import (
@@ -43,6 +43,7 @@ from .serializers import (
     QuizSerializer,
     QuizSubmission,
     StudentCourseSerializer,
+    StudentWishlistSerializer,
 )
 
 
@@ -1401,8 +1402,7 @@ class StudentCoursesApiView(ListAPIView):
         user = self.request.user
         enrollment = Enrollment.objects.filter(course=OuterRef("pk"), user=user)
         return (
-            Course.objects.prefetch_related("enrollments")
-            .filter(enrollments__user=user)
+            Course.objects.filter(enrollments__user=user)
             .annotate(
                 rating=Avg("enrollments__feedback__rating"),
                 enrollment_id=Subquery(enrollment.values("id")[:1]),
@@ -1414,4 +1414,24 @@ class StudentCoursesApiView(ListAPIView):
             .select_related("category", "owner")
             .distinct()
             .order_by("-enrolled_at")
+        )
+
+
+class StudentWishlistApiView(ListAPIView):
+    serializer_class = StudentWishlistSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return (
+            CourseWishlist.objects.filter(user=user)
+            .select_related(
+                "course",
+                "course__category",
+                "course__owner",
+            )
+            .annotate(
+                rating=Avg("course__enrollments__feedback__rating"),
+                rating_count=Count("course__enrollments__feedback", distinct=True),
+            )
+            .order_by("-created_at")
         )

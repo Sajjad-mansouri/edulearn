@@ -24,6 +24,11 @@ urlpatterns = [
         name="course_wishlist_toggle",
     ),
     path(
+        "wishlist/<int:pk>/remove/",
+        views.CourseWishlistRemoveApiView.as_view(),
+        name="course_wishlist_remove",
+    ),
+    path(
         "<int:course_id>/wishlist/status/",
         views.CourseWishlistStatusApiView.as_view(),
         name="course_wishlist_status",

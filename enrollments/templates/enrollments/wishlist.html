@@ -1,0 +1,113 @@
+ {%extends 'profiles/student/base_account.html'%}
+{%load static%}
+
+    {%block style%}
+    <link rel="stylesheet" href="{% static 'css/enrollments/wishlist.css' %}">
+    {%endblock%}
+ {%block main_content%}
+         <main class="content-main" id="contentMain">
+
+            <!-- Page Header -->
+            <header class="page-header">
+                <div class="page-header-top">
+                    <div>
+                        <h1 class="page-header-title">Wishlist</h1>
+                        <p class="page-header-desc">Courses you've saved for later</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ==================== TOOLBAR ==================== -->
+            <div class="wishlist-toolbar">
+                <div class="toolbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="wishlistSearch" class="toolbar-search-input" placeholder="Search your wishlist...">
+                    <button class="search-clear-btn" id="searchClearBtn" style="display:none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- ==================== ACTIVE FILTER CHIPS ==================== -->
+            <div class="active-filters" id="activeFilters" style="display:none;"></div>
+
+            <!-- ==================== BULK ACTIONS BAR ==================== -->
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="display:none;">
+                <label class="bulk-select-all">
+                    <input type="checkbox" id="selectAllCheckbox">
+                    <span>Select All</span>
+                </label>
+                <span class="bulk-selected-count" id="bulkSelectedCount">0 courses selected</span>
+                <button class="bulk-remove-btn" id="bulkRemoveBtn">
+                    <i class="fas fa-trash-alt"></i> Remove Selected
+                </button>
+            </div>
+
+            <!-- ==================== RESULTS COUNT ==================== -->
+            <div class="results-info" id="resultsInfo">
+                <span>Showing <strong id="showingCount">0</strong> saved courses</span>
+                <span class="total-saved" id="totalSaved"></span>
+            </div>
+
+            <!-- ==================== WISHLIST GRID ==================== -->
+            <div class="wishlist-grid" id="wishlistGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- ==================== EMPTY STATE ==================== -->
+            <div class="empty-wishlist-state" id="emptyState" style="display:none;">
+                <span class="empty-wishlist-icon">💔</span>
+                <h3>Your wishlist is empty</h3>
+                <p>Save courses you're interested in and come back to them anytime. Click the heart icon on any course to add it here.</p>
+                <button class="browse-courses-btn" onclick="window.location.href='/courses'">
+                    <i class="fas fa-compass"></i> Browse Courses
+                </button>
+            </div>
+
+            <!-- ==================== PAGINATION ==================== -->
+            <div class="pagination" id="pagination">
+                <button class="page-btn" id="prevPage" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <div class="page-numbers" id="pageNumbers"></div>
+                <button class="page-btn" id="nextPage">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+        </main>
+ {%endblock%}
+
+{%block extra_content%}
+    <!-- Actions Dropdown Portal -->
+    <div class="actions-dropdown-portal" id="actionsDropdownPortal" style="display:none;">
+        <div class="course-actions-menu" id="courseActionsMenu"></div>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div class="confirm-overlay" id="confirmOverlay" style="display:none;">
+        <div class="confirm-dialog">
+            <div class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3 class="confirm-title" id="confirmTitle">Remove from wishlist?</h3>
+            <p class="confirm-message" id="confirmMessage">This course will be removed from your wishlist.</p>
+            <div class="confirm-actions">
+                <button class="confirm-btn cancel" id="confirmCancel">Cancel</button>
+                <button class="confirm-btn danger" id="confirmOk">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading your wishlist...</p>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+{%endblock%}
+{%block script%}
+    <script src="{%static 'js/enrollments/wishlist.js' %}"></script>
+
+{%endblock%}

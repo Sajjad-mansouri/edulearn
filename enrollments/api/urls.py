@@ -69,4 +69,9 @@ urlpatterns = [
         views.StudentCoursesApiView.as_view(),
         name="student_courses",
     ),
+    path(
+        "wishlist/",
+        views.StudentWishlistApiView.as_view(),
+        name="student_wishlist",
+    ),
 ]

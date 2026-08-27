@@ -198,6 +198,11 @@ class CourseWishlistToggleApiView(APIView):
         )
 
 
+class CourseWishlistRemoveApiView(DestroyAPIView):
+    def get_queryset(self):
+        return CourseWishlist.objects.filter(user=self.request.user)
+
+
 class CourseWishlistStatusApiView(APIView):
     def get(self, request, course_id):
         course = get_object_or_404(Course, id=course_id)
