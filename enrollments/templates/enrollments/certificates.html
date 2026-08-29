@@ -1,0 +1,108 @@
+ {%extends 'profiles/student/base_account.html'%}
+{%load static%}
+
+    {%block style%}
+    <link rel="stylesheet" href="{% static 'css/enrollments/certificates.css' %}">
+    {%endblock%}
+ {%block main_content%}
+        <!-- ==================== MAIN CONTENT ==================== -->
+        <main class="content-main" id="contentMain">
+
+            <!-- Page Header -->
+            <header class="page-header">
+                <div class="page-header-top">
+                    <div>
+                        <h1 class="page-header-title">My Certificates</h1>
+                        <p class="page-header-desc">Your earned certificates and achievements</p>
+                    </div>
+                    <div class="header-stats">
+                        <div class="stat-badge">
+                            <i class="fas fa-award"></i>
+                            <span><strong id="totalCerts">0</strong> Certificates</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ==================== TOOLBAR ==================== -->
+            <div class="certificate-toolbar">
+                <div class="toolbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="certificateSearch" class="toolbar-search-input" placeholder="Search certificates...">
+                    <button class="search-clear-btn" id="searchClearBtn" style="display:none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="toolbar-tabs">
+                    <button class="tab-btn active" data-tab="all">All</button>
+                    <button class="tab-btn" data-tab="completed">Completed</button>
+                    <button class="tab-btn" data-tab="in-progress">In Progress</button>
+                </div>
+            </div>
+
+            <!-- ==================== RESULTS INFO ==================== -->
+            <div class="results-info" id="resultsInfo">
+                <span>Showing <strong id="showingCount">0</strong> certificates</span>
+            </div>
+
+            <!-- ==================== CERTIFICATES GRID ==================== -->
+            <div class="certificates-grid" id="certificatesGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- ==================== EMPTY STATE ==================== -->
+            <div class="empty-certificates-state" id="emptyState" style="display:none;">
+                <span class="empty-certificates-icon">🎓</span>
+                <h3>No certificates yet</h3>
+                <p>Complete your courses to earn certificates. Your achievements will appear here.</p>
+                <button class="browse-courses-btn" onclick="window.location.href='/courses'">
+                    <i class="fas fa-compass"></i> Browse Courses
+                </button>
+            </div>
+
+        </main>
+ {%endblock%}
+
+{%block extra_content%}
+    <!-- Certificate Preview Modal -->
+    <div class="certificate-modal" id="certificateModal" style="display:none;">
+        <div class="certificate-modal-overlay" id="modalOverlay"></div>
+        <div class="certificate-modal-content">
+            <button class="modal-close-btn" id="modalCloseBtn">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="certificate-preview" id="certificatePreview">
+                <!-- Certificate content injected here -->
+            </div>
+            <div class="modal-actions">
+                <button class="download-btn" id="downloadBtn">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+                <button class="share-btn" id="shareBtn">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading your certificates...</p>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+{%endblock%}
+
+
+
+
+{%block script%}
+    <!-- html2pdf library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+    <script src="{%static 'js/enrollments/certificates.js' %}"></script>
+
+{%endblock%}

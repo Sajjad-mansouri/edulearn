@@ -1,5 +1,8 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
+from certificates.models import Certificate
 from courses.models import Course, CourseWishlist
 
 
@@ -82,3 +85,36 @@ class StudentWishlistSerializer(serializers.ModelSerializer):
 
     def get_price(self, obj):
         return obj.course.get_discounted_price
+
+
+class StudentCourseCertificateSerializer(serializers.ModelSerializer):
+    course_title = serializers.CharField(source="enrollment.course.title")
+    course_slug = serializers.CharField(source="enrollment.course.slug")
+    instructor = serializers.CharField(source="enrollment.course.owner")
+    completion_date = serializers.DateTimeField(source="issued_at")
+    progress = serializers.FloatField(source="enrollment.progress")
+    completed = serializers.SerializerMethodField()
+    design = serializers.SerializerMethodField()
+
+    student_name = serializers.CharField(source="enrollment.user.get_full_name")
+
+    class Meta:
+        model = Certificate
+        fields = [
+            "id",
+            "certificate_number",
+            "course_title",
+            "course_slug",
+            "instructor",
+            "completion_date",
+            "progress",
+            "completed",
+            "design",
+            "student_name",
+        ]
+
+    def get_completed(self, obj):
+        return obj.enrollment.progress == Decimal("100")
+
+    def get_design(self, obj):
+        return "certificate-design-1"

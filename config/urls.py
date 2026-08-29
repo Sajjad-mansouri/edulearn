@@ -34,6 +34,7 @@ urlpatterns = [
     path("api/v1/enrollment/", include("enrollments.api.urls")),
     path("api/v1/payment/", include("payments.api.urls")),
     path("payment/", include("payments.urls")),
+    path("certificates/", include("certificates.urls")),
 ]
 
 if settings.DEBUG:

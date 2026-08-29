@@ -74,4 +74,14 @@ urlpatterns = [
         views.StudentWishlistApiView.as_view(),
         name="student_wishlist",
     ),
+    path(
+        "certificates/",
+        views.StudentCertificatesApiView.as_view(),
+        name="student_certificates",
+    ),
+    path(
+        "certificate/<int:pk>/download/",
+        views.CertificateDownloadApiView.as_view(),
+        name="certificate_download",
+    ),
 ]

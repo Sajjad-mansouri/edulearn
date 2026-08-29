@@ -15,3 +15,7 @@ class StudentCoursesView(LoginRequiredMixin, TemplateView):
 
 class StudentWishlistView(LoginRequiredMixin, TemplateView):
     template_name = "enrollments/wishlist.html"
+
+
+class StudentCertificatesView(LoginRequiredMixin, TemplateView):
+    template_name = "enrollments/certificates.html"

@@ -7,4 +7,9 @@ urlpatterns = [
     path("<enrollment_id>/learn/", views.CourseLearningView.as_view(), name="learn"),
     path("courses/", views.StudentCoursesView.as_view(), name="student_courses"),
     path("wishlist/", views.StudentWishlistView.as_view(), name="student_wishlist"),
+    path(
+        "certificates/",
+        views.StudentCertificatesView.as_view(),
+        name="student_certificates",
+    ),
 ]

@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.db.models import Avg, Count, Exists, OuterRef, Prefetch, Q, Subquery
+from django.http import FileResponse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.generics import (
@@ -23,6 +24,7 @@ from assessments.models import (
     QuizAttempt,
     QuizContent,
 )
+from certificates.models import Certificate
 from courses.models import Course, CourseWishlist
 from curriculums.models import Attachment, Lesson, LessonContent, Section
 from enrollments.mixins import EnrollmentRequiredMixin
@@ -42,6 +44,7 @@ from .serializers import (
     EnrollmentCourseSerializer,
     QuizSerializer,
     QuizSubmission,
+    StudentCourseCertificateSerializer,
     StudentCourseSerializer,
     StudentWishlistSerializer,
 )
@@ -1434,4 +1437,37 @@ class StudentWishlistApiView(ListAPIView):
                 rating_count=Count("course__enrollments__feedback", distinct=True),
             )
             .order_by("-created_at")
+        )
+
+
+class StudentCertificatesApiView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = StudentCourseCertificateSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return (
+            Certificate.objects.filter(enrollment__user=user)
+            .select_related(
+                "enrollment",
+                "enrollment__course",
+                "enrollment__user",
+            )
+            .order_by("-issued_at")
+        )
+
+
+class CertificateDownloadApiView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        certificate = get_object_or_404(
+            Certificate, pk=pk, enrollment__user=request.user
+        )
+
+        return FileResponse(
+            certificate.file.open("rb"),
+            as_attachment=True,
+            filename=f"{certificate.certificate_number}.pdf",
+            content_type="application/pdf",
         )
