@@ -1,0 +1,110 @@
+ {%extends 'profiles/instructor/base_account.html'%}
+ {%load static%}
+    {%block style%}
+ <link rel="stylesheet" href="{% static 'css/instructors/revenue.css' %}">
+
+    {%endblock%}
+{%block main_content%}
+        <main class="content-main" id="contentMain">
+            <header class="page-header">
+                <div class="page-header-top-row">
+                    <div>
+                        <h1 class="page-header-title">Revenue</h1>
+                        <p class="page-header-desc">Track your earnings and financial performance</p>
+                    </div>
+                    <div class="header-actions">
+                        <select id="periodFilter" class="filter-select">
+                            <option value="30">Last 30 Days</option>
+                            <option value="90">Last 90 Days</option>
+                            <option value="365">Last Year</option>
+                            <option value="all">All Time</option>
+                        </select>
+                        <button class="export-btn" id="exportBtn"><i class="fas fa-download"></i> Export</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Revenue Summary Cards -->
+            <div class="revenue-summary-grid" id="revenueSummaryGrid"></div>
+
+            <!-- Charts Row -->
+            <div class="revenue-charts-row">
+
+                <div class="chart-card">
+                    <div class="chart-header"><h3><i class="fas fa-chart-pie"></i> Course Revenue Breakdown</h3></div>
+                    <div class="chart-body" id="courseBreakdownBody"></div>
+                </div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="chart-card" style="margin-bottom:24px;">
+                <div class="chart-header">
+                    <h3><i class="fas fa-list-alt"></i> Recent Transactions</h3>
+                    <a href="/instructor/transactions" class="view-all-link">View All <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="transaction-table-wrapper">
+                    <table class="transaction-table" id="transactionTable">
+                        <thead><tr>
+                            <th>Type</th><th>Description</th><th>Amount</th><th>Date</th><th>Status</th>
+                        </tr></thead>
+                        <tbody id="transactionTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Mobile Transaction Cards -->
+            <div class="transaction-cards-list mobile-only" id="transactionCardsList"></div>
+        </main>
+{%endblock%}
+{%block extra_content%}
+<!-- Transaction Modal -->
+<div id="transactionModal" class="transaction-modal">
+    <div id="transactionModalOverlay" class="transaction-modal-overlay"></div>
+    <div class="transaction-modal-content">
+        <div class="transaction-modal-header">
+            <h3>All Transactions</h3>
+            <button id="closeTransactionModal" class="modal-close-btn">&times;</button>
+        </div>
+
+        <div class="transaction-modal-toolbar">
+            <div class="transaction-search">
+                <input type="text" id="transactionSearch" placeholder="Search transactions...">
+            </div>
+
+            <span id="modalTotalTransactions" class="total-transactions"></span>
+        </div>
+
+        <div class="transaction-modal-body">
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="modalTransactionBody">
+                    <!-- Transactions will be rendered here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="transaction-modal-footer">
+            <button id="modalPrevPage" class="pagination-btn">Previous</button>
+            <span id="modalPageInfo" class="page-info">Page 1 of 1</span>
+            <button id="modalNextPage" class="pagination-btn">Next</button>
+        </div>
+    </div>
+</div>
+    <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><p class="loading-text">Loading revenue data...</p></div>
+    <div class="toast-container" id="toastContainer"></div>
+{%endblock%}
+
+
+    {%block script%}
+    <script src="{%static 'js/instructors/revenue.js' %}"></script>
+
+    {%endblock%}

@@ -52,4 +52,14 @@ urlpatterns = [
         views.InstructorAnalyticsCoursesApiView.as_view(),
         name="analytics_courses",
     ),
+    path(
+        "revenue/",
+        views.InstructorRevenueApiView.as_view(),
+        name="revenue",
+    ),
+    path(
+        "transactions/",
+        views.InstructorTransactionsApiView.as_view(),
+        name="transactions",
+    ),
 ]

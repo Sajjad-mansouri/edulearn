@@ -5,7 +5,9 @@ from .course import (
     InstructorCourseSerializer,
     InstructorFilterCoursesSerializer,
 )
+from .revenue import RevenueSerializer
 from .student import InstructorDashboardSerializer
+from .transaction import TransactionSerializer
 
 __all__ = [
     "CourseSerializer",
@@ -16,4 +18,6 @@ __all__ = [
     "GradeSerializer",
     "AnalyticSerializer",
     "AnalyticFilterCoursesSerializer",
+    "RevenueSerializer",
+    "TransactionSerializer",
 ]

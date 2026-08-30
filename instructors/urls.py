@@ -18,4 +18,5 @@ urlpatterns = [
         name="update_course",
     ),
     path("analytics/", views.InstructorAnalytics.as_view(), name="analytics"),
+    path("revenue/", views.InstructorRevenue.as_view(), name="revenue"),
 ]

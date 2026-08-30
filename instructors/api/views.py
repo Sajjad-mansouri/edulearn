@@ -2,15 +2,18 @@ import io
 import zipfile
 
 from django.contrib.auth import get_user_model
+from django.db.models import F
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
     GenericAPIView,
     ListAPIView,
     RetrieveAPIView,
     UpdateAPIView,
 )
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,6 +21,7 @@ from rest_framework.views import APIView
 from assessments.models import AssignmentSubmission
 from courses.models import Course
 from normalizers.course import normalize_course_data
+from payments.models import Payment
 
 from .serializers import (
     AnalyticFilterCoursesSerializer,
@@ -28,8 +32,15 @@ from .serializers import (
     InstructorCourseSerializer,
     InstructorDashboardSerializer,
     InstructorFilterCoursesSerializer,
+    RevenueSerializer,
+    TransactionSerializer,
 )
-from .services import AnalyticService, CourseService, CourseUpdateService
+from .services import (
+    AnalyticService,
+    CourseService,
+    CourseUpdateService,
+    RevenueService,
+)
 
 User = get_user_model()
 
@@ -221,10 +232,8 @@ class InstructorAnalyticsApiView(APIView):
             course_slug=course_slug,
         )
         analytics_data = service.get_analytics()
-        print(analytics_data)
         serializer = AnalyticSerializer(data=analytics_data)
-        serializer.is_valid(raise_exception=False)
-        print(serializer.errors)
+        serializer.is_valid(raise_exception=True)
 
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
@@ -235,3 +244,50 @@ class InstructorAnalyticsCoursesApiView(ListAPIView):
 
     def get_queryset(self):
         return Course.objects.filter(owner=self.request.user)
+
+
+class InstructorRevenueApiView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        period = request.query_params.get("period", "30")
+        period = str(period).lower().strip()
+
+        if period not in RevenueService.ALLOWED_PERIODS:
+            raise ValidationError(
+                {
+                    "period": (
+                        f"Invalid period. Allowed values: "
+                        f"{', '.join(sorted(RevenueService.ALLOWED_PERIODS))}"
+                    )
+                }
+            )
+
+        service = RevenueService(
+            instructor=request.user,
+            period=period,
+        )
+        revenue_data = service.get_revenue()
+
+        serializer = RevenueSerializer(revenue_data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class InstructorTransactionsPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
+class InstructorTransactionsApiView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TransactionSerializer
+    pagination_class = InstructorTransactionsPagination
+
+    def get_queryset(self):
+        return (
+            Payment.objects.filter(enrollment__course__owner=self.request.user)
+            .annotate(course=F("enrollment__course__title"))
+            .select_related("enrollment__course")
+            .order_by("-updated_at")  # or -paid_at / -created_at
+        )

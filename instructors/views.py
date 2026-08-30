@@ -25,3 +25,7 @@ class CourseUpateTemplateView(InstructorRequiredMixin, TemplateView):
 
 class InstructorAnalytics(InstructorRequiredMixin, TemplateView):
     template_name = "instructors/analytics.html"
+
+
+class InstructorRevenue(InstructorRequiredMixin, TemplateView):
+    template_name = "instructors/revenue.html"
