@@ -17,4 +17,5 @@ urlpatterns = [
         views.CourseUpateTemplateView.as_view(),
         name="update_course",
     ),
+    path("analytics/", views.InstructorAnalytics.as_view(), name="analytics"),
 ]

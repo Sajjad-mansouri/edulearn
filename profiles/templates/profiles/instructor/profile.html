@@ -218,6 +218,10 @@
         </main>
 
 {%endblock%}
+{%block extra_content%}
+    <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><p class="loading-text">Loading profile...</p></div>
+    <div class="toast-container" id="toastContainer"></div>
+{%endblock%}
     {%block script%}
     <script src="{%static 'js/profiles/instructor/profile.js' %}"></script>
     {%endblock%}

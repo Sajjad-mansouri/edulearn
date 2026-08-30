@@ -95,3 +95,20 @@ class VideoProgress(models.Model):
 
         elif content_progress.status == (LessonContentProgress.Status.NOT_STARTED):
             content_progress.mark_started()
+
+
+class VideoWatchEvent(models.Model):
+    video_progress = models.ForeignKey(
+        VideoProgress,
+        on_delete=models.CASCADE,
+        related_name="watch_events",
+    )
+
+    watched_seconds = models.PositiveIntegerField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["created_at"]),
+        ]

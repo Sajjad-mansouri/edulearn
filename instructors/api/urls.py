@@ -42,4 +42,14 @@ urlpatterns = [
         views.GradeAssignmentApiView.as_view(),
         name="grade_assignment",
     ),
+    path(
+        "analytics/",
+        views.InstructorAnalyticsApiView.as_view(),
+        name="analytics",
+    ),
+    path(
+        "analytics/courses/",
+        views.InstructorAnalyticsCoursesApiView.as_view(),
+        name="analytics_courses",
+    ),
 ]

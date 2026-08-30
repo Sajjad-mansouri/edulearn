@@ -4,7 +4,7 @@ from .enrollment import Enrollment
 from .lesson_content_progress import LessonContentProgress
 from .lesson_progress import LessonProgress
 from .section_progress import SectionProgress
-from .video_progress import VideoProgress
+from .video_progress import VideoProgress, VideoWatchEvent
 
 __all__ = [
     "Enrollment",
@@ -14,4 +14,5 @@ __all__ = [
     "CourseProgress",
     "VideoProgress",
     "CourseLessonBookmark",
+    "VideoWatchEvent",
 ]

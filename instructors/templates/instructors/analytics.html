@@ -1,0 +1,85 @@
+ {%extends 'profiles/instructor/base_account.html'%}
+ {%load static%}
+    {%block style%}
+ <link rel="stylesheet" href="{% static 'css/instructors/analytics.css' %}">
+
+    {%endblock%}
+{%block main_content%}
+        <main class="content-main" id="contentMain">
+            <header class="page-header">
+                <div class="page-header-top-row">
+                    <div>
+                        <h1 class="page-header-title">Analytics</h1>
+                        <p class="page-header-desc">Actionable insights into your course performance</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Filters Bar -->
+            <div class="analytics-filters">
+                <select id="courseFilter" class="filter-select">
+                    <option value="all">All Courses</option>
+                    <option value="python-ds">Python for Data Science</option>
+                    <option value="ml-az">Machine Learning A-Z</option>
+                    <option value="deep-learning">Deep Learning Specialization</option>
+                    <option value="data-eng">Data Engineering Essentials</option>
+                </select>
+                <select id="periodFilter" class="filter-select">
+                    <option value="30">Last 30 Days</option>
+                    <option value="7">Last 7 Days</option>
+                    <option value="90">Last 90 Days</option>
+                    <option value="365">Last Year</option>
+                    <option value="all">All Time</option>
+                </select>
+
+                <button class="export-btn" id="exportBtn"><i class="fas fa-download"></i> Export CSV</button>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid" id="kpiGrid"></div>
+
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <div class="chart-card" id="enrollmentChart">
+                    <div class="chart-header"><h3><i class="fas fa-chart-line"></i> Enrollment Trends</h3></div>
+                    <div class="chart-body" id="enrollmentChartBody"></div>
+                </div>
+                <div class="chart-card" id="revenueChart">
+                    <div class="chart-header"><h3><i class="fas fa-chart-bar"></i> Revenue Trends</h3></div>
+                    <div class="chart-body" id="revenueChartBody"></div>
+                </div>
+                <div class="chart-card" id="completionChart">
+                    <div class="chart-header"><h3><i class="fas fa-chart-pie"></i> Completion Rate</h3></div>
+                    <div class="chart-body" id="completionChartBody"></div>
+                </div>
+                <div class="chart-card" id="retentionChart">
+                    <div class="chart-header"><h3><i class="fas fa-chart-area"></i> Student Retention</h3></div>
+                    <div class="chart-body" id="retentionChartBody"></div>
+                </div>
+                <div class="chart-card" id="watchTimeChart">
+                    <div class="chart-header"><h3><i class="fas fa-clock"></i> Watch Time (Hours)</h3></div>
+                    <div class="chart-body" id="watchTimeChartBody"></div>
+                </div>
+                <div class="chart-card" id="quizChart">
+                    <div class="chart-header"><h3><i class="fas fa-tasks"></i> Quiz Performance</h3></div>
+                    <div class="chart-body" id="quizChartBody"></div>
+                </div>
+            </div>
+
+            <!-- Geographic Distribution -->
+            <div class="chart-card geo-card" id="geoChart">
+                <div class="chart-header"><h3><i class="fas fa-globe-americas"></i> Geographic Distribution</h3></div>
+                <div class="chart-body" id="geoChartBody"></div>
+            </div>
+        </main>
+{%endblock%}
+{%block extra_content%}
+    <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><p class="loading-text">Loading analytics...</p></div>
+    <div class="toast-container" id="toastContainer"></div>
+{%endblock%}
+
+
+    {%block script%}
+    <script src="{%static 'js/instructors/analytics.js' %}"></script>
+
+    {%endblock%}

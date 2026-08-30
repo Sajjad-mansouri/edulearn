@@ -34,6 +34,7 @@ from enrollments.models import (
     LessonContentProgress,
     LessonProgress,
     VideoProgress,
+    VideoWatchEvent,
 )
 
 from .serializers import (
@@ -337,7 +338,9 @@ class LessonVideoProgressApiView(EnrollmentRequiredMixin, GenericAPIView):
             lesson_content_progress__content=lesson_content,
             defaults={"watched_seconds": timestamp},
         )
-
+        VideoWatchEvent.objects.create(
+            video_progress=video_progress, watched_seconds=timestamp
+        )
         return Response({"success": True})
 
 

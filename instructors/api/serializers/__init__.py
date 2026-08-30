@@ -1,3 +1,4 @@
+from .analytics import AnalyticFilterCoursesSerializer, AnalyticSerializer
 from .assignments import AssignmentSubmissionSerializer, GradeSerializer
 from .course import (
     CourseSerializer,
@@ -13,4 +14,6 @@ __all__ = [
     "AssignmentSubmissionSerializer",
     "InstructorFilterCoursesSerializer",
     "GradeSerializer",
+    "AnalyticSerializer",
+    "AnalyticFilterCoursesSerializer",
 ]

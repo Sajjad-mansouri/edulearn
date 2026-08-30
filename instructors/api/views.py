@@ -11,7 +11,7 @@ from rest_framework.generics import (
     RetrieveAPIView,
     UpdateAPIView,
 )
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -20,6 +20,8 @@ from courses.models import Course
 from normalizers.course import normalize_course_data
 
 from .serializers import (
+    AnalyticFilterCoursesSerializer,
+    AnalyticSerializer,
     AssignmentSubmissionSerializer,
     CourseSerializer,
     GradeSerializer,
@@ -27,7 +29,7 @@ from .serializers import (
     InstructorDashboardSerializer,
     InstructorFilterCoursesSerializer,
 )
-from .services import CourseService, CourseUpdateService
+from .services import AnalyticService, CourseService, CourseUpdateService
 
 User = get_user_model()
 
@@ -202,3 +204,34 @@ class InstructorFilterCoursesApiView(RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class InstructorAnalyticsApiView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        period = kwargs.get("period") or request.query_params.get("period") or "30"
+        course_slug = request.query_params.get(
+            "course_slug"
+        ) or request.query_params.get("course")
+
+        service = AnalyticService(
+            instructor=request.user,
+            period=period,
+            course_slug=course_slug,
+        )
+        analytics_data = service.get_analytics()
+        print(analytics_data)
+        serializer = AnalyticSerializer(data=analytics_data)
+        serializer.is_valid(raise_exception=False)
+        print(serializer.errors)
+
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+class InstructorAnalyticsCoursesApiView(ListAPIView):
+    serializer_class = AnalyticFilterCoursesSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return Course.objects.filter(owner=self.request.user)

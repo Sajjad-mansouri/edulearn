@@ -1,0 +1,110 @@
+/* ============================================ */
+/* INSTRUCTOR ANALYTICS PAGE STYLES              */
+/* ============================================ */
+
+.page-header-top-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+
+/* Filters */
+.analytics-filters { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-select { padding: 9px 34px 9px 14px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-full); background: #FFFFFF; font-size: 0.84rem; font-weight: 500; color: var(--color-gray-700); cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; transition: all var(--transition-fast); }
+.export-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-full); background: #FFFFFF; font-size: 0.84rem; font-weight: 600; color: var(--color-gray-700); cursor: pointer; transition: all var(--transition-fast); margin-left: auto; }
+.export-btn:hover { background: var(--color-gray-50); border-color: var(--color-gray-400); color: var(--color-primary-600); }
+
+/* KPI Cards */
+.kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px; }
+.kpi-card { background: #FFFFFF; border: 1px solid var(--color-gray-200); border-radius: var(--radius-xl); padding: 16px 18px; text-align: center; box-shadow: var(--shadow-xs); transition: all var(--transition-fast); }
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.kpi-icon { font-size: 1.5rem; margin-bottom: 6px; display: block; }
+.kpi-value { font-size: 1.3rem; font-weight: 700; color: var(--color-gray-900); letter-spacing: -0.02em; display: block; }
+.kpi-label { font-size: 0.7rem; font-weight: 600; color: var(--color-gray-500); text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-top: 2px; }
+.kpi-trend { font-size: 0.72rem; font-weight: 600; margin-top: 4px; display: block; }
+.kpi-trend.up { color: var(--color-success); }
+.kpi-trend.down { color: var(--color-danger); }
+.kpi-trend.neutral { color: var(--color-gray-500); }
+
+/* Charts Grid */
+.charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 18px; }
+
+/* Chart Card */
+.chart-card { background: #FFFFFF; border: 1px solid var(--color-gray-200); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-xs); }
+.chart-card.geo-card { margin-bottom: 24px; }
+.chart-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--color-gray-100); }
+.chart-header h3 { font-size: 0.88rem; font-weight: 600; color: var(--color-gray-900); display: flex; align-items: center; gap: 8px; }
+.chart-header h3 i { color: var(--color-primary-500); font-size: 0.85rem; }
+.chart-body { padding: 20px; min-height: 250px; }
+
+/* Chart Placeholders (CSS-based visual charts) */
+.chart-placeholder { display: flex; align-items: flex-end; gap: 8px; height: 200px; padding-top: 20px; }
+.chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.chart-bar { width: 100%; border-radius: var(--radius-sm) var(--radius-sm) 0 0; transition: height 0.6s ease; min-width: 20px; }
+.chart-bar.enrollment { background: linear-gradient(180deg, var(--color-primary-400), var(--color-primary-600)); }
+.chart-bar.revenue { background: linear-gradient(180deg, #34D399, #059669); }
+.chart-bar-label { font-size: 0.7rem; color: var(--color-gray-500); font-weight: 500; }
+.chart-bar-value { font-size: 0.68rem; font-weight: 600; color: var(--color-gray-700); }
+
+/* Line Chart Simulation */
+.line-chart { position: relative; height: 200px; }
+.line-chart-svg { width: 100%; height: 100%; }
+.line-point { position: absolute; width: 8px; height: 8px; background: var(--color-primary-600); border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: var(--shadow-sm); transform: translate(-50%, -50%); }
+.line-label { position: absolute; font-size: 0.68rem; color: var(--color-gray-500); transform: translateX(-50%); }
+
+/* Donut Chart */
+.donut-chart { display: flex; align-items: center; justify-content: center; gap: 30px; height: 200px; }
+.donut-visual { width: 140px; height: 140px; border-radius: 50%; position: relative; }
+.donut-center { position: absolute; inset: 30px; background: #FFFFFF; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.donut-pct { font-size: 1.4rem; font-weight: 700; color: var(--color-gray-900); }
+.donut-label-sm { font-size: 0.65rem; color: var(--color-gray-500); }
+.donut-legend { display: flex; flex-direction: column; gap: 8px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--color-gray-600); }
+.legend-dot { width: 10px; height: 10px; border-radius: var(--radius-full); }
+.legend-dot.completed { background: var(--color-success); }
+.legend-dot.progress { background: var(--color-primary-400); }
+
+/* Retention Area Chart */
+.retention-list { display: flex; align-items: flex-end; gap: 4px; height: 200px; }
+.retention-week { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.retention-bar { width: 100%; background: linear-gradient(180deg, rgba(99,102,241,0.3), rgba(99,102,241,0.8)); border-radius: var(--radius-xs) var(--radius-xs) 0 0; transition: height 0.6s ease; }
+.retention-label { font-size: 0.62rem; color: var(--color-gray-500); }
+.retention-pct { font-size: 0.62rem; font-weight: 600; color: var(--color-gray-700); }
+
+/* Horizontal Bar (Quiz) */
+.hbar-list { display: flex; flex-direction: column; gap: 10px; }
+.hbar-item { display: flex; align-items: center; gap: 10px; }
+.hbar-label { width: 100px; font-size: 0.78rem; font-weight: 500; color: var(--color-gray-700); flex-shrink: 0; text-align: right; }
+.hbar-track { flex: 1; height: 24px; background: var(--color-gray-100); border-radius: var(--radius-full); overflow: hidden; }
+.hbar-fill { height: 100%; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; transition: width 0.8s ease; }
+.hbar-fill.q1 { background: linear-gradient(90deg, var(--color-primary-400), var(--color-primary-600)); }
+.hbar-fill.q2 { background: linear-gradient(90deg, #34D399, #059669); }
+.hbar-fill.q3 { background: linear-gradient(90deg, #FBBF24, #F59E0B); }
+.hbar-fill.q4 { background: linear-gradient(90deg, #FB923C, #EA580C); }
+.hbar-value { font-size: 0.72rem; font-weight: 700; color: #FFFFFF; }
+
+/* Geographic List */
+.geo-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.geo-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--color-gray-200); border-radius: var(--radius-lg); transition: all var(--transition-fast); }
+.geo-item:hover { background: var(--color-gray-50); }
+.geo-flag { font-size: 1.5rem; }
+.geo-info { flex: 1; }
+.geo-country { font-size: 0.84rem; font-weight: 600; color: var(--color-gray-900); }
+.geo-pct { font-size: 0.76rem; color: var(--color-gray-500); }
+.geo-bar-mini { width: 60px; height: 6px; background: var(--color-gray-200); border-radius: var(--radius-full); overflow: hidden; }
+.geo-bar-mini-fill { height: 100%; background: var(--color-primary-500); border-radius: var(--radius-full); }
+
+/* Responsive */
+@media (max-width: 1199px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+    .geo-list { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 767px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .kpi-card { padding: 12px 10px; }
+    .kpi-value { font-size: 1.1rem; }
+    .charts-grid { grid-template-columns: 1fr; gap: 12px; }
+    .chart-body { padding: 14px; min-height: 200px; }
+    .analytics-filters { flex-direction: column; }
+    .filter-select { width: 100%; }
+    .export-btn { width: 100%; justify-content: center; margin-left: 0; }
+    .geo-list { grid-template-columns: 1fr; }
+    .donut-chart { flex-direction: column; height: auto; }
+}
