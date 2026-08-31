@@ -46,4 +46,5 @@ class EnrollmentLessonSerializer(serializers.ModelSerializer):
         return obj.has_attachments
 
     def get_type(self, obj):
+        print("obj in get_type", obj, obj.type)
         return obj.type

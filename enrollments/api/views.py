@@ -79,8 +79,12 @@ class EnrollmentCourseApiView(EnrollmentRequiredMixin, RetrieveAPIView):
 
     def get_queryset(self):
         # For a specific course, get all sections with lessons and attachment info
+        if self.enrollment:
+            q = Q(id=self.enrollment.course_id)
+        else:
+            q = Q(owner=self.request.user)
         return (
-            Course.objects.filter(id=self.enrollment.course_id)
+            Course.objects.filter(q)
             .prefetch_related(
                 Prefetch(
                     "sections",
@@ -112,30 +116,43 @@ class EnrollmentCourseApiView(EnrollmentRequiredMixin, RetrieveAPIView):
     def get_object(self):
         qs = self.get_queryset()
         enrollment_id = self.kwargs.get("enrollment_id")
-        return get_object_or_404(
-            qs, enrollments__id=enrollment_id, enrollments__user=self.request.user
-        )
+        course_id = self.kwargs.get("course_id")
+        if enrollment_id:
+            return get_object_or_404(
+                qs, enrollments__id=enrollment_id, enrollments__user=self.request.user
+            )
+        elif course_id:
+            return get_object_or_404(qs, id=course_id)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["enrollment_id"] = self.kwargs.get("enrollment_id")
         return context
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        print(serializer.data)
+        return Response(serializer.data)
+
 
 class LessonContentApiView(EnrollmentRequiredMixin, GenericAPIView):
     lookup_url_kwarg = "lesson_id"
 
-    def get(self, request, enrollment_id, lesson_id):
+    def get(self, request, *args, **kwargs):
         lesson = self.get_object()
         content = get_object_or_404(LessonContent, lesson=lesson, is_main_content=True)
         response_data = self.build_content_response(request, content, lesson)
         return Response(response_data)
 
     def get_queryset(self):
+        print("queryset")
+        if self.enrollment:
+            q = Q(section__course=self.enrollment.course)
+        else:
+            q = Q(section__course__owner=self.request.user)
         return (
-            Lesson.objects.filter(
-                section__course=self.enrollment.course,
-            )
+            Lesson.objects.filter(q)
             .select_related("section__course")
             .prefetch_related(
                 "contents",
@@ -150,6 +167,7 @@ class LessonContentApiView(EnrollmentRequiredMixin, GenericAPIView):
 
     def get_object(self):
         queryset = self.get_queryset()
+        print("lesson_id", self.kwargs["lesson_id"], queryset, queryset[0].id)
         return get_object_or_404(queryset, pk=self.kwargs["lesson_id"])
 
     def build_content_response(self, request, content, lesson):
@@ -174,17 +192,19 @@ class LessonContentApiView(EnrollmentRequiredMixin, GenericAPIView):
             base_data.update(handler(request, content, lesson))
         else:
             base_data["error"] = f"Unsupported content type: {content.content_type}"
-
+        print(base_data)
         return base_data
 
     def _handle_video_content(self, request, content, lesson):
-        video_progress = self._get_or_create_video_progress(request.user, content)
-        return {
+        data = {
             "videoUrl": self._get_file_url(request, content.video.video_file),
-            "video_progress": {
-                "timestamp": video_progress.watched_seconds or 0,
-            },
         }
+        if self.enrollment:
+            video_progress = self._get_or_create_video_progress(request.user, content)
+            data["video_progress"] = {
+                "timestamp": video_progress.watched_seconds or 0,
+            }
+        return data
 
     def _handle_article_content(self, request, content, lesson):
         return {

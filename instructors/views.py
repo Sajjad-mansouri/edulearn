@@ -29,3 +29,7 @@ class InstructorAnalytics(InstructorRequiredMixin, TemplateView):
 
 class InstructorRevenue(InstructorRequiredMixin, TemplateView):
     template_name = "instructors/revenue.html"
+
+
+class InstructorCoursePreview(InstructorRequiredMixin, TemplateView):
+    template_name = "instructors/course_preview.html"

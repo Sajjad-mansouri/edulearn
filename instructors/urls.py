@@ -19,4 +19,9 @@ urlpatterns = [
     ),
     path("analytics/", views.InstructorAnalytics.as_view(), name="analytics"),
     path("revenue/", views.InstructorRevenue.as_view(), name="revenue"),
+    path(
+        "courses/<int:course_id>/preview/",
+        views.InstructorCoursePreview.as_view(),
+        name="course_preview",
+    ),
 ]

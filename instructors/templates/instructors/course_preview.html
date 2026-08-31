@@ -1,0 +1,315 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Preview - EduLearn LMS</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="{% static 'css/instructors/course_preview.css' %}">
+</head>
+<body>
+    <!-- ==================== PREVIEW NAVIGATION ==================== -->
+    <nav class="preview-nav" id="previewNav">
+        <div class="preview-nav-inner">
+            <div class="preview-nav-left">
+                <button class="preview-nav-icon" id="sidebarToggleBtn" title="Toggle curriculum">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a href="" class="preview-logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>EduLearn</span>
+                </a>
+                <span class="preview-badge">
+                    <i class="fas fa-eye"></i> Preview Mode
+                </span>
+                <span class="preview-nav-course-title" id="navCourseTitle">Course Title</span>
+            </div>
+
+            <div class="preview-nav-center">
+                <div class="lesson-navigator">
+                    <button class="nav-lesson-btn" id="navPrevLesson" title="Previous lesson">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="nav-lesson-indicator" id="navLessonIndicator">Lesson 1 of 1</span>
+                    <button class="nav-lesson-btn" id="navNextLesson" title="Next lesson">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="preview-nav-right">
+                <a href="" class="btn-edit-course">
+                    <i class="fas fa-pencil-alt"></i> Edit Course
+                </a>
+                <a href="" class="btn-publish-course">
+                    <i class="fas fa-rocket"></i> Publish
+                </a>
+                <button class="preview-nav-icon" id="closePreviewBtn" title="Close preview">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== MAIN PREVIEW LAYOUT ==================== -->
+    <div class="preview-layout">
+
+        <!-- ==================== CURRICULUM SIDEBAR ==================== -->
+        <aside class="preview-sidebar" id="previewSidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-header-top">
+                    <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Close sidebar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <h3 class="sidebar-title">Course Curriculum</h3>
+                </div>
+                <div class="sidebar-course-info">
+                    <div class="course-info-item">
+                        <i class="fas fa-layer-group"></i>
+                        <span id="sidebarSectionCount">0 Sections</span>
+                    </div>
+                    <div class="course-info-item">
+                        <i class="fas fa-play-circle"></i>
+                        <span id="sidebarLessonCount">0 Lessons</span>
+                    </div>
+                    <div class="course-info-item">
+                        <i class="fas fa-clock"></i>
+                        <span id="sidebarTotalDuration">0h 0m</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-curriculum" id="sidebarCurriculum">
+                <!-- Dynamic content will be rendered here -->
+                <div class="curriculum-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading curriculum...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ==================== MAIN CONTENT ==================== -->
+        <main class="preview-main" id="previewMain">
+
+            <!-- ==================== VIDEO PLAYER ==================== -->
+            <div class="video-player-section" id="videoPlayerSection" style="display:none;">
+                <div class="video-container" id="videoContainer">
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <i class="fas fa-play-circle"></i>
+                        <p>Video Player</p>
+                        <span id="videoPlaceholderText">No video selected</span>
+                    </div>
+                    <video id="mainVideoPlayer" class="main-video-player" controls>
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="video-overlay" id="videoOverlay">
+                        <button class="video-big-play-btn" id="videoBigPlayBtn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="video-description" id="videoDescription" style="display:none;">
+                    <p id="videoDescriptionText"></p>
+                </div>
+            </div>
+
+            <!-- ==================== ARTICLE CONTENT ==================== -->
+            <div class="article-section" id="articleSection" style="display:none;">
+                <div class="article-container">
+                    <div class="article-header">
+                        <h2 class="article-title" id="articleTitle">Article Title</h2>
+                        <div class="article-meta">
+                            <span id="articleReadTime"><i class="fas fa-clock"></i> 10 min read</span>
+                            <span><i class="fas fa-book-open"></i> Article</span>
+                        </div>
+                    </div>
+                    <div class="article-body" id="articleBody">
+                        <!-- Article content will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== QUIZ CONTENT ==================== -->
+            <div class="quiz-section" id="quizSection" style="display:none;">
+                <div class="quiz-container">
+                    <div class="quiz-header">
+                        <h2 class="quiz-title" id="quizTitle">Quiz Title</h2>
+                        <div class="quiz-meta">
+                            <span id="quizQuestionCount"><i class="fas fa-circle-question"></i> 0 Questions</span>
+                            <span id="quizPassScore"><i class="fas fa-trophy"></i> Pass Score: 0%</span>
+                        </div>
+                    </div>
+                    <div class="quiz-preview-notice">
+                        <i class="fas fa-info-circle"></i>
+                        <p>This is a preview of the quiz. Students will be able to submit answers and receive scores.</p>
+                    </div>
+                    <div id="quizPreviewContent">
+                        <!-- Quiz questions preview will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== ASSIGNMENT CONTENT ==================== -->
+            <div class="assignment-section" id="assignmentSection" style="display:none;">
+                <div class="assignment-container">
+                    <div class="assignment-header">
+                        <h2 class="assignment-title" id="assignmentTitle">Assignment Title</h2>
+                        <div class="assignment-meta">
+                            <span id="assignmentMaxScore"><i class="fas fa-star"></i> Max Score: 100</span>
+                            <span id="assignmentDueDate"><i class="fas fa-calendar"></i> Due Date: N/A</span>
+                        </div>
+                    </div>
+                    <div class="assignment-preview-notice">
+                        <i class="fas fa-info-circle"></i>
+                        <p>This is a preview of the assignment. Students will be able to submit their work here.</p>
+                    </div>
+                    <div class="assignment-details" id="assignmentDetails">
+                        <!-- Assignment details will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== FILE CONTENT ==================== -->
+            <div class="file-section" id="fileSection" style="display:none;">
+                <div class="file-container">
+                    <div class="file-header">
+                        <h2 class="file-title" id="fileTitle">File Title</h2>
+                    </div>
+                    <div class="file-preview" id="filePreview">
+                        <!-- File preview will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== LIVE SESSION CONTENT ==================== -->
+            <div class="live-session-section" id="liveSessionSection" style="display:none;">
+                <div class="live-session-container">
+                    <div class="live-session-header">
+                        <h2 class="live-session-title" id="liveSessionTitle">Live Session Title</h2>
+                    </div>
+                    <div class="live-session-preview">
+                        <i class="fas fa-video"></i>
+                        <h3>Live Session</h3>
+                        <p>Students will join this live session at the scheduled time.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== CODING EXERCISE CONTENT ==================== -->
+            <div class="coding-exercise-section" id="codingExerciseSection" style="display:none;">
+                <div class="coding-exercise-container">
+                    <div class="coding-exercise-header">
+                        <h2 class="coding-exercise-title" id="codingExerciseTitle">Coding Exercise Title</h2>
+                    </div>
+                    <div class="coding-exercise-preview">
+                        <i class="fas fa-code"></i>
+                        <h3>Coding Exercise</h3>
+                        <p>Students will complete this coding exercise here.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== LESSON INFO BAR ==================== -->
+            <div class="lesson-info-bar" id="lessonInfoBar" style="display:none;">
+                <div class="lesson-info-left">
+                    <h2 class="current-lesson-title" id="currentLessonTitle">Lesson Title</h2>
+                    <div class="current-lesson-meta">
+                        <span class="lesson-type-badge" id="lessonTypeBadge">
+                            <i class="fas fa-play-circle"></i> Video
+                        </span>
+                        <span class="lesson-duration-badge" id="lessonDurationBadge">
+                            <i class="fas fa-clock"></i> 0:00
+                        </span>
+                    </div>
+                </div>
+                <div class="lesson-info-right">
+                    <span class="preview-mode-badge">
+                        <i class="fas fa-eye"></i> Preview Mode
+                    </span>
+                </div>
+            </div>
+
+            <!-- ==================== LESSON TABS ==================== -->
+            <div class="lesson-tabs" id="lessonTabs" style="display:none;">
+                <button class="lesson-tab active" data-tab="overview">
+                    <i class="fas fa-info-circle"></i> Overview
+                </button>
+                <button class="lesson-tab" data-tab="resources">
+                    <i class="fas fa-paperclip"></i> Resources
+                    <span class="tab-badge" id="resourceCount">0</span>
+                </button>
+                <button class="lesson-tab" data-tab="transcript">
+                    <i class="fas fa-file-alt"></i> Transcript
+                </button>
+            </div>
+
+            <!-- ==================== TAB CONTENT ==================== -->
+            <div class="lesson-tab-content" id="lessonTabContent" style="display:none;">
+                <!-- Overview Tab -->
+                <div class="tab-panel active" id="tabOverview">
+                    <div class="overview-content" id="overviewContent">
+                        <!-- Overview content will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Resources Tab -->
+                <div class="tab-panel" id="tabResources" style="display:none;">
+                    <div class="resources-area" id="resourcesArea">
+                        <!-- Resources will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Transcript Tab -->
+                <div class="tab-panel" id="tabTranscript" style="display:none;">
+                    <div class="transcript-area" id="transcriptArea">
+                        <!-- Transcript will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ==================== MOBILE BOTTOM BAR ==================== -->
+    <div class="mobile-preview-bar">
+        <button class="mobile-bar-btn" id="mobilePrevBtn">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="mobile-bar-btn" id="mobileCurriculumBtn">
+            <i class="fas fa-list"></i>
+        </button>
+        <span class="mobile-lesson-count" id="mobileLessonCount">1 / 1</span>
+        <button class="mobile-bar-btn" id="mobileNextBtn">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <!-- File Viewer Modal -->
+    <div id="fileViewerModal" style="display:none;">
+        <div class="file-viewer-modal">
+            <div class="file-viewer-header">
+                <h3 id="fileViewerTitle">File Viewer</h3>
+                <div class="file-viewer-actions">
+                    <a id="fileViewerDownloadBtn" href="#" download>
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    <button id="fileViewerCloseBtn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="file-viewer-content" id="fileViewerContent">
+                <!-- File content will be rendered here -->
+            </div>
+        </div>
+    </div>
+<script src="{% static 'js/auth/auth.js' %}"></script>
+    <script src="{% static 'js/instructors/course_preview.js' %}"></script>
+</body>
+</html>

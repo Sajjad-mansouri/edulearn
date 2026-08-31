@@ -1,5 +1,7 @@
 from django.urls import path
 
+from enrollments.api import views as enrollment_views
+
 from . import views
 
 app_name = "instructor_api"
@@ -61,5 +63,15 @@ urlpatterns = [
         "transactions/",
         views.InstructorTransactionsApiView.as_view(),
         name="transactions",
+    ),
+    path(
+        "course/<int:course_id>/preview/",
+        enrollment_views.EnrollmentCourseApiView.as_view(),
+        name="course_preview",
+    ),
+    path(
+        "course/<int:course_id>/lesson/<int:lesson_id>/preview/",
+        enrollment_views.LessonContentApiView.as_view(),
+        name="course_preview_lesson_content",
     ),
 ]
