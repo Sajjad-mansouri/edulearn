@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "certificates",
     "instructors",
     "payments",
+    "landing",
     # third party
     "rest_framework",
     "rest_framework_simplejwt",
@@ -209,7 +210,7 @@ SIMPLE_JWT = {
 
 
 CELERY_BROKER_URL = config("CELERY_BROKER_URL")
-USE_CELERY = config("USE_CELERY", cast=bool)
+HOST_ASYNC_ABILITY = config("HOST_ASYNC_ABILITY", cast=bool)
 
 
 GEOIP_PATH = BASE_DIR / "geoip"

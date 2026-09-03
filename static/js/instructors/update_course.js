@@ -1,7 +1,7 @@
 // ============================================
 // UPDATE COURSE PAGE CONTROLLER
 // ============================================
-const baseUrl = window.location.origin;
+
 
 function buildFormData(data, formData = new FormData(), parentKey = '') {
 
@@ -1368,11 +1368,6 @@ class UpdateCoursePage {
     }
 
     bindGlobalEvents() {
-        document.getElementById('hamburgerBtn')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.toggle('open'));
-        document.getElementById('mobileMenuBtn')?.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('appSidebar')?.classList.toggle('open'); });
-        document.getElementById('sidebarOverlay')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.remove('open'));
-        document.getElementById('userMenuBtn')?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('userDropdown')?.classList.toggle('open'); });
-        document.addEventListener('click', (e) => { if (!e.target.closest('.user-menu-wrapper')) document.getElementById('userDropdown')?.classList.remove('open'); });
 
         document.getElementById('prevStepBtn')?.addEventListener('click', () => this.prevStep());
         document.getElementById('nextStepBtn')?.addEventListener('click', () => this.nextStep());

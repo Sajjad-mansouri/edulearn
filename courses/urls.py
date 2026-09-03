@@ -4,7 +4,7 @@ from . import views
 
 app_name = "courses"
 urlpatterns = [
-    path("courses/", views.CourseCatalog.as_view(), name="catalog"),
+    path("", views.CourseCatalog.as_view(), name="catalog"),
     path(
         "course/<int:pk>/<slug:slug>/",
         views.CourseDetailView.as_view(),

@@ -1,7 +1,6 @@
 // ============================================
 // PROFILE PAGE CONTROLLER
 // ============================================
-const baseUrl = window.location.origin;
 
 function mapProfile(data) {
   // Extract profile data from nested structure

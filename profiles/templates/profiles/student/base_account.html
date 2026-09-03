@@ -24,16 +24,16 @@
         <div class="top-nav-container">
             <div class="top-nav-left">
                 <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
-                <a href="/" class="brand-logo"><span class="brand-icon"><i class="fas fa-graduation-cap"></i></span><span class="brand-text">EduLearn</span><span class="student-brand-label">Student</span></a>
+                <a href="/" class="brand-logo"><span class="brand-icon"><i class="fas fa-graduation-cap"></i></span><span class="brand-text">EduLearn</span><span class="student-brand-label">Student Dashboard</span></a>
             </div>
             <div class="top-nav-center"><div class="global-search"><i class="fas fa-search search-prefix"></i><input type="text" class="global-search-input" placeholder="Search courses..."></div></div>
             <div class="top-nav-right">
 
-                <button class="switch-role-btn" id="switchRoleBtn" onclick="switchToInstructor()"><i class="fas fa-exchange-alt"></i> Switch to Instructor</button>
+                <button class="switch-role-btn" id="switchRoleBtn" data-switch="instructor"><i class="fas fa-exchange-alt"></i> Switch to Instructor</button>
                 <div class="user-menu-wrapper">
                     <button class="user-menu-btn" id="userMenuBtn"><img src="" alt="Avatar" class="user-avatar-img"><i class="fas fa-chevron-down user-chevron"></i></button>
                     <div class="user-dropdown-menu" id="userDropdown">
-                        <div class="dropdown-user-card"><img src="" alt="Avatar" class="dropdown-user-avatar"><div><span class="dropdown-user-name"></span><span class="dropdown-user-email">john@example.com</span></div></div>
+                        <div class="dropdown-user-card"><img src="" alt="Avatar" class="dropdown-user-avatar"><div><span class="dropdown-user-name"></span><span class="dropdown-user-email"></span></div></div>
                         <div class="dropdown-separator"></div>
                         <a href="/profile" class="dropdown-item active"><i class="fas fa-user"></i> View Profile</a>
                         <a href="/student/dashboard" class="dropdown-item"><i class="fas fa-th-large"></i> Dashboard</a>
@@ -52,16 +52,15 @@
             <div class="sidebar-overlay" id="sidebarOverlay"></div>
             <nav class="sidebar-nav">
                 <div class="sidebar-group"><span class="sidebar-group-label">MY LEARNING</span>
-                    <a href="/student/dashboard" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span class="sidebar-link-text">Dashboard</span></a>
-                    <a href="/student/courses" class="sidebar-link" data-nav="dashboard"><i class="fas fa-book-open"></i><span class="sidebar-link-text">My Courses</span></a>
-                    <a href="/student/assignments" class="sidebar-link"><i class="fas fa-tasks"></i><span class="sidebar-link-text">Assignments</span></a>
-                    <a href="/wishlist" class="sidebar-link"><i class="fas fa-heart"></i><span class="sidebar-link-text">Wishlist</span></a>
-                    <a href="/certificates" class="sidebar-link"><i class="fas fa-certificate"></i><span class="sidebar-link-text">Certificates</span></a>
+
+                    <a href="/enrollment/courses/" class="sidebar-link" data-nav="/enrollment/courses/"><i class="fas fa-book-open"></i><span class="sidebar-link-text">My Courses</span></a>
+                    <a href="/enrollment/wishlist/" class="sidebar-link" data-nav="/enrollment/wishlist/"><i class="fas fa-heart"></i><span class="sidebar-link-text">Wishlist</span></a>
+                    <a href="/enrollment/certificates/" class="sidebar-link" data-nav="/enrollment/certificates/"><i class="fas fa-certificate"></i><span class="sidebar-link-text">Certificates</span></a>
                 </div>
 
                 <div class="sidebar-group"><span class="sidebar-group-label">ACCOUNT</span>
-                    <a href="/profile" class="sidebar-link active"><i class="fas fa-user"></i><span class="sidebar-link-text">Profile</span></a>
-                    <a href="/settings" class="sidebar-link"><i class="fas fa-cog"></i><span class="sidebar-link-text">Settings</span></a>
+                    <a href="/account/student/profile/" class="sidebar-link" data-nav="/account/student/profile/"><i class="fas fa-user"></i><span class="sidebar-link-text">Profile</span></a>
+
                 </div>
                 <div class="sidebar-group"><a href="/logout" class="sidebar-link logout-link"><i class="fas fa-right-from-bracket"></i><span class="sidebar-link-text">Logout</span></a></div>
             </nav>
@@ -93,11 +92,7 @@
     <script src="{%static 'js/profiles/topnav.js' %}"></script>
     {%block script%}
     {%endblock%}
-    <script>
-    function switchToInstructor() {
-        window.location.href = "/instructor/profile";
-    }
-    </script>
+
 
 </body>
 </html>

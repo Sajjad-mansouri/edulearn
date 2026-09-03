@@ -2,7 +2,6 @@
 // INSTRUCTOR PROFILE PAGE CONTROLLER
 // ============================================
 
-const baseUrl = window.location.origin;
 
 function mapInstructorProfile(data) {
     // Handle nested profile structure
@@ -91,17 +90,6 @@ class InstructorProfilePage {
     }
 
     bindEvents() {
-        // Mobile navigation
-        document.getElementById('hamburgerBtn')?.addEventListener('click', () => {
-            document.getElementById('appSidebar')?.classList.toggle('open');
-        });
-        document.getElementById('mobileMenuBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('appSidebar')?.classList.toggle('open');
-        });
-        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
-            document.getElementById('appSidebar')?.classList.remove('open');
-        });
 
         // User menu
 
@@ -156,19 +144,20 @@ class InstructorProfilePage {
     // DATA LOADING
     // ============================================
     async loadProfile() {
+
         try {
             const response = await auth.authenticatedRequest(baseUrl + "/api/v1/account/instructor/profile/");
+
             if (response.ok) {
                 const data = await response.json();
                 this.profile = mapInstructorProfile(data);
-                console.log(this.profile)
+
             } else {
                 console.error('Failed to load profile');
-                this.profile = this.getDummyProfile();
             }
         } catch (error) {
             console.error('Failed to load profile:', error);
-            this.profile = this.getDummyProfile();
+
         }
         this.renderAll();
     }

@@ -1,7 +1,7 @@
 // ============================================
 // INSTRUCTOR MY COURSES PAGE CONTROLLER
 // ============================================
-const baseUrl = window.location.origin;
+
 class InstructorCoursesPage {
     constructor() {
         this.activeTab = 'all';
@@ -27,11 +27,6 @@ class InstructorCoursesPage {
     }
 
     bindEvents() {
-        document.getElementById('hamburgerBtn')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.toggle('open'));
-        document.getElementById('mobileMenuBtn')?.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('appSidebar')?.classList.toggle('open'); });
-        document.getElementById('sidebarOverlay')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.remove('open'));
-        document.getElementById('userMenuBtn')?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('userDropdown')?.classList.toggle('open'); });
-        document.addEventListener('click', (e) => { if (!e.target.closest('.user-menu-wrapper')) document.getElementById('userDropdown')?.classList.remove('open'); });
 
         document.querySelectorAll('.course-tab').forEach(tab => tab.addEventListener('click', () => this.switchTab(tab.dataset.tab)));
 
@@ -219,14 +214,13 @@ class InstructorCoursesPage {
 
             // Extract unique categories and versions from the loaded courses
             this.extractFilterOptions(this.allCourses);
-
             // Populate filter dropdowns dynamically
             this.populateFilterDropdowns();
 
         } catch (error) {
             console.error("Error loading categories:", error);
             // Fallback to dummy data if API fails
-            this.allCourses = this.getDummyCourses();
+            this.allCourses = [];
             this.extractFilterOptions(this.allCourses);
             this.populateFilterDropdowns();
         }
@@ -617,7 +611,7 @@ class InstructorCoursesPage {
         return `
             <div class="course-card-instructor" data-id="${course.id}">
                 <input type="checkbox" class="card-select-checkbox" data-id="${course.id}">
-                <div class="course-card-thumb" onclick="window.location.href='/course/${course.slug}'">
+                <div class="course-card-thumb" >
                     <img src="${course.thumbnail}" alt="${course.title}" onerror="this.src='https://via.placeholder.com/600x340/4F46E5/FFFFFF?text=Course'">
                     <span class="course-status-badge ${course.status}">${this.capitalize(statusLabel)}</span>
                     <span class="review-status-badge ${course.reviewStatus}">${this.capitalize(reviewLabel)}</span>
@@ -647,7 +641,9 @@ class InstructorCoursesPage {
             b.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const slug = b.dataset.slug;
-                window.open(`/course/${slug}`, '_blank');
+                const id = b.dataset.id;
+
+                window.open(`/course/${id}/${slug}`, '_blank');
             });
         });
 
@@ -663,8 +659,8 @@ class InstructorCoursesPage {
         container.querySelectorAll('.card-action-btn.preview').forEach(b => {
             b.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const slug = b.dataset.slug;
-                window.open(`/course/${slug}`, '_blank');
+                const slug = b.dataset.id;
+                window.open(`/instructor/courses/${id}/preview/`, '_blank');
             });
         });
 
@@ -716,20 +712,6 @@ class InstructorCoursesPage {
             items += `<button class="action-item" data-action="submit-review" data-id="${id}"><i class="fas fa-paper-plane"></i> Submit for Review</button>`;
         }
 
-        // Archive (published, updated)
-        if (['published', 'updated'].includes(course.status)) {
-            items += `<button class="action-item" data-action="archive" data-id="${id}"><i class="fas fa-archive"></i> Archive</button>`;
-        }
-
-        // Restore (archived)
-        if (course.status === 'archived') {
-            items += `<button class="action-item" data-action="restore" data-id="${id}"><i class="fas fa-undo"></i> Restore</button>`;
-        }
-
-        // Analytics (published, updated)
-        if (['published', 'updated'].includes(course.status)) {
-            items += `<button class="action-item" data-action="analytics" data-id="${id}" data-slug="${course.slug}"><i class="fas fa-chart-bar"></i> Analytics</button>`;
-        }
 
         // Delete (draft only)
         if (course.status === 'draft') {
@@ -765,7 +747,7 @@ class InstructorCoursesPage {
                 window.location.href = `/instructor/courses/${course.slug}/${id}/edit`;
                 break;
             case 'preview':
-                window.open(`/course/${course.slug}`, '_blank');
+                window.open(`/instructor/courses/${course.id}/preview/`, '_blank');
                 break;
             case 'duplicate':
                 this.allCourses.push({

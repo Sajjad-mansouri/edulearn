@@ -5,8 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const matchingLinks = links.filter(link => {
         const navPath = link.dataset.nav.replace(/\/$/, "");
-        console.log("navpath", navPath)
-        console.log("currentPath", currentPath)
+
+
         return (
             currentPath === navPath ||
             currentPath.startsWith(`${navPath}/`)

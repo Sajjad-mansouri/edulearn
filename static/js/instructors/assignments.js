@@ -121,11 +121,6 @@ class InstructorAssignmentsPage {
     }
 
     bindEvents() {
-        document.getElementById('hamburgerBtn')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.toggle('open'));
-        document.getElementById('mobileMenuBtn')?.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('appSidebar')?.classList.toggle('open'); });
-        document.getElementById('sidebarOverlay')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.remove('open'));
-        document.getElementById('userMenuBtn')?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('userDropdown')?.classList.toggle('open'); });
-        document.addEventListener('click', (e) => { if (!e.target.closest('.user-menu-wrapper')) document.getElementById('userDropdown')?.classList.remove('open'); });
 
         const si = document.getElementById('assignSearch');
         const sc = document.getElementById('searchClearBtn');
@@ -258,12 +253,12 @@ class InstructorAssignmentsPage {
             if (allSubmissions && allSubmissions.length > 0) {
                 this.allSubmissions = allSubmissions;
             } else {
-                this.allSubmissions = this.getDummySubmissions();
+                this.allSubmissions = [];
             }
 
         } catch (error) {
             console.error("Error loading assignments:", error);
-            this.allSubmissions = this.getDummySubmissions();
+            this.allSubmissions = [];
         }
 
         this.applyFilters();
@@ -288,7 +283,7 @@ class InstructorAssignmentsPage {
 
         } catch (error) {
             console.error("Error loading assignments:", error);
-            this.allSubmissions = this.getDummySubmissions();
+            this.allSubmissions = [];
         }
     }
     async populateCourseOptions(){
@@ -414,6 +409,7 @@ class InstructorAssignmentsPage {
 
     renderStatistics() {
         const t = this.allSubmissions.length;
+        console.log("allSubmissions", this.allSubmissions)
         document.getElementById('statTotal').textContent = t;
         document.getElementById('statPending').textContent = this.allSubmissions.filter(s => s.status === 'pending').length;
         document.getElementById('statGraded').textContent = this.allSubmissions.filter(s => s.status === 'graded').length;

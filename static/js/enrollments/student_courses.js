@@ -34,48 +34,7 @@ class MyLearningPage {
     }
 
     bindEvents() {
-        // Mobile sidebar
-        const hamburgerBtn = document.getElementById('hamburgerBtn');
-        if (hamburgerBtn) {
-            hamburgerBtn.addEventListener('click', () => {
-                const sidebar = document.getElementById('appSidebar');
-                if (sidebar) sidebar.classList.toggle('open');
-            });
-        }
 
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const sidebar = document.getElementById('appSidebar');
-                if (sidebar) sidebar.classList.toggle('open');
-            });
-        }
-
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', () => {
-                const sidebar = document.getElementById('appSidebar');
-                if (sidebar) sidebar.classList.remove('open');
-            });
-        }
-
-        // User dropdown
-        const userMenuBtn = document.getElementById('userMenuBtn');
-        if (userMenuBtn) {
-            userMenuBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const dropdown = document.getElementById('userDropdown');
-                if (dropdown) dropdown.classList.toggle('open');
-            });
-        }
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.user-menu-wrapper')) {
-                const dropdown = document.getElementById('userDropdown');
-                if (dropdown) dropdown.classList.remove('open');
-            }
-        });
 
         // Tab clicks
         document.querySelectorAll('.learning-tab').forEach(tab => {

@@ -1,7 +1,7 @@
 // ============================================
 // CREATE COURSE PAGE CONTROLLER
 // ============================================
-const baseUrl = window.location.origin;
+
 
 function buildFormData(data, formData = new FormData(), parentKey = '') {
 

@@ -110,7 +110,7 @@ class NavbarManager {
             let teachLink  = ""
             if (!this.userAuth.is_instructor) {
                 teachLink = `
-                                    <a href="/teach" class="nav-link teach-link">
+                                    <a href="/account/auth/register/instructor/" class="nav-link teach-link">
                     <i class="fas fa-chalkboard-user"></i> Teach on EduLearn
                 </a>
                 `
@@ -178,11 +178,11 @@ class NavbarManager {
         } else {
             // Not authenticated - show login/signup buttons
             topNavRight.innerHTML = `
-                <a href="/teach" class="nav-link teach-link">
+                <a href="/account/auth/register/instructor/" class="nav-link teach-link">
                     <i class="fas fa-chalkboard-user"></i> Teach on EduLearn
                 </a>
-                <a href="/login" class="btn-login">Log In</a>
-                <a href="/register" class="btn-signup">Sign Up</a>
+                <a href="/account/auth/login/" class="btn-login">Log In</a>
+                <a href="/account/auth/register/student/" class="btn-signup">Sign Up</a>
             `;
         }
     }

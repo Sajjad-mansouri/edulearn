@@ -23,6 +23,7 @@ class TopNavController {
         this.updateNavUI();
         this.updateSwitchButton();
         this.updateDropdownMenu();
+        this.bindSwitchBtn();
 
         // Poll for new notifications every 60 seconds
         setInterval(() => this.loadNotificationCount(), 60000);
@@ -43,7 +44,7 @@ class TopNavController {
         document.getElementById('hamburgerBtn')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.toggle('open'));
         document.getElementById('mobileMenuBtn')?.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('appSidebar')?.classList.toggle('open'); });
         document.getElementById('sidebarOverlay')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.remove('open'));
-        document.getElementById('userMenuBtn')?.addEventListener('click', (e) => { console.log("clicked"); e.stopPropagation(); console.log(document.getElementById('userDropdown')); document.getElementById('userDropdown')?.classList.toggle('open'); });
+        document.getElementById('userMenuBtn')?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('userDropdown')?.classList.toggle('open'); });
         document.addEventListener('click', (e) => { if (!e.target.closest('.user-menu-wrapper')) document.getElementById('userDropdown')?.classList.remove('open'); });
 
         // Highlight current page in dropdown
@@ -217,7 +218,7 @@ class TopNavController {
     updateDropdownMenu() {
         const dropdown = document.getElementById('userDropdown');
         if (!dropdown || !this.userData) return;
-        console.log(this.userData)
+
         const isStudent = this.userData.is_student || this.userData.role === 'student';
         const isInstructor = this.userData.is_instructor || this.userData.role === 'instructor';
 
@@ -239,36 +240,29 @@ class TopNavController {
         // If user is both student and instructor
         if (isStudent && isInstructor) {
             menuHTML += `
-                <a href="/student/profile" class="dropdown-item" data-role="student-profile">
+                <a href="/account/student/profile" class="dropdown-item" data-role="student-profile">
                     <i class="fas fa-user-graduate"></i> Student Profile
                 </a>
-                <a href="/student/dashboard" class="dropdown-item" data-role="student-dashboard">
-                    <i class="fas fa-th-large"></i> Student Dashboard
-                </a>
+
                 <div class="dropdown-separator"></div>
-                <a href="/instructor/profile" class="dropdown-item" data-role="instructor-profile">
+                <a href="/account/instructor/profile/" class="dropdown-item" data-role="instructor-profile">
                     <i class="fas fa-chalkboard-user"></i> Instructor Profile
                 </a>
-                <a href="/instructor/dashboard" class="dropdown-item" data-role="instructor-dashboard">
-                    <i class="fas fa-chalkboard"></i> Instructor Dashboard
-                </a>
+
             `;
         }
         // If user is only student
         else if (isStudent) {
             menuHTML += `
-                <a href="/student/profile" class="dropdown-item active" data-role="student-profile">
+                <a href="/account/student/profile/" class="dropdown-item active" data-role="student-profile">
                     <i class="fas fa-user"></i> View Profile
-                </a>
-                <a href="/student/dashboard" class="dropdown-item" data-role="student-dashboard">
-                    <i class="fas fa-th-large"></i> Dashboard
                 </a>
             `;
         }
         // If user is only instructor
         else if (isInstructor) {
             menuHTML += `
-                <a href="/instructor/profile" class="dropdown-item active" data-role="instructor-profile">
+                <a href="/account/instructor/profile" class="dropdown-item active" data-role="instructor-profile">
                     <i class="fas fa-user"></i> View Profile
                 </a>
                 <a href="/instructor/dashboard" class="dropdown-item" data-role="instructor-dashboard">
@@ -279,13 +273,8 @@ class TopNavController {
 
         // Settings and Help
         menuHTML += `
-            <div class="dropdown-separator"></div>
-            <a href="/account/settings" class="dropdown-item">
-                <i class="fas fa-cog"></i> Settings
-            </a>
-            <a href="/help" class="dropdown-item">
-                <i class="fas fa-circle-question"></i> Help
-            </a>
+
+
             <div class="dropdown-separator"></div>
             <a href="/logout" class="dropdown-item logout-item">
                 <i class="fas fa-right-from-bracket"></i> Logout
@@ -298,18 +287,29 @@ class TopNavController {
         this.highlightCurrentPage();
     }
 
+    bindSwitchBtn(){
+        document.querySelector("#switchRoleBtn")?.addEventListener("click", ()=>{
+            const switchTo = event.target.dataset.switch
+            if (switchTo == "instructor"){
+                window.location.href = "/account/instructor/profile/"
+            }else if(switchTo == "student"){
+                window.location.href = "/account/student/profile/"
+            }
+        })
+    }
+
     // ============================================
     // SWITCH ROLE
     // ============================================
     switchToInstructor() {
         if (this.userData && this.userData.is_instructor) {
-            window.location.href = '/instructor/dashboard';
+            window.location.href = '/account/instructor/profile/';
         }
     }
 
     switchToStudent() {
         if (this.userData && this.userData.is_student) {
-            window.location.href = '/student/dashboard';
+            window.location.href = '/account/student/dashboard/';
         }
     }
 

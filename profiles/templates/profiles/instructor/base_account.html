@@ -26,7 +26,7 @@
                 <a href="/" class="brand-logo">
                     <span class="brand-icon"><i class="fas fa-graduation-cap"></i></span>
                     <span class="brand-text">EduLearn</span>
-                    <span class="instructor-brand-label">Instructor</span>
+                    <span class="instructor-brand-label">Instructor Dashboard</span>
                 </a>
             </div>
             <div class="top-nav-center">
@@ -36,7 +36,7 @@
                 </div>
             </div>
             <div class="top-nav-right">
-                <button class="switch-role-btn" id="switchRoleBtn" onclick="switchToInstructor()"><i class="fas fa-exchange-alt"></i> Switch to Instructor</button>
+                <button class="switch-role-btn" id="switchRoleBtn" data-switch="student"><i class="fas fa-exchange-alt"></i> Switch to Student</button>
                 <div class="user-menu-wrapper">
                     <button class="user-menu-btn" id="userMenuBtn">
                         <img src="https://ui-avatars.com/api/?name=Sarah+Chen&background=8B5CF6&color=fff&size=32" alt="Avatar" class="user-avatar-img">
@@ -69,25 +69,19 @@
             <nav class="sidebar-nav">
                 <div class="sidebar-group">
                     <span class="sidebar-group-label">TEACHING</span>
-                    <a href="/instructor/dashboard" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span class="sidebar-link-text">Dashboard</span></a>
+
                     <a href="/instructor/courses/" class="sidebar-link" data-nav="/instructor/courses/"><i class="fas fa-book"></i><span class="sidebar-link-text">My Courses</span></a>
                     <a href="/instructor/students/" class="sidebar-link" data-nav="/instructor/students/"><i class="fas fa-users"></i><span class="sidebar-link-text">Students</span></a>
                     <a href="/instructor/assignments" class="sidebar-link" data-nav="/instructor/assignments"><i class="fas fa-tasks"></i><span class="sidebar-link-text">Assignments</span></a>
-                    <a href="/instructor/reviews" class="sidebar-link" data-nav="reviews"><i class="fas fa-star"></i><span class="sidebar-link-text">Reviews</span></a>
                 </div>
                 <div class="sidebar-group">
                     <span class="sidebar-group-label">ANALYTICS & EARNINGS</span>
-                    <a href="/instructor/analytics" class="sidebar-link"><i class="fas fa-chart-line"></i><span class="sidebar-link-text">Analytics</span></a>
-                    <a href="/instructor/revenue" class="sidebar-link"><i class="fas fa-dollar-sign"></i><span class="sidebar-link-text">Revenue</span></a>
-                    <a href="/instructor/payouts" class="sidebar-link"><i class="fas fa-wallet"></i><span class="sidebar-link-text">Payouts</span></a>
+                    <a href="/instructor/analytics/" class="sidebar-link" data-nav="/instructor/analytics/"><i class="fas fa-chart-line"></i><span class="sidebar-link-text">Analytics</span></a>
+                    <a href="/instructor/revenue/" class="sidebar-link" data-nav="/instructor/revenue/"><i class="fas fa-dollar-sign"></i><span class="sidebar-link-text">Revenue</span></a>
                 </div>
                 <div class="sidebar-group">
                     <span class="sidebar-group-label">ACCOUNT</span>
                     <a href="/account/instructor/profile/" class="sidebar-link " data-nav="/account/instructor/profile/"><i class="fas fa-user"></i><span class="sidebar-link-text">Profile</span></a>
-                    <a href="/account/settings" class="sidebar-link"><i class="fas fa-cog"></i><span class="sidebar-link-text">Settings</span></a>
-                    <a href="/notifications" class="sidebar-link"><i class="fas fa-bell"></i><span class="sidebar-link-text">Notifications</span></a>
-                    <a href="/privacy" class="sidebar-link"><i class="fas fa-shield-halved"></i><span class="sidebar-link-text">Privacy</span></a>
-                    <a href="/security" class="sidebar-link"><i class="fas fa-lock"></i><span class="sidebar-link-text">Security</span></a>
                 </div>
                 <div class="sidebar-group">
                     <a href="/logout" class="sidebar-link logout-link"><i class="fas fa-right-from-bracket"></i><span class="sidebar-link-text">Logout</span></a>

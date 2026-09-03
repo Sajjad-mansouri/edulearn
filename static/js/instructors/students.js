@@ -25,9 +25,6 @@ class InstructorStudentsPage {
     }
 
     bindEvents() {
-        document.getElementById('hamburgerBtn')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.toggle('open'));
-        document.getElementById('mobileMenuBtn')?.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('appSidebar')?.classList.toggle('open'); });
-        document.getElementById('sidebarOverlay')?.addEventListener('click', () => document.getElementById('appSidebar')?.classList.remove('open'));
 
         // Search
         const si = document.getElementById('studentSearch');
@@ -94,7 +91,6 @@ class InstructorStudentsPage {
             }
 
             const data = await response.json();
-            console.log(data)
             this.allStudents = this.mapData(data.students ?? []);
             this.avgRating = data.statistics.average_course_rating
             this.instructorCourses = data.statistics.courses
@@ -102,6 +98,7 @@ class InstructorStudentsPage {
 
 
         } catch (error) {
+            this.allStudents = []
             console.error("Error loading students:", error);
         }
 

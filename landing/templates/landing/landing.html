@@ -1,0 +1,176 @@
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduLearn (LMS Portfolio) · Django REST Framework</title>
+    <!-- Font Awesome 6 (free) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"> <link rel="stylesheet" href="{% static 'css/landing/landing.css' %}">
+
+</head>
+<body>
+    <!-- Navbar -->
+<!-- Navbar -->
+<nav class="navbar">
+    <div class="container">
+        <div class="navbar-top">
+            <a href="/" class="navbar-brand">
+                <i class="fas fa-graduation-cap"></i>
+                EduLearn <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">(LMS Portfolio)</span>
+            </a>
+            <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+        </div>
+        <div class="navbar-menu" id="navbarMenu">
+            <div class="navbar-links">
+                <a href="#features"><i class="fas fa-users"></i> Features</a>
+                <a href="#highlights"><i class="fas fa-star"></i> Highlights</a>
+                <a href="#contact"><i class="fas fa-envelope"></i> Contact</a>
+            </div>
+            <div class="auth-buttons">
+                <a href="{%url 'accounts:register_student'%}" class="btn-outline">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </a>
+                <a href="{%url 'accounts:login'%}" class="btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <div class="container">
+        <!-- hero section -->
+        <div class="hero">
+            <div class="hero-content">
+                <span class="badge"><i class="fas fa-code" style="margin-right: 6px;"></i> Django + DRF · JWT · Stripe</span>
+                <h1><i class="fas fa-graduation-cap"></i> EduLearn</h1>
+                <p>Full‑featured LMS backend with granular role‑based APIs — students, instructors, payments, certificates, and interactive course content.</p>
+                <div class="hero-actions">
+                    <a href="{% url 'courses:catalog' %}" class="btn-hero-primary">
+                        <i class="fas fa-rocket"></i> Explore Courses
+                    </a>
+                    <a href="{%url 'accounts:register_student'%}" class="btn-hero-secondary">
+                        <i class="fas fa-user-plus"></i> Get Started Free
+                    </a>
+                </div>
+                <div class="tech-stack">
+                    <span class="tech-tag"><i class="fab fa-python"></i> Django 4</span>
+                    <span class="tech-tag"><i class="fas fa-database"></i> DRF</span>
+                    <span class="tech-tag"><i class="fas fa-lock"></i> JWT auth</span>
+                    <span class="tech-tag"><i class="fas fa-credit-card"></i> Stripe</span>
+                    <span class="tech-tag"><i class="fas fa-chart-line"></i> Analytics</span>
+                </div>
+            </div>
+            <div class="hero-stats">
+
+                <div class="stat-item">
+                    <h3>120+</h3>
+                    <p>API Endpoints</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Role-based Features Section -->
+        <div class="role-section" id="features">
+            <h2 class="section-title" style="margin-top: 0;">
+                <i class="fas fa-users"></i> Explore by Role
+            </h2>
+
+            <div class="tab-container" id="tabContainer">
+                <!-- Tabs will be populated dynamically -->
+            </div>
+
+            <!-- Tab contents will be populated dynamically -->
+            <div id="tabContents">
+                <!-- Loading spinner -->
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal" id="imageModal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="modal-image" id="modalImage">
+                    <!-- Modal image content -->
+                </div>
+                <div class="modal-body">
+                    <h3 id="modalTitle"></h3>
+                    <p id="modalDescription"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Highlights Section -->
+        <div class="api-highlights" id="highlights">
+            <h2 class="section-title">
+                <i class="fas fa-gem"></i> Key API Highlights
+            </h2>
+            <div class="highlight-grid" id="highlightsGrid">
+                <!-- Highlights will be populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Contact Section -->
+        <div class="contact-section" id="contact">
+            <h2 class="section-title" style="margin-top: 0;">
+                <i class="fas fa-paper-plane"></i> Contact Me
+            </h2>
+            <div class="contact-grid">
+                <div class="contact-info" id="contactInfo">
+                    <!-- Contact info will be populated dynamically -->
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+
+                <form class="contact-form" id="contactForm">
+                    <div class="form-group">
+                        <label for="name">Your Name</label>
+                        <input type="text" id="name" name="name" placeholder="Your Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Your Email</label>
+                        <input type="email" id="email" name="email" placeholder="User@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <input type="text" id="subject" name="subject" placeholder="Project inquiry, collaboration, etc.">
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" placeholder="Tell me about your project or idea..." required></textarea>
+                    </div>
+                    <div class="form-feedback" id="formFeedback" style="display: none;"></div>
+                    <button type="submit" id="submitBtn" class="btn-primary" style="justify-content: center; padding: 1rem;">
+                        <i class="fas fa-paper-plane"></i> Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- footer -->
+        <footer>
+            <div class="footer-links" id="footerLinks">
+                <!-- Footer links will be populated dynamically -->
+            </div>
+            <p id="footerText">EduLearn (LMS Portfolio) — Built with Django & Django REST Framework.</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript for data and interactivity -->
+    <script src="{%static 'js/landing/landing.js' %}"></script>
+
+
+</body>
+</html>
