@@ -40,7 +40,7 @@
     // Registration function using Auth's base URL
     async function registerUser(userData) {
       const auth = new Auth({
-        baseURL: window.location.origin + '/api/v1/accounts',
+        baseURL: window.location.origin + '/api/v1/account/auth/',
       });
 
       const url = `${auth.baseURL}/register/`;

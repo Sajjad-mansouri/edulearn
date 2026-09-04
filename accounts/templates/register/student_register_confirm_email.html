@@ -8,7 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
     <meta name="supported-color-schemes" content="light">
-    <title>{% translate "Verify your email" %} | SM-LMS</title>
+    <title>{% translate "Verify your email" %} | EduLearn</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
     /* Base resets */
     body {
@@ -50,9 +51,35 @@
     }
 
     .hero {
-        background: linear-gradient(135deg, #7ebfd7 0%, #1e7f95 100%);
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         padding: 50px 40px;
         text-align: center;
+    }
+
+    .brand-logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .brand-logo i {
+        font-size: 48px;
+        color: #ffffff;
+    }
+
+    .brand-name {
+        font-size: 32px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+    }
+
+    .brand-subtitle {
+        font-size: 14px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.7);
+        margin-left: 4px;
     }
 
     .hero-title {
@@ -64,7 +91,7 @@
     }
 
     .hero-subtitle {
-        color: rgba(255, 255, 255, 0.82);
+        color: rgba(255, 255, 255, 0.85);
         font-size: 16px;
         line-height: 1.7;
         margin: 0;
@@ -76,7 +103,7 @@
 
     .button {
         display: inline-block;
-        background-color: #d9773a;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         color: #ffffff !important;
         padding: 16px 38px;
         border-radius: 10px;
@@ -84,20 +111,28 @@
         font-weight: 600;
         letter-spacing: 0.2px;
         text-align: center;
-        box-shadow: 0 4px 12px rgba(217, 119, 58, 0.3);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         transition: all 0.2s ease;
     }
 
     .button:hover {
-        background-color: #c0682b;
-        box-shadow: 0 6px 18px rgba(217, 119, 58, 0.4);
+        box-shadow: 0 6px 18px rgba(79, 70, 229, 0.4);
+        transform: translateY(-1px);
     }
 
     .info-box {
-        background: #faf8f6;
-        border-left: 4px solid #d9773a;
+        background: #f8f7ff;
+        border-left: 4px solid #4f46e5;
         padding: 18px 20px;
         border-radius: 8px;
+    }
+
+    .security-notice {
+        background: #fef2f2;
+        border-left: 4px solid #ef4444;
+        padding: 18px 20px;
+        border-radius: 8px;
+        margin-top: 20px;
     }
 
     .footer {
@@ -108,6 +143,18 @@
         color: #7a7a7a;
         font-size: 13px;
         line-height: 1.8;
+    }
+
+    .footer-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #4f46e5;
+        font-weight: 600;
+    }
+
+    .footer-brand i {
+        font-size: 16px;
     }
 
     @media only screen and (max-width: 640px) {
@@ -128,6 +175,14 @@
             font-size: 26px;
         }
 
+        .brand-logo i {
+            font-size: 36px;
+        }
+
+        .brand-name {
+            font-size: 24px;
+        }
+
         .button {
             display: block;
             text-align: center;
@@ -146,18 +201,11 @@
                     <!-- Hero -->
                     <tr>
                         <td class="hero">
-                            <a href="{{ protocol }}://{{ domain }}" style="display:inline-block;" aria-label="SM-LMS">
-                                <img src="{{ protocol }}://{{ domain }}/static/images/logo/logo.png" alt="SM-LMS" width="320" style="
-                    display:block;
-                    margin:0 auto;
-                    width:320px;
-                    max-width:100%;
-                    height:auto;
-                    border:0;
-                    outline:none;
-                    text-decoration:none;
-                ">
-                            </a>
+                            <div class="brand-logo">
+                                <i class="fas fa-graduation-cap"></i>
+                                <span class="brand-name">EduLearn</span>
+                                <span class="brand-subtitle">(LMS Portfolio)</span>
+                            </div>
                             <h1 class="hero-title" style="margin-top:28px;">
                                 {% translate "Verify Your Email Address" %}
                             </h1>
@@ -171,7 +219,7 @@
                         <td class="content">
                             <p style="margin:0 0 18px; font-size:16px; color:#2f3b42; line-height:1.8;">
                                 {% blocktranslate %}
-                                Hello and welcome to <strong>SM-LMS</strong>!
+                                Hello and welcome to <strong>EduLearn</strong>!
                                 {% endblocktranslate %}
                             </p>
                             <p style="margin:0 0 22px; font-size:15px; color:#55636b; line-height:1.8;">
@@ -181,29 +229,34 @@
                             </p>
                             <div style="text-align:center; margin:36px 0 32px;">
                                 <a href="{{ protocol }}://{{ domain }}{% url 'accounts:register_confirm' uidb64=uid token=token %}" class="button" title="{% translate 'Verify Email Address' %}">
+                                    <i class="fas fa-envelope-circle-check" style="margin-right: 8px;"></i>
                                     {% translate "Confirm My Email" %}
                                 </a>
                             </div>
                             <div class="info-box">
                                 <p style="margin:0 0 8px; font-weight:600; font-size:14px; color:#455054;">
+                                    <i class="fas fa-link" style="margin-right: 6px; color:#4f46e5;"></i>
                                     {% translate "Can't click the button?" %}
                                 </p>
                                 <p style="margin:0 0 12px; font-size:14px; color:#6b7280;">
                                     {% translate "Copy and paste this link into your browser:" %}
                                 </p>
-                                <p style="margin:0; font-size:13px; font-family: Consolas, Monaco, 'Courier New', monospace; word-break:break-all; color:#d9773a;">
+                                <p style="margin:0; font-size:13px; font-family: Consolas, Monaco, 'Courier New', monospace; word-break:break-all; color:#4f46e5;">
                                     {{ protocol }}://{{ domain }}{% url 'accounts:register_confirm' uidb64=uid token=token %}
                                 </p>
                             </div>
+                            <div class="security-notice">
+                                <p style="margin:0 0 8px; font-weight:600; font-size:14px; color:#991b1b;">
+                                    <i class="fas fa-shield-halved" style="margin-right: 6px;"></i>
+                                    {% translate "Security Notice" %}
+                                </p>
+                                <p style="margin:0; font-size:14px; color:#6b7280; line-height:1.8;">
+                                    {% blocktranslate %}
+                                    If you didn't create an account on {{ site_name }}, please ignore this email. No account will be activated without email verification.
+                                    {% endblocktranslate %}
+                                </p>
+                            </div>
                             <hr style="margin:36px 0; border:none; border-top:1px solid #ececec;">
-                            <p style="margin:0 0 14px; font-size:15px; color:#455054; font-weight:600;">
-                                {% translate "Security Notice" %}
-                            </p>
-                            <p style="margin:0 0 28px; font-size:14px; color:#6b7280; line-height:1.8;">
-                                {% blocktranslate %}
-                                If you didn't create an account on {{ site_name }}, please ignore this email. No account will be activated without email verification.
-                                {% endblocktranslate %}
-                            </p>
                             <!-- Signature -->
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;">
                                 <tr>
@@ -212,13 +265,14 @@
                                             {% translate "Best regards," %}
                                         </p>
                                         <p style="margin:10px 0 2px; font-size:18px; font-weight:700; color:#2f3b42;">
-                                            Sajjad Mansouri
+                                            {{ developer_name|default:'Your Name' }}
                                         </p>
                                         <p style="margin:0 0 16px; font-size:14px; color:#6b7280;">
-                                            {% translate "Backend Developer & Creator of SM-LMS" %}
+                                            {% translate "Backend Developer & Creator of EduLearn" %}
                                         </p>
                                         <p style="margin:0;">
-                                            <a href="{{ protocol }}://{{ domain }}" style="color:#d9773a; font-weight:600;">
+                                            <a href="{{ protocol }}://{{ domain }}" style="color:#4f46e5; font-weight:600;">
+                                                <i class="fas fa-graduation-cap" style="margin-right: 6px;"></i>
                                                 {{ site_name }}
                                             </a>
                                         </p>
@@ -232,6 +286,12 @@
                             <p style="margin:0 0 8px;">
                                 {% translate "This is an automated message – please do not reply to this email." %}
                             </p>
+                            <p style="margin:0 0 12px;">
+                                <span class="footer-brand">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    EduLearn (LMS Portfolio)
+                                </span>
+                            </p>
                             <p style="margin:0;">
                                 &copy; {% now "Y" %} {{ site_name }}. {% translate "All rights reserved." %}
                             </p>
@@ -242,7 +302,8 @@
                     <tr>
                         <td style="padding:22px 20px; text-align:center;">
                             <p style="margin:0; font-size:12px; color:#9ca3af;">
-                                {% translate "Thank you for joining SM-LMS – we can’t wait to see you learn!" %}
+                                <i class="fas fa-graduation-cap" style="margin-right: 6px;"></i>
+                                {% translate "Thank you for joining EduLearn – we can't wait to see you learn!" %}
                             </p>
                         </td>
                     </tr>

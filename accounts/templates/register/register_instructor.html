@@ -1,0 +1,489 @@
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Become an Instructor - EduLearn</title>
+
+    <!-- Font Awesome 6.5.1 (Fixed Version) -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+    />
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'%3E%3Cpath fill='%234f46e5' d='M623.1 136.9l-282.7-98.2c-5.3-1.8-11-1.8-16.4 0L41.3 136.9C28.4 141.5 20 154.9 20 168.5s8.4 27 21.3 31.6l28.7 10v114.3c-13.8 6.6-24 19.7-24 35.3 0 13.7 8.1 25.7 19.9 31.9l.4 95.3c0 6.2 5 11.2 11.2 11.2 6.2 0 11.2-5 11.2-11.2l-.4-95.3c11.8-6.2 19.9-18.2 19.9-31.9 0-15.6-10.2-28.7-24-35.3V214.5l88.9 30.8c-4 15.5-1.6 31.4 6.7 44.7 2.4 3.8 5.3 7.4 8.6 10.7L208 440.4c0 37.7 30.9 68.3 68.3 68.3s68.3-30.6 68.3-68.3l-1.7-139.7c10.3 6.8 22.1 10.7 34.8 10.7s24.5-3.9 34.8-10.7l-1.7 139.7c0 37.7 30.9 68.3 68.3 68.3s68.3-30.6 68.3-68.3l-1.7-139.7c3.3-3.3 6.2-6.9 8.6-10.7 8.3-13.3 10.7-29.2 6.7-44.7l130.9-45.4c12.9-4.6 21.3-16 21.3-31.6s-8.4-27-21.3-31.6zM122.7 177.2l175-60.8 175 60.8v43.4l-175-60.8-175 60.8v-43.4zM276.3 403.9c-16.7 0-30.3-13.6-30.3-30.3s13.6-30.3 30.3-30.3 30.3 13.6 30.3 30.3-13.6 30.3-30.3 30.3zm137.7 0c-16.7 0-30.3-13.6-30.3-30.3s13.6-30.3 30.3-30.3 30.3 13.6 30.3 30.3-13.6 30.3-30.3 30.3z'/%3E%3C/svg%3E">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/accounts/register_instructor.css' %}">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <a href="/" class="logo">
+                    <span class="brand-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </span>
+                    <span class="brand-name">EduLearn</span>
+                </a>
+
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    Become an Instructor
+                </h1>
+                <p class="hero-subtitle">
+                    Share your knowledge, inspire millions, and grow your career
+                </p>
+            </div>
+        </section>
+
+        <!-- Status Messages -->
+        <div id="statusContainer" class="status-container" style="display: none;">
+            <!-- Dynamic status messages will be inserted here -->
+        </div>
+
+        <!-- Registration Form Container -->
+        <div id="registrationContainer" class="registration-container" style="display: none;">
+
+            <!-- Progress Indicator -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-steps">
+                    <div class="progress-step active" data-step="1">
+                        <div class="step-circle">
+                            <i class="fas fa-user"></i>
+                            <span class="step-number">1</span>
+                        </div>
+                        <span class="step-label">Personal Info</span>
+                    </div>
+                    <div class="progress-step" data-step="2">
+                        <div class="step-circle">
+                            <i class="fas fa-briefcase"></i>
+                            <span class="step-number">2</span>
+                        </div>
+                        <span class="step-label">Experience</span>
+                    </div>
+                    <div class="progress-step" data-step="3">
+                        <div class="step-circle">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span class="step-number">3</span>
+                        </div>
+                        <span class="step-label">Education & Skills</span>
+                    </div>
+                    <div class="progress-step" data-step="4">
+                        <div class="step-circle">
+                            <i class="fas fa-check-circle"></i>
+                            <span class="step-number">4</span>
+                        </div>
+                        <span class="step-label">Review & Submit</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form id="instructorForm" class="instructor-form" enctype="multipart/form-data">
+
+                <!-- Step 1: Personal Information -->
+                <div class="form-step active" data-step="1">
+                    <div class="step-header">
+                        <h2>Personal Information</h2>
+                        <p>Tell us about yourself</p>
+                    </div>
+
+                    <!-- Personal Details Fields - ALWAYS VISIBLE -->
+                    <div class="form-grid" style="margin-bottom: 30px;">
+                        <!-- Username Field -->
+                        <div class="form-group">
+                            <label for="username">Username <span class="required">*</span></label>
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                class="form-control"
+                                placeholder="Enter your username"
+                                autocomplete="username"
+                            >
+                            <span class="error-message" id="usernameError"></span>
+                        </div>
+
+                        <!-- Email Field -->
+                        <div class="form-group">
+                            <label for="email">Email Address <span class="required">*</span></label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                class="form-control"
+                                placeholder="Enter your email"
+                                autocomplete="email"
+                            >
+                            <span class="error-message" id="emailError"></span>
+                        </div>
+
+                        <!-- First Name Field -->
+                        <div class="form-group">
+                            <label for="firstName">First Name <span class="required">*</span></label>
+                            <input
+                                type="text"
+                                id="firstName"
+                                name="first_name"
+                                class="form-control"
+                                placeholder="Enter your first name"
+                                autocomplete="given-name"
+                            >
+                            <span class="error-message" id="firstNameError"></span>
+                        </div>
+
+                        <!-- Last Name Field -->
+                        <div class="form-group">
+                            <label for="lastName">Last Name <span class="required">*</span></label>
+                            <input
+                                type="text"
+                                id="lastName"
+                                name="last_name"
+                                class="form-control"
+                                placeholder="Enter your last name"
+                                autocomplete="family-name"
+                            >
+                            <span class="error-message" id="lastNameError"></span>
+                        </div>
+                    </div>
+
+                    <!-- Note for unauthenticated users -->
+                    <div class="info-note" id="guestNote" style="display: none;">
+                        <i class="fas fa-info-circle"></i>
+                        <p>If your application is approved, we'll send you login credentials to this email address.</p>
+                    </div>
+
+                    <div class="form-grid">
+                        <!-- Professional Title -->
+                        <div class="form-group full-width">
+                            <label for="professionalTitle">
+                                Professional Title <span class="required">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="professionalTitle"
+                                name="professional_title"
+                                class="form-control"
+                                placeholder="e.g., Senior Web Developer, Data Scientist, UX Designer"
+                                required
+                                minlength="5"
+                                maxlength="255"
+                            >
+                            <span class="error-message" id="professionalTitleError"></span>
+                        </div>
+
+                        <!-- Organization -->
+                        <div class="form-group full-width">
+                            <label for="organization">
+                                Organization/Company
+                            </label>
+                            <input
+                                type="text"
+                                id="organization"
+                                name="organization"
+                                class="form-control"
+                                placeholder="e.g., Google, Microsoft, Freelance"
+                                maxlength="255"
+                            >
+                        </div>
+
+                        <!-- Years of Experience -->
+                        <div class="form-group">
+                            <label for="yearsExperience">
+                                Years of Experience <span class="required">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                id="yearsExperience"
+                                name="years_of_experience"
+                                class="form-control"
+                                placeholder="e.g., 5"
+                                min="0"
+                                max="50"
+                                required
+                            >
+                            <span class="error-message" id="yearsExperienceError"></span>
+                        </div>
+
+                        <!-- Country -->
+                        <div class="form-group">
+                            <label for="country">Country</label>
+                            <select id="country" name="country" class="form-control">
+                                <option value="">Select your country</option>
+                                <option value="US">United States</option>
+                                <option value="UK">United Kingdom</option>
+                                <option value="CA">Canada</option>
+                                <option value="AU">Australia</option>
+                                <option value="DE">Germany</option>
+                                <option value="FR">France</option>
+                                <option value="IN">India</option>
+                                <option value="BR">Brazil</option>
+                                <option value="JP">Japan</option>
+                                <option value="CN">China</option>
+                                <option value="KR">South Korea</option>
+                                <option value="SG">Singapore</option>
+                                <option value="AE">United Arab Emirates</option>
+                                <option value="NL">Netherlands</option>
+                                <option value="SE">Sweden</option>
+                                <option value="NO">Norway</option>
+                                <option value="DK">Denmark</option>
+                                <option value="FI">Finland</option>
+                                <option value="ES">Spain</option>
+                                <option value="IT">Italy</option>
+                                <option value="PT">Portugal</option>
+                                <option value="IE">Ireland</option>
+                                <option value="NZ">New Zealand</option>
+                                <option value="ZA">South Africa</option>
+                                <option value="MX">Mexico</option>
+                                <option value="AR">Argentina</option>
+                                <option value="CL">Chile</option>
+                                <option value="CO">Colombia</option>
+                                <option value="PE">Peru</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+
+                        <!-- Headline -->
+                        <div class="form-group full-width">
+                            <label for="headline">Professional Headline</label>
+                            <input
+                                type="text"
+                                id="headline"
+                                name="headline"
+                                class="form-control"
+                                placeholder="e.g., Full Stack Developer with 10+ years of experience"
+                                maxlength="255"
+                            >
+                        </div>
+
+                        <!-- Biography -->
+                        <div class="form-group full-width">
+                            <label for="biography">Professional Biography</label>
+                            <textarea
+                                id="biography"
+                                name="biography"
+                                class="form-control"
+                                rows="5"
+                                placeholder="Tell us about your professional journey, teaching philosophy, and what makes you passionate about sharing knowledge..."
+                                maxlength="2000"
+                            ></textarea>
+                            <div class="character-count">
+                                <span id="biographyCount">0</span>/2000 characters
+                            </div>
+                        </div>
+
+                        <!-- Website -->
+                        <div class="form-group">
+                            <label for="website">Personal Website</label>
+                            <input
+                                type="url"
+                                id="website"
+                                name="website"
+                                class="form-control"
+                                placeholder="https://yourwebsite.com"
+                            >
+                        </div>
+
+                        <!-- LinkedIn -->
+                        <div class="form-group">
+                            <label for="linkedin">LinkedIn Profile</label>
+                            <input
+                                type="url"
+                                id="linkedin"
+                                name="linkedin"
+                                class="form-control"
+                                placeholder="https://linkedin.com/in/username"
+                            >
+                        </div>
+
+                        <!-- GitHub -->
+                        <div class="form-group full-width">
+                            <label for="github">GitHub Profile</label>
+                            <input
+                                type="url"
+                                id="github"
+                                name="github"
+                                class="form-control"
+                                placeholder="https://github.com/username"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Work Experience -->
+                <div class="form-step" data-step="2">
+                    <div class="step-header">
+                        <h2>Work Experience</h2>
+                        <p>Add your relevant work experience (most recent first)</p>
+                    </div>
+
+                    <div id="experienceContainer" class="dynamic-container">
+                        <!-- Experience entries will be added here dynamically -->
+                    </div>
+
+                    <button type="button" class="btn-add-more" id="addExperienceBtn">
+                        <i class="fas fa-plus"></i>
+                        Add Experience
+                    </button>
+                </div>
+
+                <!-- Step 3: Education & Skills -->
+                <div class="form-step" data-step="3">
+                    <div class="step-header">
+                        <h2>Education & Skills</h2>
+                        <p>Add your educational background and technical skills</p>
+                    </div>
+
+                    <!-- Education Section -->
+                    <div class="subsection">
+                        <h3 class="subsection-title">
+                            <i class="fas fa-graduation-cap"></i>
+                            Education
+                        </h3>
+                        <div id="educationContainer" class="dynamic-container">
+                            <!-- Education entries will be added here dynamically -->
+                        </div>
+                        <button type="button" class="btn-add-more" id="addEducationBtn">
+                            <i class="fas fa-plus"></i>
+                            Add Education
+                        </button>
+                    </div>
+
+                    <!-- Skills Section -->
+                    <div class="subsection">
+                        <h3 class="subsection-title">
+                            <i class="fas fa-tools"></i>
+                            Skills & Expertise
+                        </h3>
+                        <div class="skills-input-container">
+                            <div class="skills-tags" id="skillsTags">
+                                <!-- Selected skills will appear here as tags -->
+                            </div>
+                            <input
+                                type="text"
+                                id="skillInput"
+                                class="form-control skill-input"
+                                placeholder="Type a skill and press Enter"
+                                autocomplete="off"
+                            >
+                            <div class="skills-suggestions" id="skillsSuggestions"></div>
+                        </div>
+                        <p class="helper-text">Press Enter to add a skill. Add at least one skill.</p>
+                        <span class="error-message" id="skillsError"></span>
+                    </div>
+                </div>
+
+                <!-- Step 4: Review & Submit -->
+                <div class="form-step" data-step="4">
+                    <div class="step-header">
+                        <h2>Review & Submit</h2>
+                        <p>Review your application and submit for approval</p>
+                    </div>
+
+                    <!-- Terms and Conditions -->
+                    <div class="terms-container">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="agreeTerms" name="agree_terms" required>
+                            <span class="checkmark"></span>
+                            <span class="terms-text">
+                                I agree to the
+                                <a href="/terms/instructor/" target="_blank">Instructor Terms & Conditions</a>
+                                and
+                                <a href="/privacy/" target="_blank">Privacy Policy</a>
+                                <span class="required">*</span>
+                            </span>
+                        </label>
+                        <span class="error-message" id="termsError"></span>
+                    </div>
+
+                    <!-- Review Summary -->
+                    <div class="review-summary">
+                        <h3>Application Summary</h3>
+                        <div id="reviewContent">
+                            <!-- Review summary will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="form-navigation">
+                    <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">
+                        <i class="fas fa-arrow-left"></i>
+                        Previous
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextBtn">
+                        Next
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button type="button" class="btn btn-success" id="submitBtn" style="display: none;">
+                        <i class="fas fa-paper-plane"></i>
+                        Submit Application
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Container -->
+        <div id="successContainer" class="success-container" style="display: none;">
+            <div class="success-card">
+                <div class="success-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h2>Application Submitted Successfully!</h2>
+                <p id="successMessage">
+                    Thank you for applying to become an instructor. Your application is now pending review by our admin team.
+                </p>
+                <div class="pending-info" id="pendingInfo">
+                    <i class="fas fa-envelope"></i>
+                    <p>If your application is approved, we'll send you an email with your login credentials.</p>
+                </div>
+                <div class="success-actions">
+                    <a href="/" class="btn btn-primary" id="redirectHomeBtn">
+                        <i class="fas fa-home"></i>
+                        Go to Homepage
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 EduPlatform. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="/terms/">Terms</a>
+                <a href="/privacy/">Privacy</a>
+                <a href="/support/">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom JavaScript -->
+    <script src="{% static 'js/auth/auth.js' %}"></script>
+
+    <script src="{% static 'js/accounts/register_instructor.js' %}"></script>
+</body>
+</html>

@@ -51,7 +51,7 @@ def send_registration_email(user, request, role_name):
         "html_template": html_template,
         "context": context,
     }
-    if settings.USE_CELERY:
+    if settings.HOST_ASYNC_ABILITY:
         send_email.delay(**email_kwargs)
     else:
         send_email(**email_kwargs)
@@ -203,7 +203,7 @@ def send_password_reset_email(request, email) -> None:
             "html_template": html_template,
             "context": context,
         }
-        if settings.USE_CELERY:
+        if settings.HOST_ASYNC_ABILITY:
             send_email.delay(**email_kwargs)
         else:
             send_email(**email_kwargs)
