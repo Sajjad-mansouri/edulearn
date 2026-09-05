@@ -106,7 +106,7 @@ class CourseSerializer(serializers.ModelSerializer):
 class InstructorCourseSerializer(serializers.ModelSerializer):
     category = serializers.CharField(source="category.name", read_only=True)
     students = serializers.SerializerMethodField()
-    revenue = serializers.SerializerMethodField()
+    revenue = serializers.DecimalField(max_digits=12, decimal_places=2)
     rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -126,9 +126,6 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
             "review_status",
         ]
 
-    def get_revenue(self, obj):
-        return 10
-
     def get_students(self, obj):
         return obj.enrollments.count()
 
@@ -139,6 +136,16 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
         if avg_rating:
             return round(avg_rating, 1)
         return avg_rating
+
+
+class InstructorCourseSubmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = [
+            "id",
+            "status",
+            "review_status",
+        ]
 
 
 class InstructorFilterCoursesSerializer(serializers.ModelSerializer):

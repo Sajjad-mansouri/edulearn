@@ -3,6 +3,7 @@ from .assignments import AssignmentSubmissionSerializer, GradeSerializer
 from .course import (
     CourseSerializer,
     InstructorCourseSerializer,
+    InstructorCourseSubmissionSerializer,
     InstructorFilterCoursesSerializer,
 )
 from .revenue import RevenueSerializer
@@ -20,4 +21,5 @@ __all__ = [
     "AnalyticFilterCoursesSerializer",
     "RevenueSerializer",
     "TransactionSerializer",
+    "InstructorCourseSubmissionSerializer",
 ]

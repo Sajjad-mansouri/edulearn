@@ -18,6 +18,21 @@ urlpatterns = [
         name="update_course",
     ),
     path(
+        "courses/<int:pk>/delete/",
+        views.CourseDeleteApiView.as_view(),
+        name="course_delete",
+    ),
+    path(
+        "courses/<int:course_id>/submit/",
+        views.CourseSubmitApiView.as_view(),
+        name="submit_course",
+    ),
+    path(
+        "courses/<int:course_id>/publish/",
+        views.CoursePublishApiView.as_view(),
+        name="publish_course",
+    ),
+    path(
         "courses/",
         views.InstructorCoursesApiView.as_view(),
         name="instructor_course_list",

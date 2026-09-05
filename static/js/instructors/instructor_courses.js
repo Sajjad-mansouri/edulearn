@@ -15,19 +15,47 @@ class InstructorCoursesPage {
         this.selectedCourses = new Set();
         this.openActionMenu = null;
         this.pendingConfirm = null;
+        this.pendingPublishCourse = null;
         this.availableCategories = [];
         this.availableVersions = [];
         this.init();
     }
 
     async init() {
+        this.ensurePublishModalExists();
         this.bindEvents();
         await this.loadCourses();
         this.hideLoader();
     }
 
-    bindEvents() {
+    ensurePublishModalExists() {
+        if (document.getElementById('publishOverlay')) return;
 
+        const modalHtml = `
+            <div id="publishOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+                <div style="background: white; border-radius: 12px; padding: 30px; max-width: 450px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 id="publishTitle" style="margin: 0; font-size: 20px; font-weight: 600; color: #333;">Publish Course</h3>
+                        <button id="publishClose" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+                    </div>
+                    <p id="publishMessage" style="margin: 0 0 15px 0; color: #666; line-height: 1.5;">Your course has been approved and is ready to be published. Once published, it will be visible to all students.</p>
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <strong id="publishCourseName" style="color: #333; font-size: 16px;"></strong>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button id="publishCancel" style="padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; color: #666;">Cancel</button>
+                        <button id="publishConfirm" style="padding: 10px 20px; border: none; background: #4F46E5; color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                            <i class="fas fa-check-circle"></i> Publish Course
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    bindEvents() {
         document.querySelectorAll('.course-tab').forEach(tab => tab.addEventListener('click', () => this.switchTab(tab.dataset.tab)));
 
         const searchInput = document.getElementById('courseSearch');
@@ -71,6 +99,22 @@ class InstructorCoursesPage {
 
         document.getElementById('confirmCancel')?.addEventListener('click', () => this.closeConfirm());
         document.getElementById('confirmOk')?.addEventListener('click', () => this.executeConfirm());
+
+        // Use event delegation for publish modal (works with dynamically created elements)
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'publishCancel' || e.target.closest('#publishCancel')) {
+                this.closePublishModal();
+            }
+            if (e.target.id === 'publishConfirm' || e.target.closest('#publishConfirm')) {
+                this.executePublish();
+            }
+            if (e.target.id === 'publishClose' || e.target.closest('#publishClose')) {
+                this.closePublishModal();
+            }
+            if (e.target.id === 'publishOverlay') {
+                this.closePublishModal();
+            }
+        });
 
         document.getElementById('prevPage')?.addEventListener('click', () => this.changePage(-1));
         document.getElementById('nextPage')?.addEventListener('click', () => this.changePage(1));
@@ -220,7 +264,7 @@ class InstructorCoursesPage {
         } catch (error) {
             console.error("Error loading categories:", error);
             // Fallback to dummy data if API fails
-            this.allCourses = [];
+            this.allCourses = this.getDummyCourses();
             this.extractFilterOptions(this.allCourses);
             this.populateFilterDropdowns();
         }
@@ -382,10 +426,10 @@ class InstructorCoursesPage {
                 id: 12,
                 title: 'SQL for Data Analysis v2',
                 category: 'data-science',
-                status: 'ready_for_review',
+                status: 'submitted',
                 version: '2.5',
                 progress: 95,
-                reviewStatus: 'not_submitted',
+                reviewStatus: 'approved',
                 thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=600&h=340&fit=crop',
                 lastUpdated: new Date(Date.now() - 1 * 86400000),
                 slug: 'sql-v2'
@@ -477,7 +521,7 @@ class InstructorCoursesPage {
         const count = (status) => this.allCourses.filter(c => c.status === status).length;
         document.getElementById('countAll').textContent = this.allCourses.length;
         document.getElementById('countDraft').textContent = count('draft');
-        document.getElementById('countReadyForReview').textContent = count('ready_for_review');
+        document.getElementById('countReadyForReview').textContent = count('submitted');
         document.getElementById('countUnderReview').textContent = count('under_review');
         document.getElementById('countPublished').textContent = count('published');
         document.getElementById('countUpdated').textContent = count('updated');
@@ -534,12 +578,12 @@ class InstructorCoursesPage {
     createCourseCard(course) {
         const isPublished = course.status === 'published';
         const isDraft = course.status === 'draft';
-        const isReadyForReview = course.status === 'ready_for_review';
+        const isSubmitted = course.status === 'submitted';
         const isUnderReview = course.status === 'under_review';
         const isUpdated = course.status === 'updated';
         const isArchived = course.status === 'archived';
         const showFullStats = isPublished || isUpdated || isArchived;
-        const showDraftProgress = isDraft || isReadyForReview || isUnderReview;
+        const showDraftProgress = isDraft || isSubmitted || isUnderReview;
 
         const statusLabel = course.status.replace(/_/g, ' ');
         const reviewLabel = course.reviewStatus.replace(/_/g, ' ');
@@ -589,9 +633,9 @@ class InstructorCoursesPage {
                 <button class="card-action-btn edit" data-id="${course.id}" data-slug="${course.slug}"><i class="fas fa-pen"></i> Edit</button>
                 <button class="card-more-btn" data-id="${course.id}"><i class="fas fa-ellipsis-h"></i></button>
             `;
-        } else if (isReadyForReview) {
+        } else if (isSubmitted) {
             footerHtml = `
-                <span class="last-updated">Ready ${this.formatRelative(course.lastUpdated)}</span>
+                <span class="last-updated">Submitted ${this.formatRelative(course.lastUpdated)}</span>
                 <button class="card-action-btn preview" data-id="${course.id}" data-slug="${course.slug}"><i class="fas fa-eye"></i> Preview</button>
                 <button class="card-more-btn" data-id="${course.id}"><i class="fas fa-ellipsis-h"></i></button>
             `;
@@ -611,13 +655,13 @@ class InstructorCoursesPage {
         return `
             <div class="course-card-instructor" data-id="${course.id}">
                 <input type="checkbox" class="card-select-checkbox" data-id="${course.id}">
-                <div class="course-card-thumb" >
+                <div class="course-card-thumb">
                     <img src="${course.thumbnail}" alt="${course.title}" onerror="this.src='https://via.placeholder.com/600x340/4F46E5/FFFFFF?text=Course'">
                     <span class="course-status-badge ${course.status}">${this.capitalize(statusLabel)}</span>
                     <span class="review-status-badge ${course.reviewStatus}">${this.capitalize(reviewLabel)}</span>
                     <span class="version-badge">v${course.version}</span>
                 </div>
-                <div class="course-card-body-instructor" onclick="window.location.href='/course/${course.slug}'">
+                <div class="course-card-body-instructor">
                     <h3 class="course-card-title-instructor">${course.title}</h3>
                     <span class="course-card-category">${this.capitalize(course.category)}</span>
                     ${statsHtml}
@@ -642,7 +686,6 @@ class InstructorCoursesPage {
                 e.stopPropagation();
                 const slug = b.dataset.slug;
                 const id = b.dataset.id;
-
                 window.open(`/course/${id}/${slug}`, '_blank');
             });
         });
@@ -659,7 +702,7 @@ class InstructorCoursesPage {
         container.querySelectorAll('.card-action-btn.preview').forEach(b => {
             b.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const slug = b.dataset.id;
+                const id = b.dataset.id;
                 window.open(`/instructor/courses/${id}/preview/`, '_blank');
             });
         });
@@ -693,8 +736,8 @@ class InstructorCoursesPage {
         const menu = document.getElementById('courseActionsMenu');
 
         let items = '';
-        // Edit (all except archived)
 
+        // Edit (all except archived)
         if (course.status !== 'archived') {
             items += `<button class="action-item" data-action="edit" data-id="${id}" data-slug="${course.slug}"><i class="fas fa-pen"></i> Edit Course</button>`;
         }
@@ -702,16 +745,15 @@ class InstructorCoursesPage {
         // Preview (all)
         items += `<button class="action-item" data-action="preview" data-id="${id}" data-slug="${course.slug}"><i class="fas fa-eye"></i> Preview</button>`;
 
-        // Publish (draft, ready_for_review, under_review)
-        if (course.status == 'draft' && course.reviewStatus == "approved") {
-            items += `<button class="action-item" data-action="publish" data-id="${id}"><i class="fas fa-check-circle"></i> Publish</button>`;
+        // Publish (submitted with approved review status)
+        if (course.status === 'submitted' && course.reviewStatus === 'approved') {
+            items += `<button class="action-item publish-action" data-action="publish" data-id="${id}"><i class="fas fa-check-circle"></i> Publish</button>`;
         }
 
         // Submit for Review (draft)
-        if (course.status === 'draft' && course.reviewStatus == "not_submitted") {
+        if (course.status === 'draft' && course.reviewStatus === 'not_submitted') {
             items += `<button class="action-item" data-action="submit-review" data-id="${id}"><i class="fas fa-paper-plane"></i> Submit for Review</button>`;
         }
-
 
         // Delete (draft only)
         if (course.status === 'draft') {
@@ -726,8 +768,10 @@ class InstructorCoursesPage {
         menu.querySelectorAll('.action-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.handleCourseAction(item.dataset.action, parseInt(item.dataset.id));
+                const action = item.dataset.action;
+                const courseId = parseInt(item.dataset.id);
                 this.closeActionMenu();
+                this.handleCourseAction(action, courseId);
             });
         });
     }
@@ -766,16 +810,16 @@ class InstructorCoursesPage {
                 this.showToast('Course duplicated');
                 break;
             case 'publish':
-                course.status = 'published';
-                course.reviewStatus = 'approved';
-                this.applyFilters();
-                this.showToast(`"${course.title}" published!`);
+                this.showPublishModal(course);
                 break;
             case 'submit-review':
-                course.status = 'under_review';
-                course.reviewStatus = 'pending';
-                this.applyFilters();
-                this.showToast(`"${course.title}" submitted for review`);
+                this.showConfirm(
+                    `Submit "${course.title}" for Review?`,
+                    'This course will be submitted for review and cannot be edited until the review is complete.',
+                    () => {
+                        this.submitCourse(id);
+                    }
+                );
                 break;
             case 'archive':
                 course.status = 'archived';
@@ -796,13 +840,156 @@ class InstructorCoursesPage {
                     `Delete "${course.title}"?`,
                     'This cannot be undone.',
                     () => {
-                        this.allCourses = this.allCourses.filter(c => c.id !== id);
-                        this.applyFilters();
-                        this.showToast('Draft deleted');
+                        this.deleteCourse(id);
                     }
                 );
                 break;
         }
+    }
+
+    showPublishModal(course) {
+        this.pendingPublishCourse = course;
+
+        // Update modal content
+        const publishTitle = document.getElementById('publishTitle');
+        const publishMessage = document.getElementById('publishMessage');
+        const publishCourseName = document.getElementById('publishCourseName');
+
+        if (publishTitle) publishTitle.textContent = 'Publish Course';
+        if (publishMessage) publishMessage.textContent = 'Your course has been approved and is ready to be published. Once published, it will be visible to all students.';
+        if (publishCourseName) publishCourseName.textContent = course.title;
+
+        // Show modal
+        const overlay = document.getElementById('publishOverlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+            overlay.style.zIndex = '9999';
+        } else {
+            console.error('Publish overlay not found');
+            this.showToast('Error: Publish modal not found');
+        }
+    }
+
+    closePublishModal() {
+        const overlay = document.getElementById('publishOverlay');
+        if (overlay) overlay.style.display = 'none';
+        this.pendingPublishCourse = null;
+    }
+
+    async executePublish() {
+        if (!this.pendingPublishCourse) return;
+
+        const course = this.pendingPublishCourse;
+        const publishBtn = document.getElementById('publishConfirm');
+
+        // Disable button and show loading state
+        if (publishBtn) {
+            publishBtn.disabled = true;
+            publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+        }
+
+        try {
+            await this.publishCourse(course.id);
+            this.closePublishModal();
+        } catch (error) {
+            console.error('Error publishing course:', error);
+            this.showToast('Failed to publish course. Please try again.');
+        } finally {
+            // Re-enable button
+            if (publishBtn) {
+                publishBtn.disabled = false;
+                publishBtn.innerHTML = '<i class="fas fa-check-circle"></i> Publish Course';
+            }
+        }
+    }
+
+    async publishCourse(courseId) {
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + `/api/v1/instructor/courses/${courseId}/publish/`,
+                {
+                    method: "POST",
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to publish course.");
+            }
+
+            const data = await response.json();
+
+            // Update the course in the local array
+            const course = this.allCourses.find(c => c.id === courseId);
+            if (course) {
+                course.status = 'published';
+                course.reviewStatus = 'approved';
+            }
+
+            this.applyFilters();
+            this.showToast('Course published successfully!');
+
+            return data;
+        } catch (error) {
+            console.error("Error publishing course:", error);
+            this.showToast('Failed to publish course. Please try again.');
+            throw error;
+        }
+    }
+
+    async submitCourse(courseId) {
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + `/api/v1/instructor/courses/${courseId}/submit/`,
+                {
+                    method: "POST",
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to submit course for review.");
+            }
+
+            const data = await response.json();
+
+            // Update the course in the local array
+            const course = this.allCourses.find(c => c.id === courseId);
+            if (course) {
+                course.status = 'submitted';
+                course.reviewStatus = 'pending';
+            }
+
+            this.applyFilters();
+            this.showToast('Course submitted for review successfully!');
+
+            return data;
+        } catch (error) {
+            console.error("Error submitting course for review:", error);
+            this.showToast('Failed to submit course for review. Please try again.');
+            throw error;
+        }
+    }
+
+    async deleteCourse(courseId) {
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + `/api/v1/instructor/courses/${courseId}/delete/`,
+                {
+                    method: "DELETE",
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to delete course.");
+            }
+
+            this.allCourses = this.allCourses.filter(c => c.id !== courseId);
+            this.showToast('Draft deleted');
+        } catch (error) {
+            console.error("Error deleting course, try later:", error);
+            this.showToast('Failed to delete course. Please try again.');
+        }
+
+        this.applyFilters();
     }
 
     showConfirm(title, message, cb) {
@@ -862,7 +1049,7 @@ class InstructorCoursesPage {
             const msgs = {
                 all: { icon: '📚', title: 'No courses yet', desc: 'Start creating your first course!', btn: true },
                 draft: { icon: '📝', title: 'No draft courses', desc: 'Start creating a new course.', btn: true },
-                ready_for_review: { icon: '📋', title: 'No courses ready for review', desc: 'Complete a draft to submit it for review.', btn: false },
+                submitted: { icon: '📋', title: 'No submitted courses', desc: 'Complete a draft to submit it for review.', btn: false },
                 under_review: { icon: '🔍', title: 'No courses under review', desc: 'Submitted courses will appear here.', btn: false },
                 published: { icon: '✅', title: 'No published courses', desc: 'Publish a course to see it here.', btn: false },
                 updated: { icon: '🔄', title: 'No updated courses', desc: 'Updated courses will appear here.', btn: false },
@@ -911,16 +1098,45 @@ class InstructorCoursesPage {
     }
 
     showToast(m) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 99999;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            `;
+            document.body.appendChild(toastContainer);
+        }
+
         const t = document.createElement('div');
         t.className = 'toast-popup';
         t.textContent = m;
-        document.getElementById('toastContainer').appendChild(t);
+        t.style.cssText = `
+            background: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            max-width: 300px;
+        `;
+        toastContainer.appendChild(t);
         requestAnimationFrame(() => {
             t.style.opacity = '1';
             t.style.transform = 'translateY(0)';
         });
         setTimeout(() => {
             t.style.opacity = '0';
+            t.style.transform = 'translateY(20px)';
             setTimeout(() => t.remove(), 300);
         }, 3000);
     }

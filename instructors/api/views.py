@@ -1,13 +1,16 @@
 import io
 import zipfile
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.db.models import F
+from django.db.models import DecimalField, F, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
+    DestroyAPIView,
     GenericAPIView,
     ListAPIView,
     RetrieveAPIView,
@@ -30,6 +33,7 @@ from .serializers import (
     CourseSerializer,
     GradeSerializer,
     InstructorCourseSerializer,
+    InstructorCourseSubmissionSerializer,
     InstructorDashboardSerializer,
     InstructorFilterCoursesSerializer,
     RevenueSerializer,
@@ -78,10 +82,12 @@ class CourseUpdateApiView(GenericAPIView):
         course = CourseUpdateService(
             course=course, deleted_ids_dict=deleted_ids_dict
         ).update(serializer.validated_data)
+
         if course_status == Course.Status.SUBMITTED:
             course.status = Course.Status.SUBMITTED
             course.review_status = Course.ReviewStatus.PENDING
             course.save()
+
         return Response(serializer.data)
 
     def get_queryset(self):
@@ -107,7 +113,24 @@ class InstructorCoursesApiView(ListAPIView):
     permission_classes = [IsInstructor]
 
     def get_queryset(self):
-        return Course.objects.filter(owner=self.request.user)
+        return Course.objects.filter(owner=self.request.user).annotate(
+            revenue=Coalesce(
+                Sum(
+                    "enrollments__payments__amount",
+                    filter=Q(enrollments__payments__status=Payment.Status.SUCCEEDED),
+                ),
+                Value(Decimal("0.00")),
+                output_field=DecimalField(max_digits=12, decimal_places=2),
+            )
+            - Coalesce(
+                Sum(
+                    "enrollments__payments__amount",
+                    filter=Q(enrollments__payments__status=Payment.Status.REFUNDED),
+                ),
+                Value(Decimal("0.00")),
+                output_field=DecimalField(max_digits=12, decimal_places=2),
+            )
+        )
 
 
 class InstructorStudentsApiView(RetrieveAPIView):
@@ -298,3 +321,66 @@ class InstructorTransactionsApiView(ListAPIView):
             .select_related("enrollment__course")
             .order_by("-updated_at")  # or -paid_at / -created_at
         )
+
+
+class CourseDeleteApiView(DestroyAPIView):
+    permission_classes = [IsInstructor]
+
+    def get_queryset(self):
+        return Course.objects.filter(
+            Q(owner=self.request.user)
+            & ~Q(
+                review_status__in=[
+                    Course.ReviewStatus.PENDING,
+                    Course.ReviewStatus.UNDER_REVIEW,
+                ]
+            )
+        )
+
+
+class CourseSubmitApiView(APIView):
+    permission_classes = [IsInstructor]
+
+    def post(self, request, course_id):
+        courses = Course.objects.filter(
+            Q(owner=request.user)
+            & Q(
+                review_status__in=[
+                    Course.ReviewStatus.NOT_SUBMITTED,
+                    Course.ReviewStatus.CHANGES_REQUESTED,
+                ]
+            )
+        )
+        course = get_object_or_404(courses, id=course_id)
+        serializer = InstructorCourseSubmissionSerializer(
+            course,
+            {
+                "review_status": Course.ReviewStatus.PENDING,
+                "status": Course.Status.SUBMITTED,
+            },
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
+
+
+class CoursePublishApiView(APIView):
+    permission_classes = [IsInstructor]
+
+    def post(self, request, course_id):
+        courses = Course.objects.filter(
+            Q(owner=request.user)
+            & Q(review_status=Course.ReviewStatus.APPROVED)
+            & Q(status=Course.Status.SUBMITTED)
+        )
+
+        course = get_object_or_404(courses, id=course_id)
+        serializer = InstructorCourseSubmissionSerializer(
+            course, {"status": Course.Status.PUBLISHED}, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)

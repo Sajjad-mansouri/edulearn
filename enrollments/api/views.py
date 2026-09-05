@@ -143,6 +143,7 @@ class LessonContentApiView(GenericAPIView):
     def get(self, request, *args, **kwargs):
         lesson = self.get_object()
         content = get_object_or_404(LessonContent, lesson=lesson, is_main_content=True)
+
         response_data = self.build_content_response(request, content, lesson)
         return Response(response_data)
 
@@ -168,7 +169,6 @@ class LessonContentApiView(GenericAPIView):
 
     def get_object(self):
         queryset = self.get_queryset()
-        print("lesson_id", self.kwargs["lesson_id"], queryset, queryset[0].id)
         return get_object_or_404(queryset, pk=self.kwargs["lesson_id"])
 
     def build_content_response(self, request, content, lesson):

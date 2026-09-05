@@ -20,7 +20,7 @@ class LessonContent(models.Model):
         related_name="contents",
         verbose_name=_("Lesson"),
     )
-    is_main_content = models.BooleanField(default=False)
+    is_main_content = models.BooleanField(default=True)
 
     title = models.CharField(
         _("Title"),
