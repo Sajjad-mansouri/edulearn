@@ -21,6 +21,7 @@ from courses.models import (
     CourseWishlist,
 )
 from curriculums.models import Lesson, LessonContent, Section
+from enrollments.api.permissions import IsStudent
 from enrollments.models import Enrollment
 from profiles.models import InstructorProfile
 
@@ -43,12 +44,15 @@ from .services import (
 
 class CategoriesApiView(ListAPIView):
     serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         return Category.objects.filter(parent=None)
 
 
 class CategoriesApiViewsV1(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, *args, **kwargs):
         categories = Category.objects.filter(parent__isnull=True).prefetch_related(
             "children"
@@ -71,6 +75,7 @@ class CategoriesApiViewsV1(APIView):
 
 class SubcategoriesApiView(ListAPIView):
     serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         category_slug = self.kwargs.get("categorySlug")
@@ -183,6 +188,8 @@ class CoursesApiView(ListAPIView):
 
 
 class CourseWishlistToggleApiView(APIView):
+    permission_classes = [IsStudent]
+
     def post(self, request, course_id):
         course = get_object_or_404(Course, id=course_id)
 
@@ -199,6 +206,8 @@ class CourseWishlistToggleApiView(APIView):
 
 
 class CourseWishlistRemoveApiView(DestroyAPIView):
+    permission_classes = [IsStudent]
+
     def get_queryset(self):
         return CourseWishlist.objects.filter(user=self.request.user)
 
@@ -313,6 +322,8 @@ class CourseDetailCurriculumApiView(ListAPIView):
 
 
 class CourseReviewListApiView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, course_id):
         per_page = 3
         page_number = request.query_params.get("page", 1)
@@ -354,6 +365,8 @@ class CourseReviewListApiView(APIView):
 
 
 class CourseReviewApiView(APIView):
+    permission_classes = [IsStudent]
+
     def post(self, request, course_id):
         enrollment = get_object_or_404(
             Enrollment, user=request.user, course_id=course_id
@@ -367,6 +380,8 @@ class CourseReviewApiView(APIView):
 
 
 class CourseReviewHelpfulApiView(APIView):
+    permission_classes = [IsStudent]
+
     def post(self, request, course_id, review_id):
         enrollment = get_object_or_404(
             Enrollment, user=request.user, course_id=course_id
@@ -390,6 +405,7 @@ class CourseReviewHelpfulApiView(APIView):
 
 class CourseReviewDestroyApiView(DestroyAPIView):
     lookup_url_kwarg = "review_id"
+    permission_classes = [IsStudent]
 
     def get_queryset(self):
         return CourseFeedback.objects.filter(enrollment__user=self.request.user)

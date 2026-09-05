@@ -5,10 +5,10 @@ from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from enrollments.api.permissions import IsEnrolled
 from enrollments.models import Enrollment
 from payments.api.serializers import CheckoutSessionResponseSerializer
 from payments.exceptions import (
@@ -23,7 +23,7 @@ from payments.services.webhook import handle_checkout_session_completed
 
 
 class CreateCheckoutSessionApiView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsEnrolled]
 
     def post(self, request, enrollment_id):
         enrollment = get_object_or_404(Enrollment, id=enrollment_id, user=request.user)

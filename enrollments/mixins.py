@@ -1,17 +1,16 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
 
-from accounts.models import Role
+from courses.models import Course
 
 from .models import Enrollment
 
 
-class EnrollmentRequiredMixin(LoginRequiredMixin):
+class EnrollmentOrOwnerRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return super().dispatch(request, *args, **kwargs)
         enrollment_id = kwargs.get("enrollment_id")
-        print("enrollment_id", enrollment_id)
         if enrollment_id:
             try:
                 self.enrollment = Enrollment.objects.select_related("course").get(
@@ -21,10 +20,13 @@ class EnrollmentRequiredMixin(LoginRequiredMixin):
                 raise Http404() from None
 
         else:
-            try:
-                self.request.user.roles.get(name=Role.Roles.INSTRUCTOR)
-                self.enrollment = None
-            except Role.DoesNotExist:
-                raise Http404() from None
-
+            course_id = kwargs.get("course_id")
+            if course_id:
+                try:
+                    Course.objects.filter(id=course_id, owner=request.user)
+                    self.enrollment = None
+                except Course.DoesNotExist:
+                    raise Http404() from None
+            else:
+                raise Http404()
         return super().dispatch(request, *args, **kwargs)

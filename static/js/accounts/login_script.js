@@ -103,11 +103,12 @@ form.addEventListener('submit', async (e) => {
 
     try {
         const result = await auth.login(username, password);
+        console.log(result)
 
         if (result.success) {
             // Get the redirect URL and navigate to it
             const redirectUrl = getRedirectUrl();
-            window.location.href = redirectUrl;
+            window.location.href = result.data.redirect_url;
         } else {
             showError(result.error || 'Invalid username or password.');
         }

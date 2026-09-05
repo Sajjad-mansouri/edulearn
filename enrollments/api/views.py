@@ -27,7 +27,6 @@ from assessments.models import (
 from certificates.models import Certificate
 from courses.models import Course, CourseWishlist
 from curriculums.models import Attachment, Lesson, LessonContent, Section
-from enrollments.mixins import EnrollmentRequiredMixin
 from enrollments.models import (
     CourseLessonBookmark,
     Enrollment,
@@ -37,6 +36,7 @@ from enrollments.models import (
     VideoWatchEvent,
 )
 
+from .permissions import IsEnrolled, IsOwner, IsStudent
 from .serializers import (
     AssignmentSerializer,
     AssignmentSubmissionFileSerializer,
@@ -73,9 +73,9 @@ class CurrentUserEnrollmentStatus(GenericAPIView):
         return Response({"is_enrolled": False})
 
 
-class EnrollmentCourseApiView(EnrollmentRequiredMixin, RetrieveAPIView):
+class EnrollmentCourseApiView(RetrieveAPIView):
     serializer_class = EnrollmentCourseSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsOwner | IsEnrolled]
 
     def get_queryset(self):
         # For a specific course, get all sections with lessons and attachment info
@@ -136,8 +136,9 @@ class EnrollmentCourseApiView(EnrollmentRequiredMixin, RetrieveAPIView):
         return Response(serializer.data)
 
 
-class LessonContentApiView(EnrollmentRequiredMixin, GenericAPIView):
+class LessonContentApiView(GenericAPIView):
     lookup_url_kwarg = "lesson_id"
+    permission_classes = [IsOwner | IsEnrolled]
 
     def get(self, request, *args, **kwargs):
         lesson = self.get_object()
@@ -263,8 +264,9 @@ class LessonContentApiView(EnrollmentRequiredMixin, GenericAPIView):
         return attachment_serializer.data
 
 
-class LessonCompletion(EnrollmentRequiredMixin, GenericAPIView):
+class LessonCompletion(GenericAPIView):
     lookup_url_kwarg = "lesson_id"
+    permission_classes = [IsEnrolled]
 
     def post(self, request, enrollment_id, lesson_id):
         instance = self.get_object()
@@ -292,7 +294,7 @@ class LessonCompletion(EnrollmentRequiredMixin, GenericAPIView):
         return Lesson.objects.filter(section__course__enrollments=self.enrollment)
 
 
-class EnrollmentProgress(EnrollmentRequiredMixin, RetrieveAPIView):
+class EnrollmentProgress(RetrieveAPIView):
     """
     enrollmentId: enrollmentId,
     overallProgress: 0,
@@ -304,6 +306,7 @@ class EnrollmentProgress(EnrollmentRequiredMixin, RetrieveAPIView):
     """
 
     lookup_url_kwarg = "enrollment_id"
+    permission_classes = [IsEnrolled]
 
     def get(self, request, enrollment_id):
         enrollment = self.get_object()
@@ -337,7 +340,9 @@ class EnrollmentProgress(EnrollmentRequiredMixin, RetrieveAPIView):
         )
 
 
-class LessonVideoProgressApiView(EnrollmentRequiredMixin, GenericAPIView):
+class LessonVideoProgressApiView(GenericAPIView):
+    permission_classes = [IsEnrolled]
+
     def post(self, request, enrollment_id, lesson_id):
         # Validate input
         timestamp = request.data.get("timestamp")
@@ -364,7 +369,7 @@ class LessonVideoProgressApiView(EnrollmentRequiredMixin, GenericAPIView):
         return Response({"success": True})
 
 
-class LessonBookmarkApiView(EnrollmentRequiredMixin, GenericAPIView):
+class LessonBookmarkApiView(GenericAPIView):
     """
     Toggle bookmark for a lesson.
     Returns:
@@ -373,6 +378,8 @@ class LessonBookmarkApiView(EnrollmentRequiredMixin, GenericAPIView):
         - bookmarkedLessons: list of lesson IDs
         - message: string
     """
+
+    permission_classes = [IsEnrolled]
 
     def post(self, request, enrollment_id, lesson_id):
         # Use self.enrollment from mixin
@@ -405,7 +412,7 @@ class LessonBookmarkApiView(EnrollmentRequiredMixin, GenericAPIView):
         return Response(data)
 
 
-class QuizSubmitApiViewv1(EnrollmentRequiredMixin, GenericAPIView):
+class QuizSubmitApiViewv1(GenericAPIView):
     """
     get these data:
     {'answers':
@@ -447,6 +454,8 @@ class QuizSubmitApiViewv1(EnrollmentRequiredMixin, GenericAPIView):
 
 
     """
+
+    permission_classes = [IsEnrolled]
 
     def post(self, request, enrollment_id, lesson_id):
         lesson = get_object_or_404(Lesson, id=lesson_id)
@@ -644,7 +653,9 @@ class QuizSubmitApiViewv1(EnrollmentRequiredMixin, GenericAPIView):
         return correctAnswer, userAnswer, isCorrect
 
 
-class QuizSubmitApiView(EnrollmentRequiredMixin, GenericAPIView):
+class QuizSubmitApiView(GenericAPIView):
+    permission_classes = [IsEnrolled]
+
     def post(self, request, enrollment_id, lesson_id):
         enrollment = self.enrollment
 
@@ -972,7 +983,7 @@ class QuizSubmitApiView(EnrollmentRequiredMixin, GenericAPIView):
         )
 
 
-class QuizSubmitAttemptsApiViewv1(EnrollmentRequiredMixin, GenericAPIView):
+class QuizSubmitAttemptsApiViewv1(GenericAPIView):
     """
     success: true,
     lessonId: lessonId,
@@ -984,6 +995,8 @@ class QuizSubmitAttemptsApiViewv1(EnrollmentRequiredMixin, GenericAPIView):
     can_attempt: attemptsUsed < maxAttempts
 
     """
+
+    permission_classes = [IsEnrolled]
 
     def get(self, request, enrollment_id, lesson_id):
         lesson = get_object_or_404(Lesson, id=lesson_id)
@@ -1013,7 +1026,7 @@ class QuizSubmitAttemptsApiViewv1(EnrollmentRequiredMixin, GenericAPIView):
         return Response(data)
 
 
-class QuizSubmitAttemptsApiView(EnrollmentRequiredMixin, GenericAPIView):
+class QuizSubmitAttemptsApiView(GenericAPIView):
     """
     Get quiz attempt statistics for a lesson.
     Returns:
@@ -1026,6 +1039,8 @@ class QuizSubmitAttemptsApiView(EnrollmentRequiredMixin, GenericAPIView):
         - last_score: int or None
         - can_attempt: bool
     """
+
+    permission_classes = [IsEnrolled]
 
     def get(self, request, enrollment_id, lesson_id):
         enrollment = self.enrollment
@@ -1098,7 +1113,9 @@ class QuizSubmitAttemptsApiView(EnrollmentRequiredMixin, GenericAPIView):
         }
 
 
-class AssignmentApiView1(EnrollmentRequiredMixin, GenericAPIView):
+class AssignmentApiView1(GenericAPIView):
+    permission_classes = [IsEnrolled]
+
     def get(self, request, enrollment_id, lesson_id):
         """
         success: true,
@@ -1164,7 +1181,9 @@ class AssignmentApiView1(EnrollmentRequiredMixin, GenericAPIView):
         return attempts_used, serializer.data
 
 
-class AssignmentApiView(EnrollmentRequiredMixin, GenericAPIView):
+class AssignmentApiView(GenericAPIView):
+    permission_classes = [IsEnrolled]
+
     def get(self, request, enrollment_id, lesson_id):
         enrollment = self.enrollment
 
@@ -1221,7 +1240,9 @@ class AssignmentApiView(EnrollmentRequiredMixin, GenericAPIView):
         )
 
 
-class AssignmentSubmissionApiViewv1(EnrollmentRequiredMixin, GenericAPIView):
+class AssignmentSubmissionApiViewv1(GenericAPIView):
+    permission_classes = [IsEnrolled]
+
     def post(self, request, enrollment_id, lesson_id):
         lesson = get_object_or_404(
             Lesson, id=lesson_id, section__course__enrollments=self.enrollment
@@ -1267,7 +1288,9 @@ class AssignmentSubmissionApiViewv1(EnrollmentRequiredMixin, GenericAPIView):
         return Response(data)
 
 
-class AssignmentSubmissionApiView(EnrollmentRequiredMixin, GenericAPIView):
+class AssignmentSubmissionApiView(GenericAPIView):
+    permission_classes = [IsEnrolled]
+
     def post(self, request, enrollment_id, lesson_id):
         enrollment = self.enrollment
 
@@ -1423,6 +1446,7 @@ class CourseEnrollment(APIView):
 # **********
 class StudentCoursesApiView(ListAPIView):
     serializer_class = StudentCourseSerializer
+    permission_classes = [IsStudent]
 
     def get_queryset(self):
         user = self.request.user
@@ -1445,6 +1469,7 @@ class StudentCoursesApiView(ListAPIView):
 
 class StudentWishlistApiView(ListAPIView):
     serializer_class = StudentWishlistSerializer
+    permission_classes = [IsStudent]
 
     def get_queryset(self):
         user = self.request.user
@@ -1464,7 +1489,7 @@ class StudentWishlistApiView(ListAPIView):
 
 
 class StudentCertificatesApiView(ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsStudent]
     serializer_class = StudentCourseCertificateSerializer
 
     def get_queryset(self):
@@ -1481,7 +1506,7 @@ class StudentCertificatesApiView(ListAPIView):
 
 
 class CertificateDownloadApiView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsStudent]
 
     def get(self, request, pk):
         certificate = get_object_or_404(

@@ -14,7 +14,6 @@ from rest_framework.generics import (
     UpdateAPIView,
 )
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -23,6 +22,7 @@ from courses.models import Course
 from normalizers.course import normalize_course_data
 from payments.models import Payment
 
+from .permissions import IsInstructor
 from .serializers import (
     AnalyticFilterCoursesSerializer,
     AnalyticSerializer,
@@ -46,7 +46,7 @@ User = get_user_model()
 
 
 class CourseBuilder(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsInstructor]
 
     def post(self, request, *args, **kwargs):
         course_status = kwargs.get("course_status")
@@ -65,7 +65,7 @@ class CourseBuilder(APIView):
 
 
 class CourseUpdateApiView(GenericAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsInstructor]
 
     def patch(self, request, *args, **kwargs):
         course_status = kwargs.get("course_status")
@@ -90,6 +90,7 @@ class CourseUpdateApiView(GenericAPIView):
 
 class CourseApiView(RetrieveAPIView):
     serializer_class = CourseSerializer
+    permission_classes = [IsInstructor]
 
     def get_queryset(self):
         return Course.objects.filter(owner=self.request.user)
@@ -103,6 +104,7 @@ class CourseApiView(RetrieveAPIView):
 
 class InstructorCoursesApiView(ListAPIView):
     serializer_class = InstructorCourseSerializer
+    permission_classes = [IsInstructor]
 
     def get_queryset(self):
         return Course.objects.filter(owner=self.request.user)
@@ -110,6 +112,7 @@ class InstructorCoursesApiView(ListAPIView):
 
 class InstructorStudentsApiView(RetrieveAPIView):
     serializer_class = InstructorDashboardSerializer
+    permission_classes = [IsInstructor]
 
     def get_object(self):
         return self.request.user
@@ -117,6 +120,7 @@ class InstructorStudentsApiView(RetrieveAPIView):
 
 class InstructorAssignmentsApiView(ListAPIView):
     serializer_class = AssignmentSubmissionSerializer
+    permission_classes = [IsInstructor]
 
     def get_queryset(self):
         return AssignmentSubmission.objects.filter(
@@ -126,6 +130,7 @@ class InstructorAssignmentsApiView(ListAPIView):
 
 class GradeAssignmentApiView(UpdateAPIView):
     serializer_class = GradeSerializer
+    permission_classes = [IsInstructor]
 
     def get_queryset(self):
         return AssignmentSubmission.objects.filter(
@@ -134,7 +139,7 @@ class GradeAssignmentApiView(UpdateAPIView):
 
 
 class SubmissionDownloadView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsInstructor]
 
     def get(self, request, id):
         submission = get_object_or_404(AssignmentSubmission, pk=id)
@@ -174,7 +179,7 @@ class SubmissionDownloadView(APIView):
 
 
 class BulkDownloadView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsInstructor]
 
     def get(self, request):
         ids = request.GET.get("ids", "")
@@ -212,13 +217,14 @@ class BulkDownloadView(APIView):
 
 class InstructorFilterCoursesApiView(RetrieveAPIView):
     serializer_class = InstructorFilterCoursesSerializer
+    permission_classes = [IsInstructor]
 
     def get_object(self):
         return self.request.user
 
 
 class InstructorAnalyticsApiView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsInstructor]
 
     def get(self, request, *args, **kwargs):
         period = kwargs.get("period") or request.query_params.get("period") or "30"
@@ -241,13 +247,14 @@ class InstructorAnalyticsApiView(APIView):
 class InstructorAnalyticsCoursesApiView(ListAPIView):
     serializer_class = AnalyticFilterCoursesSerializer
     pagination_class = None
+    permission_classes = [IsInstructor]
 
     def get_queryset(self):
         return Course.objects.filter(owner=self.request.user)
 
 
 class InstructorRevenueApiView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsInstructor]
 
     def get(self, request, *args, **kwargs):
         period = request.query_params.get("period", "30")
@@ -280,7 +287,7 @@ class InstructorTransactionsPagination(PageNumberPagination):
 
 
 class InstructorTransactionsApiView(ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsInstructor]
     serializer_class = TransactionSerializer
     pagination_class = InstructorTransactionsPagination
 

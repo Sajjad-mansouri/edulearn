@@ -15,7 +15,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.generic import TemplateView
 
-from profiles.models import Profile
+from profiles.models import Profile, StudentProfile
 
 UserModel = get_user_model()
 INTERNAL_REGISTRATION_SESSION_TOKEN = "_registration_token"
@@ -39,7 +39,8 @@ def confirm_registration(user):
     if not user.is_active:
         user.is_active = True
         user.save(update_fields=["is_active"])
-    Profile.objects.get_or_create(user=user)
+    profile, _created = Profile.objects.get_or_create(user=user)
+    StudentProfile.objects.get_or_create(profile=profile)
     return user
 
 

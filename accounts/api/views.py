@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, GenericAPIView, RetrieveAPIView
@@ -6,6 +7,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import Role
 from profiles.api.serializers import (
     EducationSerializer,
     ExperienceSerializer,
@@ -125,8 +127,14 @@ class LoginApiView(GenericAPIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         tokens = perform_login(serializer.validated_data, request)
+        if request.user.roles.filter(name=Role.Roles.INSTRUCTOR).exists():
+            profile_url = reverse("profiles:instructor_profile")
+        else:
+            profile_url = reverse("profiles:student_profile")
 
-        return Response(tokens, status=status.HTTP_200_OK)
+        data = {"redirect_url": profile_url, **tokens}
+        print(data)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class LogoutApiView(GenericAPIView):

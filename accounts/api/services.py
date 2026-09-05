@@ -248,6 +248,9 @@ def register_instructor(
         user = User.objects.create_user(is_active=False, **user_data)
         profile = Profile.objects.create(user=user, **profile_data)
 
+    role, _ = Role.objects.get_or_create(name=Role.Roles.INSTRUCTOR)
+    role.users.add(user)
+
     # Create skills, educations, experiences
     for skill_data in skills_data:
         Skill.objects.create(profile=profile, **skill_data)

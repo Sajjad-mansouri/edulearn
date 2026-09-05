@@ -1,11 +1,12 @@
 # Create your views here.
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 
+from accounts.mixins import InstructorRequiredMixin, StudentRequiredMixin
 
-class StudentProfileView(LoginRequiredMixin, TemplateView):
+
+class StudentProfileView(StudentRequiredMixin, TemplateView):
     template_name = "profiles/student/profile.html"
 
 
-class InstructorProfileView(LoginRequiredMixin, TemplateView):
+class InstructorProfileView(InstructorRequiredMixin, TemplateView):
     template_name = "profiles/instructor/profile.html"
