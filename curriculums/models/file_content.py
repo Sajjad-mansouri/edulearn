@@ -4,6 +4,24 @@ from django.utils.translation import gettext_lazy as _
 from .lesson_content import LessonContent
 
 
+def file_upload_path(instance, filename):
+    course = instance.content.lesson.section.course
+
+    owner_id = course.owner_id
+    course_id = course.id
+    lesson_content_id = instance.content_id
+
+    return (
+        f"courses/"
+        f"{owner_id}/"
+        f"{course_id}/"
+        f"lesson_contents/"
+        f"{lesson_content_id}/"
+        f"file/"
+        f"{filename}"
+    )
+
+
 class FileContent(models.Model):
     content = models.OneToOneField(
         LessonContent,
@@ -13,7 +31,7 @@ class FileContent(models.Model):
     )
 
     file = models.FileField(
-        _("File"), upload_to="courses/files/", null=True, blank=True
+        _("File"), upload_to=file_upload_path, null=True, blank=True
     )
     file_url = models.URLField(
         blank=True,

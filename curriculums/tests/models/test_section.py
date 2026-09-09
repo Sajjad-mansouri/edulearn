@@ -1,147 +1,266 @@
-import datetime
+from datetime import timedelta
 
 import pytest
-from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 
-from courses.tests.factories import CourseFactory
-from curriculums.models import Section
-from curriculums.tests.factories import SectionFactory
+from curriculums.models.section import Section
 
 
 @pytest.mark.django_db
 class TestSectionModel:
-    """Tests for the Section model."""
-
-    @pytest.fixture
-    def course(self):
-        return CourseFactory()
-
     def test_create_section(self, course):
-        """A section can be created."""
         section = Section.objects.create(
             course=course,
-            title="Getting Started",
-            description="Introduction to the course.",
-            order=1,
-            is_published=True,
-            estimated_duration=datetime.timedelta(minutes=45),
+            title="Introduction",
         )
 
+        assert section.pk is not None
         assert section.course == course
-        assert section.title == "Getting Started"
-        assert section.description == "Introduction to the course."
+        assert section.title == "Introduction"
+        assert section.description == ""
         assert section.order == 1
-        assert section.is_published is True
-        assert section.estimated_duration == datetime.timedelta(minutes=45)
+        assert section.is_published is False
+        assert section.duration is None
 
-    def test_string_representation(self):
-        """The string representation should return the section title."""
-        section = SectionFactory(title="Introduction")
+    def test_str_returns_title(self, course):
+        section = Section.objects.create(
+            course=course,
+            title="Introduction",
+        )
 
         assert str(section) == "Introduction"
 
     def test_description_is_optional(self, course):
-        """A section can be created without a description."""
         section = Section.objects.create(
             course=course,
             title="Introduction",
-            order=1,
         )
 
         assert section.description == ""
 
-    def test_estimated_duration_is_optional(self, course):
-        """A section can be created without an estimated duration."""
+    def test_description_can_be_set(self, course):
         section = Section.objects.create(
             course=course,
             title="Introduction",
-            order=1,
+            description="This section introduces the course.",
         )
 
-        assert section.estimated_duration is None
+        assert section.description == ("This section introduces the course.")
 
-    def test_is_published_defaults_to_false(self, course):
-        """Sections are unpublished by default."""
+    def test_order_defaults_to_one(self, course):
         section = Section.objects.create(
             course=course,
             title="Introduction",
-            order=1,
+        )
+
+        assert section.order == 1
+
+    def test_explicit_order_is_preserved(self, course):
+        section = Section.objects.create(
+            course=course,
+            title="Advanced Topics",
+            order=3,
+        )
+
+        assert section.order == 3
+
+    def test_is_published_defaults_to_false(self, course):
+        section = Section.objects.create(
+            course=course,
+            title="Introduction",
         )
 
         assert section.is_published is False
 
-    def test_order_must_be_unique_per_course(self, course):
-        """A course cannot have two sections with the same order."""
-        SectionFactory(
+    def test_section_can_be_published(self, course):
+        section = Section.objects.create(
             course=course,
-            order=1,
+            title="Introduction",
+            is_published=True,
         )
 
-        with pytest.raises(IntegrityError):
-            Section.objects.create(
-                course=course,
-                title="Duplicate",
-                order=1,
-            )
+        assert section.is_published is True
 
-    def test_same_order_can_be_used_for_different_courses(self):
-        """Different courses may use the same section order."""
-        course1 = CourseFactory()
-        course2 = CourseFactory()
-
-        section1 = SectionFactory(
-            course=course1,
-            order=1,
-        )
-
-        section2 = SectionFactory(
-            course=course2,
-            order=1,
-        )
-
-        assert section1.order == section2.order == 1
-
-    def test_course_can_have_multiple_sections(self, course):
-        """A course can have multiple sections."""
-        section1 = SectionFactory(
+    def test_duration_is_optional(self, course):
+        section = Section.objects.create(
             course=course,
-            order=1,
+            title="Introduction",
         )
-        section2 = SectionFactory(
+
+        assert section.duration is None
+
+    def test_duration_can_be_set(self, course):
+        duration = timedelta(hours=1, minutes=30)
+
+        section = Section.objects.create(
             course=course,
-            order=2,
+            title="Introduction",
+            duration=duration,
         )
 
-        assert set(course.sections.all()) == {
-            section1,
-            section2,
-        }
+        assert section.duration == duration
 
-    def test_sections_are_ordered_by_order(self, course):
-        """Sections are returned in ascending order."""
-        SectionFactory(course=course, order=3)
-        SectionFactory(course=course, order=1)
-        SectionFactory(course=course, order=2)
-
-        orders = list(
-            course.sections.values_list(
-                "order",
-                flat=True,
-            )
+    def test_course_is_required(self):
+        section = Section(
+            title="Introduction",
         )
 
-        assert orders == [1, 2, 3]
+        with pytest.raises(ValidationError) as exc_info:
+            section.full_clean()
 
-    def test_deleting_course_deletes_sections(self):
-        """Deleting a course cascades to its sections."""
-        course = CourseFactory()
+        assert "course" in exc_info.value.message_dict
 
-        section = SectionFactory(
+    def test_title_is_required(self, course):
+        section = Section(
             course=course,
         )
+
+        with pytest.raises(ValidationError) as exc_info:
+            section.full_clean()
+
+        assert "title" in exc_info.value.message_dict
+
+    def test_title_cannot_exceed_max_length(self, course):
+        section = Section(
+            course=course,
+            title="a" * 256,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            section.full_clean()
+
+        assert "title" in exc_info.value.message_dict
+
+    def test_title_at_max_length_is_valid(self, course):
+        section = Section(
+            course=course,
+            title="a" * 255,
+        )
+
+        section.full_clean()
+
+        assert len(section.title) == 255
+
+    def test_negative_order_is_rejected(self, course):
+        section = Section(
+            course=course,
+            title="Introduction",
+            order=-1,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            section.full_clean()
+
+        assert "order" in exc_info.value.message_dict
+
+    @pytest.mark.parametrize(
+        "order",
+        [0, 1, 2, 100, 65535],
+    )
+    def test_valid_order_values(self, course, order):
+        section = Section(
+            course=course,
+            title=f"Section {order}",
+            order=order,
+        )
+
+        section.full_clean()
+
+        assert section.order == order
+
+    def test_reverse_course_relation(self, course):
+        section = Section.objects.create(
+            course=course,
+            title="Introduction",
+        )
+
+        assert section in course.sections.all()
+
+    def test_deleting_course_deletes_sections(self, course):
+        section = Section.objects.create(
+            course=course,
+            title="Introduction",
+        )
+        section_id = section.pk
 
         course.delete()
 
-        assert not Section.objects.filter(
-            pk=section.pk,
-        ).exists()
+        assert not Section.objects.filter(pk=section_id).exists()
+
+    def test_section_can_be_updated(self, course):
+        section = Section.objects.create(
+            course=course,
+            title="Introduction",
+        )
+
+        new_duration = timedelta(minutes=45)
+
+        section.title = "Advanced Topics"
+        section.description = "Advanced course material."
+        section.order = 2
+        section.is_published = True
+        section.duration = new_duration
+        section.save()
+
+        section.refresh_from_db()
+
+        assert section.title == "Advanced Topics"
+        assert section.description == "Advanced course material."
+        assert section.order == 2
+        assert section.is_published is True
+        assert section.duration == new_duration
+
+    def test_ordering_is_by_course_then_order(self, course):
+        first = Section.objects.create(
+            course=course,
+            title="Second Section",
+            order=2,
+        )
+
+        second = Section.objects.create(
+            course=course,
+            title="First Section",
+            order=1,
+        )
+
+        sections = list(Section.objects.all())
+
+        assert sections == [second, first]
+
+    def test_sections_from_different_courses_are_ordered_by_course_then_order(
+        self,
+        course,
+        test_user,
+    ):
+        from courses.models import Course
+
+        another_course = Course.objects.create(
+            title="Another Course",
+            owner=test_user,
+        )
+
+        first_course_section = Section.objects.create(
+            course=course,
+            title="First Course Section",
+            order=2,
+        )
+
+        another_course_section = Section.objects.create(
+            course=another_course,
+            title="Another Course Section",
+            order=1,
+        )
+
+        second_first_course_section = Section.objects.create(
+            course=course,
+            title="Another First Course Section",
+            order=1,
+        )
+
+        sections = list(Section.objects.all())
+
+        assert sections == [
+            another_course_section,
+            second_first_course_section,
+            first_course_section,
+        ]

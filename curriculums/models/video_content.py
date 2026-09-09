@@ -5,6 +5,33 @@ from django.utils.translation import gettext_lazy as _
 from .lesson_content import LessonContent
 
 
+def file_upload_path(instance, filename, content_type):
+    course = instance.content.lesson.section.course
+
+    owner_id = course.owner_id
+    course_id = course.id
+    lesson_content_id = instance.content_id
+
+    return (
+        f"courses/"
+        f"{owner_id}/"
+        f"{course_id}/"
+        f"lesson_contents/"
+        f"{lesson_content_id}/"
+        f"{content_type}/"
+        f"{filename}"
+    )
+
+
+def video_upload_path(instance, filename):
+    return file_upload_path(instance, filename, "videos")
+
+
+def caption_upload_path(instance, filename):
+    video_instance = instance.video
+    return file_upload_path(video_instance, filename, "captions")
+
+
 class VideoContent(models.Model):
     class Source(models.TextChoices):
         FILE = "file", _("Uploaded File")
@@ -22,7 +49,7 @@ class VideoContent(models.Model):
         default=Source.FILE,
     )
 
-    video_file = models.FileField(upload_to="courses/videos/", blank=True, null=True)
+    video_file = models.FileField(upload_to=video_upload_path, blank=True, null=True)
 
     external_url = models.URLField(
         blank=True,
@@ -39,6 +66,7 @@ class VideoContent(models.Model):
     )
 
     def clean(self):
+        super().clean()
         if self.source == self.Source.FILE and not self.video_file:
             raise ValidationError({"video_file": _("An video file is required.")})
 
@@ -74,7 +102,7 @@ class VideoCaption(models.Model):
     )
 
     file = models.FileField(
-        upload_to="courses/captions/",
+        upload_to=caption_upload_path,
     )
 
     file_format = models.CharField(

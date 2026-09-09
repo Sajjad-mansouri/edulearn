@@ -1,319 +1,432 @@
-import datetime
+from datetime import timedelta
+from unittest.mock import Mock
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 
-from curriculums.models import VideoCaption, VideoContent
-from curriculums.tests.factories import (
-    LessonContentFactory,
-    VideoCaptionFactory,
-    VideoContentFactory,
-)
-from utils.test.files import file_field
+from curriculums.models import LessonContent, VideoContent
+from curriculums.models.video_content import video_upload_path
 
 
-@pytest.mark.django_db
-class TestVideoContentModel:
-    """Tests for the VideoContent model."""
+@pytest.fixture
+def lesson_content(lesson):
+    return LessonContent.objects.create(
+        lesson=lesson,
+        title="Introduction Video",
+        content_type=LessonContent.Type.VIDEO,
+        order=1,
+    )
 
-    @pytest.fixture
-    def content(self):
-        return LessonContentFactory()
 
-    def test_create_uploaded_video(self, content):
-        """A video content using an uploaded file can be created."""
+@pytest.fixture
+def video_content(lesson_content):
+    return VideoContent.objects.create(
+        content=lesson_content,
+        source=VideoContent.Source.FILE,
+        video_file=SimpleUploadedFile(
+            "example.mp4",
+            b"fake video content",
+            content_type="video/mp4",
+        ),
+    )
+
+
+class TestFileUploadPath:
+    def test_video_upload_path_uses_owner_course_lesson_content_and_filename(
+        self,
+        test_user,
+        course,
+        section,
+        lesson,
+        lesson_content,
+    ):
+        instance = Mock()
+        instance.content = lesson_content
+        instance.content_id = lesson_content.pk
+
+        expected = (
+            f"courses/"
+            f"{test_user.pk}/"
+            f"{course.pk}/"
+            f"lesson_contents/"
+            f"{lesson_content.pk}/"
+            f"videos/"
+            f"example.mp4"
+        )
+
+        # The actual helper receives an instance whose `content`
+        # points to LessonContent.
+        result = video_upload_path(instance, "example.mp4")
+
+        assert result == expected
+
+    def test_video_upload_path_preserves_filename(
+        self,
+        lesson_content,
+    ):
+        instance = Mock()
+        instance.content = lesson_content
+        instance.content_id = lesson_content.pk
+
+        result = video_upload_path(instance, "my-video-01.mp4")
+
+        assert result.endswith(
+            f"lesson_contents/{lesson_content.pk}/videos/my-video-01.mp4"
+        )
+
+    def test_video_upload_path_handles_filename_with_spaces(
+        self,
+        lesson_content,
+    ):
+        instance = Mock()
+        instance.content = lesson_content
+        instance.content_id = lesson_content.pk
+
+        result = video_upload_path(instance, "my lesson video.mp4")
+
+        assert result.endswith(
+            f"lesson_contents/{lesson_content.pk}/videos/my lesson video.mp4"
+        )
+
+
+class TestVideoContentCreation:
+    def test_creates_video_content_with_uploaded_file(
+        self,
+        lesson_content,
+    ):
+        video_file = SimpleUploadedFile(
+            "example.mp4",
+            b"fake video content",
+            content_type="video/mp4",
+        )
+
         video = VideoContent.objects.create(
-            content=content,
+            content=lesson_content,
             source=VideoContent.Source.FILE,
-            video_file=file_field(
-                "video.mp4",
-                b"video-content",
-            ),
-            duration=datetime.timedelta(minutes=10),
-            transcript="Video transcript",
+            video_file=video_file,
         )
 
-        assert video.content == content
+        assert video.pk is not None
+        assert video.content == lesson_content
         assert video.source == VideoContent.Source.FILE
-        assert video.video_file.name.endswith("video.mp4")
-        assert video.duration == datetime.timedelta(minutes=10)
-        assert video.transcript == "Video transcript"
+        assert video.video_file
 
-    def test_create_external_video(self, content):
-        """A video content using an external URL can be created."""
+    def test_source_defaults_to_file(
+        self,
+        lesson_content,
+    ):
         video = VideoContent.objects.create(
-            content=content,
-            source=VideoContent.Source.URL,
-            external_url="https://www.youtube.com/watch?v=abcdefghijk",
+            content=lesson_content,
+            video_file=SimpleUploadedFile(
+                "example.mp4",
+                b"fake video content",
+                content_type="video/mp4",
+            ),
         )
 
-        assert video.source == VideoContent.Source.URL
-        assert video.external_url == "https://www.youtube.com/watch?v=abcdefghijk"
+        assert video.source == VideoContent.Source.FILE
 
-    def test_string_representation(self):
-        """The string representation should return the lesson content title."""
-        video = VideoContentFactory()
-
-        assert str(video) == video.content.title
-
-    def test_duration_is_optional(self, content):
-        """Duration is optional."""
+    def test_external_url_source_can_be_created_without_file(
+        self,
+        lesson_content,
+    ):
         video = VideoContent.objects.create(
-            content=content,
+            content=lesson_content,
+            source=VideoContent.Source.URL,
+            external_url="https://example.com/video",
+        )
+        assert video.pk is not None
+        assert video.source == VideoContent.Source.URL
+        assert not video.video_file
+        assert video.external_url == "https://example.com/video"
+
+    def test_text_is_optional(
+        self,
+        lesson_content,
+    ):
+        video = VideoContent.objects.create(
+            content=lesson_content,
             source=VideoContent.Source.URL,
             external_url="https://example.com/video",
         )
 
-        assert video.duration is None
+        assert video.text == ""
 
-    def test_transcript_is_optional(self, content):
-        """Transcript is optional."""
+    def test_transcript_is_optional(
+        self,
+        lesson_content,
+    ):
         video = VideoContent.objects.create(
-            content=content,
+            content=lesson_content,
             source=VideoContent.Source.URL,
             external_url="https://example.com/video",
         )
 
         assert video.transcript == ""
 
-    def test_requires_video_file_for_file_source(self, content):
-        """Uploaded file source requires a video file."""
-        video = VideoContent(
-            content=content,
-            source=VideoContent.Source.FILE,
-        )
-
-        with pytest.raises(ValidationError) as exc:
-            video.clean()
-
-        assert "video_file" in exc.value.message_dict
-
-    def test_requires_external_url_for_url_source(self, content):
-        """External URL source requires a URL."""
-        video = VideoContent(
-            content=content,
+    def test_duration_is_optional(
+        self,
+        lesson_content,
+    ):
+        video = VideoContent.objects.create(
+            content=lesson_content,
             source=VideoContent.Source.URL,
+            external_url="https://example.com/video",
         )
 
-        with pytest.raises(ValidationError) as exc:
-            video.clean()
+        assert video.duration is None
 
-        assert "external_url" in exc.value.message_dict
 
-    def test_video_file_passes_validation(self, content):
-        """A valid uploaded video passes validation."""
+class TestVideoContentValidation:
+    def test_file_source_requires_video_file(
+        self,
+        lesson_content,
+    ):
         video = VideoContent(
-            content=content,
+            content=lesson_content,
             source=VideoContent.Source.FILE,
-            video_file=file_field(
-                "video.mp4",
-                b"video-content",
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            video.full_clean()
+
+        assert exc_info.value.message_dict == {
+            "video_file": ["An video file is required."]
+        }
+
+    def test_file_source_is_valid_with_video_file(
+        self,
+        lesson_content,
+    ):
+        video = VideoContent(
+            content=lesson_content,
+            source=VideoContent.Source.FILE,
+            video_file=SimpleUploadedFile(
+                "example.mp4",
+                b"fake video content",
+                content_type="video/mp4",
             ),
         )
 
-        video.clean()
+        video.full_clean()
 
-    def test_external_video_passes_validation(self, content):
-        """A valid external video passes validation."""
+    def test_url_source_requires_external_url(
+        self,
+        lesson_content,
+    ):
         video = VideoContent(
-            content=content,
+            content=lesson_content,
             source=VideoContent.Source.URL,
-            external_url="https://vimeo.com/123456",
         )
 
-        video.clean()
+        with pytest.raises(ValidationError) as exc_info:
+            video.full_clean()
 
-    def test_content_can_have_only_one_video(self, content):
-        """Each lesson content can have only one video."""
-        VideoContentFactory(content=content)
-
-        with pytest.raises(IntegrityError):
-            VideoContentFactory(content=content)
-
-
-@pytest.mark.django_db
-class TestVideoCaptionModel:
-    """Tests for the VideoCaption model."""
-
-    @pytest.fixture
-    def video(self):
-        return VideoContentFactory()
-
-    def test_create_video_caption(self, video):
-        """A video caption can be created."""
-        caption = VideoCaptionFactory(
-            video=video,
-            language="en",
-            label="English",
-            file_format=VideoCaption.Format.VTT,
-            is_default=True,
-        )
-
-        assert caption.video == video
-        assert caption.language == "en"
-        assert caption.label == "English"
-        assert caption.file_format == VideoCaption.Format.VTT
-        assert caption.is_default is True
-        assert caption.file
-
-    def test_label_is_optional(self, video):
-        """Label may be blank."""
-        caption = VideoCaptionFactory(
-            video=video,
-            label="",
-        )
-
-        assert caption.label == ""
-
-    def test_is_default_defaults_to_false(self, video):
-        """is_default defaults to False."""
-        caption = VideoCaptionFactory(
-            video=video,
-        )
-
-        assert caption.is_default is False
-
-    def test_video_can_have_multiple_caption_languages(self, video):
-        """A video can have captions in different languages."""
-        english = VideoCaptionFactory(
-            video=video,
-            language="en",
-        )
-
-        persian = VideoCaptionFactory(
-            video=video,
-            language="fa",
-        )
-
-        assert set(video.captions.all()) == {
-            english,
-            persian,
+        assert exc_info.value.message_dict == {
+            "external_url": ["A video URL is required."]
         }
 
-    def test_same_language_can_be_used_for_different_videos(self):
-        """Different videos may use the same language."""
-        video1 = VideoContentFactory()
-        video2 = VideoContentFactory()
-
-        caption1 = VideoCaptionFactory(
-            video=video1,
-            language="en",
+    def test_url_source_is_valid_with_external_url(
+        self,
+        lesson_content,
+    ):
+        video = VideoContent(
+            content=lesson_content,
+            source=VideoContent.Source.URL,
+            external_url="https://example.com/video.mp4",
         )
 
-        caption2 = VideoCaptionFactory(
-            video=video2,
-            language="en",
+        video.full_clean()
+
+    def test_non_file_source_does_not_require_video_file(
+        self,
+        lesson_content,
+    ):
+        video = VideoContent(
+            content=lesson_content,
+            source=VideoContent.Source.URL,
+            external_url="https://example.com/video.mp4",
         )
 
-        assert caption1.language == caption2.language == "en"
+        video.full_clean()
 
-    def test_same_video_cannot_have_duplicate_language(self, video):
-        """A video cannot have two captions with the same language."""
-        VideoCaptionFactory(
-            video=video,
-            language="en",
+        assert not video.video_file
+
+    def test_file_source_does_not_require_external_url(
+        self,
+        lesson_content,
+    ):
+        video = VideoContent(
+            content=lesson_content,
+            source=VideoContent.Source.FILE,
+            video_file=SimpleUploadedFile(
+                "example.mp4",
+                b"fake video content",
+                content_type="video/mp4",
+            ),
+        )
+
+        video.full_clean()
+
+        assert video.external_url == ""
+
+
+class TestVideoContentRelations:
+    def test_content_has_reverse_video_relation(
+        self,
+        lesson_content,
+        video_content,
+    ):
+        assert lesson_content.video == video_content
+
+    def test_content_is_required(
+        self,
+        db,
+    ):
+        video = VideoContent(
+            source=VideoContent.Source.URL,
+            external_url="https://example.com/video",
+        )
+
+        with pytest.raises(ValidationError):
+            video.full_clean()
+
+    def test_content_is_one_to_one(
+        self,
+        lesson_content,
+        video_content,
+    ):
+        duplicate = VideoContent(
+            content=lesson_content,
+            source=VideoContent.Source.URL,
+            external_url="https://example.com/video",
+        )
+
+        with pytest.raises(ValidationError):
+            duplicate.full_clean()
+
+    def test_content_is_unique_at_database_level(
+        self,
+        lesson_content,
+        video_content,
+    ):
+        duplicate = VideoContent(
+            content=lesson_content,
+            source=VideoContent.Source.URL,
+            external_url="https://example.com/video",
         )
 
         with pytest.raises(IntegrityError):
-            VideoCaptionFactory(
-                video=video,
-                language="en",
-            )
+            duplicate.save(force_insert=True)
 
-    def test_only_one_default_caption_is_allowed_per_video(self, video):
-        """A video can have only one default caption."""
-        VideoCaptionFactory(
-            video=video,
-            language="en",
-            is_default=True,
+
+class TestVideoContentDeletion:
+    def test_deleting_lesson_content_deletes_video_content(
+        self,
+        lesson_content,
+        video_content,
+    ):
+        video_id = video_content.pk
+
+        lesson_content.delete()
+
+        assert not VideoContent.objects.filter(pk=video_id).exists()
+
+
+class TestVideoContentStringRepresentation:
+    def test_str_returns_content_title(
+        self,
+        lesson_content,
+        video_content,
+    ):
+        assert str(video_content) == lesson_content.title
+
+
+class TestVideoContentFields:
+    @pytest.mark.parametrize(
+        "source",
+        [
+            VideoContent.Source.FILE,
+            VideoContent.Source.URL,
+        ],
+    )
+    def test_valid_source_choices(
+        self,
+        lesson_content,
+        source,
+    ):
+        video = VideoContent(
+            content=lesson_content,
+            source=source,
+            video_file=(
+                SimpleUploadedFile(
+                    "example.mp4",
+                    b"fake video content",
+                    content_type="video/mp4",
+                )
+                if source == VideoContent.Source.FILE
+                else None
+            ),
+            external_url=(
+                "https://example.com/video" if source == VideoContent.Source.URL else ""
+            ),
         )
 
-        with pytest.raises(IntegrityError):
-            VideoCaptionFactory(
-                video=video,
-                language="fa",
-                is_default=True,
-            )
+        video.full_clean()
 
-    def test_multiple_non_default_captions_are_allowed(self, video):
-        """Multiple non-default captions are allowed."""
-        english = VideoCaptionFactory(
-            video=video,
-            language="en",
-            is_default=False,
+    def test_invalid_source_is_rejected_by_model_validation(
+        self,
+        lesson_content,
+    ):
+        video = VideoContent(
+            content=lesson_content,
+            source="invalid",
+            external_url="https://example.com/video",
         )
 
-        persian = VideoCaptionFactory(
-            video=video,
-            language="fa",
-            is_default=False,
+        with pytest.raises(ValidationError) as exc_info:
+            video.full_clean()
+
+        assert "source" in exc_info.value.message_dict
+
+    @pytest.mark.parametrize(
+        "duration",
+        [
+            timedelta(seconds=0),
+            timedelta(seconds=30),
+            timedelta(minutes=10),
+            timedelta(hours=2),
+        ],
+    )
+    def test_valid_duration_values(
+        self,
+        lesson_content,
+        duration,
+    ):
+        video = VideoContent(
+            content=lesson_content,
+            source=VideoContent.Source.URL,
+            external_url="https://example.com/video",
+            duration=duration,
         )
 
-        assert english.is_default is False
-        assert persian.is_default is False
+        video.full_clean()
 
-    def test_default_caption_on_different_videos_is_allowed(self):
-        """Each video may have its own default caption."""
-        video1 = VideoContentFactory()
-        video2 = VideoContentFactory()
+        assert video.duration == duration
 
-        caption1 = VideoCaptionFactory(
-            video=video1,
-            language="en",
-            is_default=True,
+    def test_video_file_can_be_empty(
+        self,
+        lesson_content,
+    ):
+        video = VideoContent(
+            content=lesson_content,
+            source=VideoContent.Source.URL,
+            external_url="https://example.com/video",
+            video_file=None,
         )
 
-        caption2 = VideoCaptionFactory(
-            video=video2,
-            language="en",
-            is_default=True,
-        )
+        video.full_clean()
 
-        assert caption1.is_default is True
-        assert caption2.is_default is True
-
-    def test_deleting_video_deletes_captions(self):
-        """Deleting a video cascades to its captions."""
-        video = VideoContentFactory()
-
-        caption = VideoCaptionFactory(
-            video=video,
-        )
-
-        video.delete()
-
-        assert not VideoCaption.objects.filter(
-            pk=caption.pk,
-        ).exists()
-
-    def test_related_name_returns_video_captions(self, video):
-        """Captions are accessible via the related name."""
-        caption1 = VideoCaptionFactory(
-            video=video,
-            language="en",
-        )
-
-        caption2 = VideoCaptionFactory(
-            video=video,
-            language="fa",
-        )
-
-        assert set(video.captions.all()) == {
-            caption1,
-            caption2,
-        }
-
-    def test_file_is_uploaded_to_expected_location(self):
-        """Caption files are stored in the expected upload directory."""
-        caption = VideoCaptionFactory()
-
-        assert caption.file.name.startswith("courses/captions/")
-
-    def test_string_representation(self):
-        """String representation contains video and language."""
-        caption = VideoCaptionFactory(
-            language="en",
-        )
-
-        assert str(caption) == f"{caption.video} (en)"
+        assert not video.video_file

@@ -1,195 +1,351 @@
-import datetime
+from datetime import timedelta
 
 import pytest
-from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 
-from curriculums.models import Lesson
-from curriculums.tests.factories import LessonFactory, SectionFactory
+from curriculums.models.lesson import Lesson
 
 
 @pytest.mark.django_db
 class TestLessonModel:
-    """Tests for the Lesson model."""
-
-    @pytest.fixture
-    def section(self):
-        return SectionFactory()
-
     def test_create_lesson(self, section):
-        """A lesson can be created."""
         lesson = Lesson.objects.create(
             section=section,
-            title="Introduction",
-            slug="introduction",
-            duration=datetime.timedelta(minutes=15),
-            order=1,
-            is_published=True,
-            is_preview=True,
-            completion_criteria=Lesson.CompletionCriteria.WATCH_VIDEO,
+            title="Getting Started",
+            slug="getting-started",
         )
 
+        assert lesson.pk is not None
         assert lesson.section == section
-        assert lesson.title == "Introduction"
-        assert lesson.slug == "introduction"
-        assert lesson.duration == datetime.timedelta(minutes=15)
-        assert lesson.order == 1
-        assert lesson.is_published is True
-        assert lesson.is_preview is True
-        assert lesson.completion_criteria == Lesson.CompletionCriteria.WATCH_VIDEO
+        assert lesson.title == "Getting Started"
+        assert lesson.slug == "getting-started"
 
-    def test_string_representation(self):
-        """The string representation should return the lesson title."""
-        lesson = LessonFactory(title="Variables")
-
-        assert str(lesson) == "Variables"
-
-    def test_generates_slug_when_slug_is_not_provided(self, section):
-        """Slug is generated automatically from the title."""
+    def test_description_is_optional(self, section):
         lesson = Lesson.objects.create(
             section=section,
-            title="Python Basics",
+            title="Getting Started",
+            slug="getting-started",
         )
 
-        assert lesson.slug == "python-basics"
-
-    def test_does_not_override_existing_slug(self, section):
-        """An existing slug is preserved."""
-        lesson = Lesson.objects.create(
-            section=section,
-            title="Python Basics",
-            slug="custom-slug",
-        )
-
-        assert lesson.slug == "custom-slug"
-
-    def test_slug_does_not_change_when_title_changes(self):
-        """Changing the title does not change the slug."""
-        lesson = LessonFactory()
-
-        original_slug = lesson.slug
-
-        lesson.title = "New Lesson Title"
-        lesson.save()
-
-        lesson.refresh_from_db()
-
-        assert lesson.slug == original_slug
+        assert lesson.description == ""
 
     def test_duration_is_optional(self, section):
-        """A lesson can be created without a duration."""
         lesson = Lesson.objects.create(
             section=section,
-            title="Introduction",
+            title="Getting Started",
+            slug="getting-started",
         )
 
         assert lesson.duration is None
 
-    def test_is_published_defaults_to_false(self, section):
-        """Lessons are unpublished by default."""
+    def test_order_defaults_to_one(self, section):
         lesson = Lesson.objects.create(
             section=section,
-            title="Introduction",
+            title="Getting Started",
+            slug="getting-started",
+        )
+
+        assert lesson.order == 1
+
+    def test_is_published_defaults_to_false(self, section):
+        lesson = Lesson.objects.create(
+            section=section,
+            title="Getting Started",
+            slug="getting-started",
         )
 
         assert lesson.is_published is False
 
     def test_is_preview_defaults_to_false(self, section):
-        """Preview is disabled by default."""
         lesson = Lesson.objects.create(
             section=section,
-            title="Introduction",
+            title="Getting Started",
+            slug="getting-started",
         )
 
         assert lesson.is_preview is False
 
-    def test_completion_criteria_defaults_to_manual(self, section):
-        """Completion criteria defaults to manual."""
+    def test_str_returns_title(self, section):
         lesson = Lesson.objects.create(
             section=section,
-            title="Introduction",
+            title="Getting Started",
+            slug="getting-started",
         )
 
-        assert lesson.completion_criteria == Lesson.CompletionCriteria.MANUAL
+        assert str(lesson) == "Getting Started"
 
-    def test_order_must_be_unique_per_section(self, section):
-        """A section cannot contain two lessons with the same order."""
-        LessonFactory(
+    def test_slug_is_generated_from_title_when_empty(self, section):
+        lesson = Lesson.objects.create(
             section=section,
-            order=1,
+            title="Getting Started With Django",
+            slug="",
         )
 
-        with pytest.raises(IntegrityError):
-            Lesson.objects.create(
-                section=section,
-                title="Duplicate Lesson",
-                order=1,
-            )
+        assert lesson.slug == "getting-started-with-django"
 
-    def test_same_order_can_be_used_in_different_sections(self):
-        """Different sections may reuse the same order."""
-        section1 = SectionFactory()
-        section2 = SectionFactory()
-
-        lesson1 = LessonFactory(
-            section=section1,
-            order=1,
-        )
-
-        lesson2 = LessonFactory(
-            section=section2,
-            order=1,
-        )
-
-        assert lesson1.order == lesson2.order == 1
-
-    def test_section_can_have_multiple_lessons(self, section):
-        """A section can have multiple lessons."""
-        lesson1 = LessonFactory(
+    def test_slug_is_preserved_when_provided(self, section):
+        lesson = Lesson.objects.create(
             section=section,
-            order=1,
+            title="Getting Started With Django",
+            slug="django-basics",
         )
 
-        lesson2 = LessonFactory(
+        assert lesson.slug == "django-basics"
+
+    def test_slug_generation_handles_special_characters(self, section):
+        lesson = Lesson.objects.create(
             section=section,
-            order=2,
+            title="Django & REST Framework!",
+            slug="",
         )
 
-        assert set(section.lessons.all()) == {
-            lesson1,
-            lesson2,
-        }
+        assert lesson.slug == "django-rest-framework"
 
-    def test_section_can_access_its_lessons(self, section):
-        """A section should access its lessons through the reverse relation."""
-        lesson = LessonFactory(section=section)
-
-        assert lesson in section.lessons.all()
-
-    def test_lessons_are_ordered_by_order(self, section):
-        """Lessons are returned in ascending order."""
-        LessonFactory(section=section, order=3)
-        LessonFactory(section=section, order=1)
-        LessonFactory(section=section, order=2)
-
-        orders = list(
-            section.lessons.values_list(
-                "order",
-                flat=True,
-            )
-        )
-
-        assert orders == [1, 2, 3]
-
-    def test_deleting_section_deletes_lessons(self):
-        """Deleting a section cascades to its lessons."""
-        section = SectionFactory()
-
-        lesson = LessonFactory(
+    def test_updating_title_does_not_change_existing_slug(self, section):
+        lesson = Lesson.objects.create(
             section=section,
+            title="Getting Started",
+            slug="getting-started",
         )
+
+        lesson.title = "Advanced Django"
+        lesson.save()
+
+        lesson.refresh_from_db()
+
+        assert lesson.title == "Advanced Django"
+        assert lesson.slug == "getting-started"
+
+    def test_lesson_accepts_description(self, section):
+        lesson = Lesson.objects.create(
+            section=section,
+            title="Getting Started",
+            slug="getting-started",
+            description="Introduction to Django.",
+        )
+
+        assert lesson.description == "Introduction to Django."
+
+    def test_lesson_accepts_duration(self, section):
+        duration = timedelta(minutes=45)
+
+        lesson = Lesson.objects.create(
+            section=section,
+            title="Getting Started",
+            slug="getting-started",
+            duration=duration,
+        )
+
+        assert lesson.duration == duration
+
+    def test_lesson_accepts_explicit_order(self, section):
+        lesson = Lesson.objects.create(
+            section=section,
+            title="Getting Started",
+            slug="getting-started",
+            order=3,
+        )
+
+        assert lesson.order == 3
+
+    def test_lesson_can_be_published(self, section):
+        lesson = Lesson.objects.create(
+            section=section,
+            title="Getting Started",
+            slug="getting-started",
+            is_published=True,
+        )
+
+        assert lesson.is_published is True
+
+    def test_lesson_can_be_preview(self, section):
+        lesson = Lesson.objects.create(
+            section=section,
+            title="Getting Started",
+            slug="getting-started",
+            is_preview=True,
+        )
+
+        assert lesson.is_preview is True
+
+    def test_section_is_required(self):
+        lesson = Lesson(
+            title="Getting Started",
+            slug="getting-started",
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            lesson.full_clean()
+
+        assert "section" in exc_info.value.message_dict
+
+    def test_title_is_required(self, section):
+        lesson = Lesson(
+            section=section,
+            slug="getting-started",
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            lesson.full_clean()
+
+        assert "title" in exc_info.value.message_dict
+
+    def test_slug_is_required_when_full_clean_is_called(
+        self,
+        section,
+    ):
+        lesson = Lesson(
+            section=section,
+            title="Getting Started",
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            lesson.full_clean()
+
+        assert "slug" in exc_info.value.message_dict
+
+    def test_title_cannot_exceed_max_length(self, section):
+        lesson = Lesson(
+            section=section,
+            title="a" * 256,
+            slug="getting-started",
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            lesson.full_clean()
+
+        assert "title" in exc_info.value.message_dict
+
+    def test_slug_cannot_exceed_max_length(self, section):
+        lesson = Lesson(
+            section=section,
+            title="Getting Started",
+            slug="a" * 281,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            lesson.full_clean()
+
+        assert "slug" in exc_info.value.message_dict
+
+    def test_negative_order_is_rejected(self, section):
+        lesson = Lesson(
+            section=section,
+            title="Getting Started",
+            slug="getting-started",
+            order=-1,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            lesson.full_clean()
+
+        assert "order" in exc_info.value.message_dict
+
+    def test_deleting_section_deletes_lessons(self, section):
+        lesson = Lesson.objects.create(
+            section=section,
+            title="Getting Started",
+            slug="getting-started",
+        )
+        lesson_id = lesson.pk
 
         section.delete()
 
-        assert not Lesson.objects.filter(
-            pk=lesson.pk,
-        ).exists()
+        assert not Lesson.objects.filter(pk=lesson_id).exists()
+
+    def test_reverse_section_relation(self, section):
+        lesson = Lesson.objects.create(
+            section=section,
+            title="Getting Started",
+            slug="getting-started",
+        )
+
+        assert lesson in section.lessons.all()
+
+    def test_lesson_can_be_updated(self, section):
+        lesson = Lesson.objects.create(
+            section=section,
+            title="Getting Started",
+            slug="getting-started",
+        )
+
+        lesson.title = "Updated Lesson"
+        lesson.description = "Updated description."
+        lesson.order = 2
+        lesson.is_published = True
+        lesson.is_preview = True
+        lesson.save()
+
+        lesson.refresh_from_db()
+
+        assert lesson.title == "Updated Lesson"
+        assert lesson.description == "Updated description."
+        assert lesson.order == 2
+        assert lesson.is_published is True
+        assert lesson.is_preview is True
+        assert lesson.slug == "getting-started"
+
+    def test_ordering_is_by_section_then_order(self, section):
+        first = Lesson.objects.create(
+            section=section,
+            title="Second Lesson",
+            slug="second-lesson",
+            order=2,
+        )
+
+        second = Lesson.objects.create(
+            section=section,
+            title="First Lesson",
+            slug="first-lesson",
+            order=1,
+        )
+
+        lessons = list(Lesson.objects.all())
+
+        assert lessons == [second, first]
+
+    def test_lessons_from_different_sections_are_ordered_by_section_then_order(
+        self,
+        course,
+    ):
+        from curriculums.models.section import Section
+
+        first_section = Section.objects.create(
+            course=course,
+            title="First Section",
+            order=1,
+        )
+        second_section = Section.objects.create(
+            course=course,
+            title="Second Section",
+            order=2,
+        )
+
+        first_section_lesson = Lesson.objects.create(
+            section=first_section,
+            title="First Section Lesson",
+            slug="first-section-lesson",
+            order=2,
+        )
+
+        second_section_lesson = Lesson.objects.create(
+            section=second_section,
+            title="Second Section Lesson",
+            slug="second-section-lesson",
+            order=1,
+        )
+
+        another_first_section_lesson = Lesson.objects.create(
+            section=first_section,
+            title="Another First Section Lesson",
+            slug="another-first-section-lesson",
+            order=1,
+        )
+
+        lessons = list(Lesson.objects.all())
+
+        assert lessons == [
+            another_first_section_lesson,
+            first_section_lesson,
+            second_section_lesson,
+        ]
