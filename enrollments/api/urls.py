@@ -32,7 +32,7 @@ urlpatterns = [
     path(
         "<enrollment_id>/lesson/<int:lesson_id>/resume/",
         views.LessonVideoProgressApiView.as_view(),
-        name="enrollment_progress",
+        name="enrollment_video_progress",
     ),
     path(
         "<enrollment_id>/lesson/<int:lesson_id>/bookmark/",

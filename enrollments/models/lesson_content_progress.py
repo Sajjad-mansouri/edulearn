@@ -135,7 +135,7 @@ class LessonContentProgress(models.Model):
         """
         from .lesson_progress import LessonProgress
 
-        lesson_progress = LessonProgress.objects.get(
+        lesson_progress, _created = LessonProgress.objects.get_or_create(
             enrollment=self.enrollment,
             lesson=self.content.lesson,
         )

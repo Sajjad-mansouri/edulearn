@@ -49,7 +49,7 @@ def normalize_lessons(
     lessons_deleted_attachments_ids = []
     lessons_deleted_captions_ids = []
     for i, lesson_base in iterate_indexed(query_dict, prefix, FIELD_LESSON_TITLE):
-        contents, deleted_attachments_ids, captions_deleted_ids = (
+        content, deleted_attachments_ids, captions_deleted_ids = (
             normalize_lesson_content(query_dict, section_index, i)
         )
         lessons_deleted_attachments_ids.extend(deleted_attachments_ids)
@@ -71,7 +71,7 @@ def normalize_lessons(
             "completion_criteria": normalize_completion_criteria(
                 query_dict, section_index, i
             ),
-            "contents": contents,
+            "content": content,
         }
         if lesson_id:
             lesson["id"] = lesson_id

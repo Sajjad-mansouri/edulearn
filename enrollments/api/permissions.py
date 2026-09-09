@@ -22,8 +22,11 @@ class IsEnrolled(permissions.BasePermission):
         # Case 1: Enrollment-based access
         if enrollment_id:
             enrollment = Enrollment.objects.filter(
-                id=enrollment_id, user=request.user
+                id=enrollment_id,
+                user=request.user,
+                status__in=[Enrollment.Status.ACTIVE, Enrollment.Status.COMPLETED],
             ).exists()
+            print("enrollment", enrollment)
             if enrollment:
                 # Store enrollment for later use if needed
                 view.enrollment = Enrollment.objects.select_related("course").get(

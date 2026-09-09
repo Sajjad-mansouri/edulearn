@@ -425,7 +425,7 @@ class CourseCatalogPage {
 
         container.querySelectorAll('.course-card-catalog').forEach(card => {
             card.addEventListener('click', () => {
-                window.location.href = '/course/' + card.dataset.slug;
+                window.location.href = `/courses/${card.dataset.id}/${card.dataset.slug}/` ;
             });
         });
     }
@@ -453,7 +453,7 @@ class CourseCatalogPage {
         }
 
         return `
-            <div class="course-card-catalog" data-slug="${course.slug}">
+            <div class="course-card-catalog" data-slug="${course.slug}" data-id="${course.id}">
                 <div class="course-card-thumb">
                     ${imageHTML}
                     ${badgeHTML}

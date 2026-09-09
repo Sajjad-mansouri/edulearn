@@ -32,6 +32,7 @@ def handle_checkout_session_completed(session: dict) -> None:
     payment.stripe_payment_intent_id = session.get("payment_intent")
     payment.save(update_fields=["status", "stripe_payment_intent_id", "updated_at"])
     enrollment = payment.enrollment
+
     if enrollment.status == Enrollment.Status.PENDING:
         enrollment.status = Enrollment.Status.ACTIVE
         enrollment.save(update_fields=["status", "updated_at"])

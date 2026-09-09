@@ -37,6 +37,9 @@ class CourseFeedbackSerializer(serializers.ModelSerializer):
 
     def get_user_has_liked(self, obj):
         request = self.context["request"]
+        if request.user.is_anonymous:
+            return False
+
         return CourseFeedbackInteraction.objects.filter(
             feedback=obj, enrollment__user=request.user
         ).exists()

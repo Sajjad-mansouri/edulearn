@@ -14,10 +14,10 @@ class LessonContent(models.Model):
         LIVE_SESSION = "live_session", _("Live Session")
         CODING_EXERCISE = "coding_exercise", _("Coding Exercise")
 
-    lesson = models.ForeignKey(
+    lesson = models.OneToOneField(
         Lesson,
         on_delete=models.CASCADE,
-        related_name="contents",
+        related_name="content",
         verbose_name=_("Lesson"),
     )
     is_main_content = models.BooleanField(default=True)

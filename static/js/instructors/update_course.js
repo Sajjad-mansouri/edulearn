@@ -1171,7 +1171,7 @@ class UpdateCoursePage {
                     content: {}
                 };
 
-                const content = lesson.contents?.[0] || {};
+                const content = lesson.content || {};
 
                 if (transformedLesson.type === 'video') {
                     const videoData = content.video || {};
@@ -1350,7 +1350,7 @@ class UpdateCoursePage {
     }
 
     mapLessonType(lesson) {
-        const content = lesson.contents?.[0] || {};
+        const content = lesson.content || {};
 
         if (content.content_type === 'video') return 'video';
         if (content.content_type === 'article') return 'article';

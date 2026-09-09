@@ -686,7 +686,7 @@ class InstructorCoursesPage {
                 e.stopPropagation();
                 const slug = b.dataset.slug;
                 const id = b.dataset.id;
-                window.open(`/course/${id}/${slug}`, '_blank');
+                window.open(`/courses/${id}/${slug}`, '_blank');
             });
         });
 

@@ -160,7 +160,7 @@ class CourseApiService {
     static async checkAuth() {
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/auth/current_user/",
+                baseUrl + "/api/v1/account/auth/current-user/",
                 {
                     method: "GET",
                 }
@@ -501,7 +501,7 @@ class CourseDetailPage {
 
     getSlugFromUrl() {
         const path = window.location.pathname;
-        const match = path.match(/\/course\/(\d+)\/([^/]+)/);
+        const match = path.match(/\/courses\/(\d+)\/([^/]+)/);
         return match ? match[2] : 'python-for-data-science';
     }
 
@@ -512,10 +512,12 @@ class CourseDetailPage {
         }
 
         const path = window.location.pathname;
-        const match = path.match(/\/course\/(\d+)/)
+        const match = path.match(/\/courses\/(\d+)\//)
         if (match){
             return parseInt(match[1])
         }
+
+        return null;
     }
 
     async init() {
@@ -604,6 +606,7 @@ class CourseDetailPage {
             ]);
 
             this.courseData = courseData;
+            console.log(courseData)
             this.instructorData = instructorData;
             this.curriculumData = curriculumData;
             this.reviewsData = reviewsData;
@@ -1474,7 +1477,7 @@ class CourseDetailPage {
         try {
             // Check if the course is free
             const coursePrice = parseFloat(this.courseData?.price) || 0;
-
+            console.log(coursePrice, coursePrice===0,)
             if (coursePrice === 0) {
                 // Free course - enroll directly
                 const enrollData = await CourseApiService.enrollInCourse(this.courseId);

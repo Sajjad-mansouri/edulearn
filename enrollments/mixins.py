@@ -14,7 +14,9 @@ class EnrollmentOrOwnerRequiredMixin(LoginRequiredMixin):
         if enrollment_id:
             try:
                 self.enrollment = Enrollment.objects.select_related("course").get(
-                    id=enrollment_id, user=request.user
+                    id=enrollment_id,
+                    user=request.user,
+                    status__in=[Enrollment.Status.ACTIVE, Enrollment.Status.COMPLETED],
                 )
             except Enrollment.DoesNotExist:
                 raise Http404() from None

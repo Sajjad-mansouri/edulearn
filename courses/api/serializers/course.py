@@ -54,7 +54,8 @@ class CourseSerializer(serializers.ModelSerializer):
         return ""
 
     def get_duration(self, obj):
-        course_duration = self.context["course_duration"]
+        print(obj.duration)
+        course_duration = obj.duration
         total_seconds = course_duration.total_seconds()
         hour = total_seconds / (60 * 60)
         return f"{hour:.2}h"

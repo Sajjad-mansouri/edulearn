@@ -1,5 +1,4 @@
 from django.db import transaction
-from rest_framework.generics import get_object_or_404
 
 from assessments.models import (
     AcceptedAnswer,
@@ -10,7 +9,6 @@ from assessments.models import (
     QuizContent,
 )
 from courses.models import (
-    Category,
     Course,
     CourseFeature,
     LearningOutcome,
@@ -81,13 +79,8 @@ class CourseService:
 
     def _get_category_object(self, data):
         category = data.get("category", "")
-        subcategory = data.get("subcategory", "")
-        if category == "":
-            return None
-        if subcategory != "":
-            category = subcategory
-
-        return get_object_or_404(Category, slug=category)
+        print("data", data)
+        return category
 
     def _add_tags(self, course, data):
         tags_list = []
@@ -124,7 +117,7 @@ class CourseService:
             )
             self._create_lesson_content(
                 lesson=lesson,
-                contents=lesson_data["contents"],
+                content=lesson_data["content"],
             )
 
     def _create_lesson_completion_criteria(self, lesson, completion_criteria):
@@ -135,25 +128,24 @@ class CourseService:
             quiz_passing_score=completion_criteria["quiz_passing_score"],
         )
 
-    def _create_lesson_content(self, lesson, contents):
-        for content_order, content in enumerate(contents, start=1):
-            content_type = content["content_type"]
-            lesson_content = LessonContent.objects.create(
-                lesson=lesson, content_type=content_type, order=content_order
-            )
+    def _create_lesson_content(self, lesson, content):
+        content_type = content["content_type"]
+        lesson_content = LessonContent.objects.create(
+            lesson=lesson, content_type=content_type, order=0
+        )
 
-            self._create_lesson_content_attachments(lesson, lesson_content, content)
-            if content_type == "file":
-                self._create_file_content(lesson_content, content["file"])
-            elif content_type == "article":
-                self._create_article_content(lesson_content, content["article"])
-            elif content_type == "video":
-                self._create_video_content(lesson_content, content["video"])
-            elif content_type == "quiz":
-                self._create_quiz_content(lesson_content, content["quiz"])
+        self._create_lesson_content_attachments(lesson, lesson_content, content)
+        if content_type == "file":
+            self._create_file_content(lesson_content, content["file"])
+        elif content_type == "article":
+            self._create_article_content(lesson_content, content["article"])
+        elif content_type == "video":
+            self._create_video_content(lesson_content, content["video"])
+        elif content_type == "quiz":
+            self._create_quiz_content(lesson_content, content["quiz"])
 
-            elif content_type == "assignment":
-                self._create_assignment_content(lesson_content, content["assignment"])
+        elif content_type == "assignment":
+            self._create_assignment_content(lesson_content, content["assignment"])
 
     def _create_lesson_content_attachments(self, lesson, lesson_content, content):
         for attachment in content.get("attachments", []):

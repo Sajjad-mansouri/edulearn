@@ -15,10 +15,15 @@ class Assignment(models.Model):
 
     instructions = models.TextField(_("Instructions"), blank=True)
 
-    max_score = models.PositiveSmallIntegerField(
-        _("Maximum Score"), default=100, null=True
+    passing_score = models.PositiveSmallIntegerField(
+        _("Passing Score"),
+        default=70,
+        help_text=_("Required score (0-100) to pass."),
+        null=True,
     )
-
+    max_score = models.PositiveSmallIntegerField(
+        _("Passing Score"), default=100, null=True
+    )
     due_date = models.DateTimeField(
         _("Due Date"),
         null=True,
@@ -60,9 +65,9 @@ class Assignment(models.Model):
     def clean(self):
         super().clean()
 
-        if self.max_score < 1:
+        if self.max_score < 0:
             raise ValidationError(
-                {"max_score": _("Maximum score must be greater than zero.")}
+                {"max_score": _("Passing score must be greater than zero.")}
             )
 
         if self.max_file_size_mb < 1:

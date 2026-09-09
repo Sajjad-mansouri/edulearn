@@ -29,7 +29,7 @@ class NavbarManager {
     async checkAuth() {
         try {
             const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/auth/current_user/",
+                baseUrl + "/api/v1/account/auth/current-user/",
                 {
                     method: "GET",
                 }

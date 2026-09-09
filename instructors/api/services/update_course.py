@@ -1,6 +1,5 @@
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404
 
 from assessments.models import (
     AcceptedAnswer,
@@ -11,7 +10,6 @@ from assessments.models import (
     QuizContent,
 )
 from courses.models import (
-    Category,
     CourseFeature,
     LearningOutcome,
     Prerequisite,
@@ -244,7 +242,7 @@ class CourseUpdateService:
             self._update_lesson_completion_criteria(
                 lesson, lesson_data.get("completion_criteria")
             )
-            self._update_lesson_content(lesson, lesson_data.get("contents", []))
+            self._update_lesson_content(lesson, lesson_data.get("content", {}))
 
     def _update_lesson(self, lesson_data, order):
         """Update existing lesson."""
@@ -305,25 +303,16 @@ class CourseUpdateService:
                 quiz_passing_score=completion_criteria.get("quiz_passing_score"),
             )
 
-    def _update_lesson_content(self, lesson, contents):
+    def _update_lesson_content(self, lesson, content):
         """Update lesson content items."""
+        if content.get("id"):
+            lesson_content = self._update_lesson_content_item(content)
+        else:
+            lesson_content = self._create_lesson_content(lesson, content)
 
-        for content_order, content_data in enumerate(contents, start=1):
-            if not content_data:
-                continue
+        self._update_specific_content(lesson_content, content)
 
-            if content_data.get("id"):
-                lesson_content = self._update_lesson_content_item(
-                    content_data, content_order
-                )
-            else:
-                lesson_content = self._create_lesson_content(
-                    lesson, content_data, content_order
-                )
-
-            self._update_specific_content(lesson_content, content_data)
-
-    def _update_lesson_content_item(self, content_data, order):
+    def _update_lesson_content_item(self, content_data, order=0):
         """Update existing lesson content."""
         try:
             lesson_content = LessonContent.objects.get(
@@ -648,11 +637,9 @@ class CourseUpdateService:
 
     def _get_category_object(self, data):
         """Get category object from data."""
+        print(data)
         category = data.get("category")
-        if not category:
-            return self.course.category
-
-        return get_object_or_404(Category, slug=category.slug)
+        return category
 
     def _update_lesson_content_attachments(self, lesson_content, attachments):
         """Update lesson content attachments."""

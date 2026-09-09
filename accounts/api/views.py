@@ -171,4 +171,5 @@ class CurrentUserApiView(RetrieveAPIView):
     serializer_class = CurrentUserSerializer
 
     def get_object(self):
+        print("get object current user")
         return self.request.user

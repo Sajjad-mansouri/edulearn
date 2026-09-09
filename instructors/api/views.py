@@ -58,6 +58,7 @@ class CourseBuilder(APIView):
 
         serializer = CourseSerializer(data=course_data)
         serializer.is_valid(raise_exception=False)
+        print(serializer.errors)
         course = CourseService(instructor=request.user).create(
             serializer.validated_data
         )
@@ -74,7 +75,7 @@ class CourseUpdateApiView(GenericAPIView):
     def patch(self, request, *args, **kwargs):
         course_status = kwargs.get("course_status")
         course_data, deleted_ids_dict = normalize_course_data(request.data)
-
+        print("course data", course_data)
         course = self.get_object()
         serializer = CourseSerializer(instance=course, data=course_data, partial=True)
         serializer.is_valid(raise_exception=False)
@@ -159,6 +160,9 @@ class GradeAssignmentApiView(UpdateAPIView):
         return AssignmentSubmission.objects.filter(
             enrollment__course__owner=self.request.user
         )
+
+    def perform_update(self, serializer):
+        serializer.save()
 
 
 class SubmissionDownloadView(APIView):

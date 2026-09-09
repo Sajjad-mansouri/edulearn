@@ -1,7 +1,7 @@
 // ============================================
 // INSTRUCTOR STUDENTS PAGE CONTROLLER
 // ============================================
-const baseUrl = window.location.origin;
+
 class InstructorStudentsPage {
     constructor() {
         this.searchQuery = '';

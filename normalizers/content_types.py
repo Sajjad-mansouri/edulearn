@@ -402,4 +402,4 @@ def normalize_lesson_content(
         query_dict, attachments_base, {"file": "file"}
     )
 
-    return [content], deleted_attachments_ids, captions_deleted_ids
+    return content, deleted_attachments_ids, captions_deleted_ids

@@ -39,6 +39,46 @@ class ApiService {
         }
     }
 
+    static async getVideoResumePoint(enrollmentId, lessonId) {
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + `/api/v1/enrollment/${enrollmentId}/lesson/${lessonId}/resume/`,
+                { method: "GET" }
+            );
+            if (!response.ok) throw new Error('Failed to fetch video resume point');
+            const data = await response.json();
+            console.log("get video resume point", data)
+            return data;
+        } catch (error) {
+            console.warn('Failed to fetch resume point:', error.message);
+            return {
+                success: false,
+                timestamp: 0,
+                message: 'No resume point available'
+            };
+        }
+    }
+
+    static async saveVideoResumePoint(enrollmentId, lessonId, timestamp) {
+        try {
+            const response = await auth.authenticatedRequest(
+                baseUrl + `/api/v1/enrollment/${enrollmentId}/lesson/${lessonId}/resume/`,
+                { method: "POST", body: JSON.stringify({ timestamp }) }
+            );
+            if (!response.ok) throw new Error('Failed to save video resume point');
+            const data = await response.json();
+            console.log("save video resume", data)
+            return data;
+        } catch (error) {
+            console.warn('Failed to save resume point:', error.message);
+            return {
+                success: false,
+                timestamp: timestamp,
+                message: 'Failed to save resume point'
+            };
+        }
+    }
+
     static async submitLessonCompletion(enrollmentId, lessonId, completionData) {
         try {
             const response = await auth.authenticatedRequest(
@@ -51,35 +91,10 @@ class ApiService {
             return data;
         } catch (error) {
             console.warn('Using dummy completion response:', error.message);
-
-            let progressData = this.getDummyProgress(enrollmentId);
-            let completedLessons = progressData.completedLessons || [];
-
-            const isCompleting = completionData?.completed !== undefined ? completionData.completed : true;
-
-            if (isCompleting) {
-                if (!completedLessons.includes(lessonId)) {
-                    completedLessons.push(lessonId);
-                }
-            } else {
-                completedLessons = completedLessons.filter(id => id !== lessonId);
-            }
-
-            progressData.completedLessons = completedLessons;
-            progressData.completedCount = completedLessons.length;
-            progressData.overallProgress = Math.round((completedLessons.length / (progressData.totalLessons || 12)) * 100);
-
-            try {
-                localStorage.setItem('progress_' + enrollmentId, JSON.stringify(progressData));
-            } catch (e) {}
-
             return {
-                success: true,
-                completed: isCompleting,
-                completedLessons: completedLessons,
-                completedCount: completedLessons.length,
-                overallProgress: progressData.overallProgress,
-                message: isCompleting ? 'Lesson marked as complete' : 'Lesson marked as incomplete'
+                success: false,
+                completed: completionData?.completed,
+                message: 'Failed to update completion status'
             };
         }
     }
@@ -95,8 +110,11 @@ class ApiService {
             console.log("quiz submit response", data)
             return data;
         } catch (error) {
-            console.warn('Using dummy quiz result:', error.message);
-            return this.getDummyQuizResult(enrollmentId, lessonId, answers);
+            console.warn('Failed to submit quiz:', error.message);
+            return {
+                success: false,
+                message: 'Failed to submit quiz'
+            };
         }
     }
 
@@ -111,8 +129,14 @@ class ApiService {
             console.log("quiz attempt status", data)
             return data;
         } catch (error) {
-            console.warn('Using dummy quiz attempt status:', error.message);
-            return this.getDummyQuizAttemptStatus(enrollmentId, lessonId);
+            console.warn('Failed to fetch quiz attempts:', error.message);
+            return {
+                success: true,
+                attempts_used: 0,
+                max_attempts: 3,
+                attempts_remaining: 3,
+                can_attempt: true
+            };
         }
     }
 
@@ -127,18 +151,19 @@ class ApiService {
             console.log("assignment details", data)
             return data;
         } catch (error) {
-            console.warn('Using dummy assignment details:', error.message);
-            return this.getDummyAssignmentDetails(enrollmentId, lessonId);
+            console.warn('Failed to fetch assignment details:', error.message);
+            return {
+                success: false,
+                message: 'Failed to fetch assignment details'
+            };
         }
     }
 
     static async submitAssignment(enrollmentId, lessonId, submissionText, files) {
         try {
-            // Create FormData for multipart/form-data upload
             const formData = new FormData();
             formData.append('submission_text', submissionText);
 
-            // Append each file to FormData
             if (files && files.length > 0) {
                 for (const file of files) {
                     formData.append('files', file);
@@ -150,9 +175,7 @@ class ApiService {
                 {
                     method: "POST",
                     body: formData,
-                    headers: {
-                        // Don't set Content-Type header, browser will set it with boundary
-                    }
+                    headers: {}
                 }
             );
             if (!response.ok) throw new Error('Failed to submit assignment');
@@ -160,8 +183,11 @@ class ApiService {
             console.log("assignment submit response", data)
             return data;
         } catch (error) {
-            console.warn('Using dummy assignment submission:', error.message);
-            return this.getDummyAssignmentSubmission(enrollmentId, lessonId, submissionText, files);
+            console.warn('Failed to submit assignment:', error.message);
+            return {
+                success: false,
+                message: 'Failed to submit assignment'
+            };
         }
     }
 
@@ -176,8 +202,15 @@ class ApiService {
             console.log('enrollment progress', data)
             return data;
         } catch (error) {
-            console.warn('Using dummy progress data:', error.message);
-            return this.getDummyProgress(enrollmentId);
+            console.warn('Failed to fetch progress:', error.message);
+            return {
+                enrollmentId: enrollmentId,
+                overallProgress: 0,
+                completedLessons: [],
+                completedCount: 0,
+                totalLessons: 12,
+                bookmarkedLessons: []
+            };
         }
     }
 
@@ -192,67 +225,16 @@ class ApiService {
             console.log("bookmark", data)
             return data;
         } catch (error) {
-            console.warn('Using dummy bookmark response:', error.message);
-
-            let progressData = this.getDummyProgress(enrollmentId);
-            let bookmarkedLessons = progressData.bookmarkedLessons || [];
-
-            const isBookmarked = bookmarkedLessons.includes(lessonId);
-
-            if (isBookmarked) {
-                bookmarkedLessons = bookmarkedLessons.filter(id => id !== lessonId);
-            } else {
-                bookmarkedLessons.push(lessonId);
-            }
-
-            progressData.bookmarkedLessons = bookmarkedLessons;
-
-            try {
-                localStorage.setItem('progress_' + enrollmentId, JSON.stringify(progressData));
-            } catch (e) {}
-
+            console.warn('Failed to toggle bookmark:', error.message);
             return {
-                success: true,
-                bookmarked: !isBookmarked,
-                bookmarkedLessons: bookmarkedLessons,
-                message: !isBookmarked ? 'Lesson bookmarked' : 'Bookmark removed'
+                success: false,
+                message: 'Failed to update bookmark'
             };
         }
     }
-
-
-    static async saveVideoResumePoint(enrollmentId, lessonId, timestamp) {
-        try {
-            const response = await auth.authenticatedRequest(
-                baseUrl + `/api/v1/enrollment/${enrollmentId}/lesson/${lessonId}/resume/`,
-                { method: "POST", body: JSON.stringify({ timestamp }) }
-            );
-            if (!response.ok) throw new Error('Failed to save video resume point');
-            const data = await response.json();
-            console.log("save video resul", data)
-            return data;
-        } catch (error) {
-            console.warn('Using dummy resume response:', error.message);
-
-            try {
-                localStorage.setItem(`video_resume_${enrollmentId}_${lessonId}`, JSON.stringify({
-                    lessonId: lessonId,
-                    timestamp: timestamp,
-                    savedAt: new Date().toISOString()
-                }));
-            } catch (e) {}
-
-            return {
-                success: true,
-                timestamp: timestamp,
-                message: 'Video resume point saved to localStorage'
-            };
-        }
-    }
-
 
     // ============================================
-    // DUMMY DATA GENERATORS
+    // DUMMY DATA GENERATORS (For testing only)
     // ============================================
 
     static getDummyCurriculum(enrollmentId) {
@@ -280,7 +262,18 @@ class ApiService {
                                 video_watch_percentage: 90
                             },
                             videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-                            description: 'Learn the basics of Python programming language'
+                            description: 'Learn the basics of Python programming language including installation, syntax, and running your first program. This comprehensive introduction covers everything you need to get started with Python development.',
+                            resources: [
+                                { name: 'Python Setup Guide.pdf', size: '1.2 MB', type: 'pdf', url: '#' },
+                                { name: 'Code Examples.zip', size: '500 KB', type: 'zip', url: '#' }
+                            ],
+                            transcript: [
+                                { time: '00:00', text: 'Welcome to Python for Data Science. In this lesson, we will cover the basics of Python programming.' },
+                                { time: '00:30', text: 'First, let us install Python on your system. You can download it from python.org.' },
+                                { time: '01:00', text: 'Once installed, open your terminal and type python to start the interpreter.' },
+                                { time: '01:30', text: 'Let us write our first program: print("Hello, World!")' },
+                                { time: '02:00', text: 'Python is known for its simple and readable syntax.' }
+                            ]
                         },
                         {
                             id: 2,
@@ -295,6 +288,7 @@ class ApiService {
                                 criteria_type: 'read_article',
                                 article_scroll_percentage: 90
                             },
+                            description: 'Master Python variables, data types, and type conversion with practical examples.',
                             articleContent: '<h2>Python Variables</h2><p>Variables are used to store data values in Python.</p><p>Python has several built-in data types including integers, floats, strings, and booleans.</p><p>Understanding variables is fundamental to programming in Python.</p><p>Let\'s explore more about variables and data types in this comprehensive guide.</p><p>You\'ll learn how to declare variables, assign values, and perform operations.</p><p>By the end of this article, you\'ll have a solid understanding of Python\'s type system.</p><p>Variables can be reassigned to different values throughout your program.</p><p>Python uses dynamic typing, which means you don\'t need to declare variable types explicitly.</p><p>This makes Python code more concise and easier to read.</p>'
                         },
                         {
@@ -310,6 +304,7 @@ class ApiService {
                                 criteria_type: 'pass_quiz',
                                 quiz_passing_score: 60
                             },
+                            description: 'Test your knowledge of Python control flow with this comprehensive quiz.',
                             quizData: {
                                 passScore: 60,
                                 max_attempts: 3,
@@ -377,7 +372,14 @@ class ApiService {
                                 video_watch_percentage: 90
                             },
                             videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-                            description: 'Learn about Python lists and tuples'
+                            description: 'Deep dive into Python lists and tuples - creation, manipulation, and best practices.',
+                            resources: [
+                                { name: 'Lists Cheatsheet.pdf', size: '800 KB', type: 'pdf', url: '#' }
+                            ],
+                            transcript: [
+                                { time: '00:00', text: 'In this lesson, we will explore lists and tuples in Python.' },
+                                { time: '00:45', text: 'Lists are mutable sequences, while tuples are immutable.' }
+                            ]
                         },
                         {
                             id: 5,
@@ -389,9 +391,9 @@ class ApiService {
                             preview: false,
                             has_resources: false,
                             completion_criteria: {
-                                criteria_type: 'read_article',
-                                article_scroll_percentage: 90
+                                criteria_type: 'manual'
                             },
+                            description: 'Learn dictionary operations, methods, and real-world use cases.',
                             articleContent: '<h2>Python Dictionaries</h2><p>Dictionaries are key-value pairs in Python.</p><p>They are mutable and unordered in older Python versions.</p><p>Learn how to create, access, and manipulate dictionaries.</p><p>Dictionary comprehension is a powerful feature in Python.</p><p>Master dictionary methods for efficient data handling.</p><p>Dictionaries are optimized for retrieving values when you know the key.</p><p>They are one of the most commonly used data structures in Python.</p><p>Understanding dictionaries is essential for working with JSON data.</p><p>Python dictionaries preserve insertion order in Python 3.7+.</p>'
                         },
                         {
@@ -407,6 +409,7 @@ class ApiService {
                                 criteria_type: 'pass_quiz',
                                 quiz_passing_score: 70
                             },
+                            description: 'Evaluate your understanding of Python data structures.',
                             quizData: {
                                 passScore: 70,
                                 max_attempts: 2,
@@ -474,7 +477,12 @@ class ApiService {
                                 video_watch_percentage: 85
                             },
                             videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-                            description: 'Learn object-oriented programming in Python'
+                            description: 'Master object-oriented programming concepts in Python including classes, inheritance, and polymorphism.',
+                            resources: [
+                                { name: 'OOP Examples.zip', size: '2.1 MB', type: 'zip', url: '#' },
+                                { name: 'Class Diagrams.pdf', size: '1.5 MB', type: 'pdf', url: '#' },
+                                { name: 'Reference Guide.docx', size: '900 KB', type: 'zip', url: '#' }
+                            ]
                         },
                         {
                             id: 8,
@@ -489,6 +497,7 @@ class ApiService {
                                 criteria_type: 'read_article',
                                 article_scroll_percentage: 90
                             },
+                            description: 'Learn to handle errors gracefully with try-except blocks and custom exceptions.',
                             articleContent: '<h2>Exception Handling</h2><p>Learn to handle errors gracefully in Python.</p><p>Try, except, finally blocks are essential for robust code.</p><p>Custom exceptions can be created for specific needs.</p><p>Proper error handling makes applications more reliable.</p><p>Understanding exception hierarchy is important for catching specific errors.</p><p>The finally block always executes regardless of whether an exception occurs.</p><p>You can raise exceptions manually using the raise keyword.</p><p>Exception handling improves user experience by preventing crashes.</p>'
                         },
                         {
@@ -503,6 +512,7 @@ class ApiService {
                             completion_criteria: {
                                 criteria_type: 'manual'
                             },
+                            description: 'Download and review Python file operation resources and cheatsheets.',
                             file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
                             file_name: 'Python Cheatsheet.pdf',
                             resources: [
@@ -523,6 +533,7 @@ class ApiService {
                             completion_criteria: {
                                 criteria_type: 'submit_assignment'
                             },
+                            description: 'Build a complete data analysis project and submit for instructor review.',
                             assignmentData: {
                                 instructions: 'Build a data analysis project using Python. Analyze a dataset of your choice and present your findings with visualizations.',
                                 maxScore: 100,
@@ -544,7 +555,8 @@ class ApiService {
                             has_resources: false,
                             completion_criteria: {
                                 criteria_type: 'manual'
-                            }
+                            },
+                            description: 'Join the live Q&A session to get your questions answered by instructors.'
                         },
                         {
                             id: 12,
@@ -557,7 +569,8 @@ class ApiService {
                             has_resources: false,
                             completion_criteria: {
                                 criteria_type: 'manual'
-                            }
+                            },
+                            description: 'Complete the hands-on coding challenge to practice your Python skills.'
                         }
                     ]
                 }
@@ -582,335 +595,13 @@ class ApiService {
                 id: lessonId,
                 title: `Lesson ${lessonId}`,
                 type: 'article',
+                description: 'Lesson content not available.',
                 articleContent: '<p>Lesson content not available.</p>',
                 video_progress: { timestamp: 0 }
             };
         }
 
-        if (lesson.type === 'video') {
-            const savedResume = localStorage.getItem(`video_resume_${enrollmentId}_${lessonId}`);
-            let timestamp = 0;
-            if (savedResume) {
-                try {
-                    const parsed = JSON.parse(savedResume);
-                    timestamp = parsed.timestamp || 0;
-                } catch (e) {}
-            }
-            lesson.video_progress = { timestamp: timestamp };
-        }
-
         return lesson;
-    }
-
-    static getDummyProgress(enrollmentId) {
-        const savedProgress = localStorage.getItem('progress_' + enrollmentId);
-        if (savedProgress) {
-            try {
-                const parsed = JSON.parse(savedProgress);
-                return {
-                    enrollmentId: enrollmentId,
-                    overallProgress: parsed.overallProgress || 0,
-                    completedLessons: parsed.completedLessons || [],
-                    completedCount: parsed.completedCount || (parsed.completedLessons?.length || 0),
-                    totalLessons: parsed.totalLessons || 12,
-                    bookmarkedLessons: parsed.bookmarkedLessons || []
-                };
-            } catch (e) {
-                console.warn('Failed to parse saved progress, using default:', e);
-            }
-        }
-
-        return {
-            enrollmentId: enrollmentId,
-            overallProgress: 0,
-            completedLessons: [],
-            completedCount: 0,
-            totalLessons: 12,
-            bookmarkedLessons: []
-        };
-    }
-
-    static getDummyQuizAttemptStatus(enrollmentId, lessonId) {
-        const quizStateKey = `quiz_state_${enrollmentId}`;
-        const savedQuizState = localStorage.getItem(quizStateKey);
-
-        let attemptsUsed = 0;
-        let bestScore = 0;
-        let lastScore = 0;
-        let maxAttempts = 3;
-
-        const curriculum = this.getDummyCurriculum(enrollmentId);
-        for (const section of curriculum.sections) {
-            const lesson = section.lessons.find(l => l.id === lessonId);
-            if (lesson && lesson.quizData && lesson.quizData.max_attempts) {
-                maxAttempts = lesson.quizData.max_attempts;
-                break;
-            }
-        }
-
-        if (savedQuizState) {
-            try {
-                const parsed = JSON.parse(savedQuizState);
-                if (parsed.quizResults && parsed.quizResults[lessonId]) {
-                    const quizResult = parsed.quizResults[lessonId];
-                    attemptsUsed = quizResult.attempts || 0;
-                    bestScore = quizResult.bestScore || 0;
-                    lastScore = quizResult.lastScore || 0;
-                }
-            } catch (e) {}
-        }
-
-        return {
-            success: true,
-            lessonId: lessonId,
-            attempts_used: attemptsUsed,
-            max_attempts: maxAttempts,
-            attempts_remaining: Math.max(0, maxAttempts - attemptsUsed),
-            best_score: bestScore,
-            last_score: lastScore,
-            can_attempt: attemptsUsed < maxAttempts
-        };
-    }
-
-    static getDummyQuizResult(enrollmentId, lessonId, answers) {
-        const answersArray = Array.isArray(answers) ? answers : [];
-        const totalQuestions = answersArray.length || 4;
-
-        const correctAnswersMap = {
-            22: ['2'],
-            23: 'Object-Relational Mapping',
-            24: 'True',
-            25: ['1', '2', '4'],
-            26: ['2'],
-            27: '{}',
-            28: 'True',
-            29: ['1', '2', '3']
-        };
-
-        const questionResults = answersArray.map((answer) => {
-            let isCorrect = false;
-            let correctAnswer = 'N/A';
-
-            if (correctAnswersMap[answer.questionId]) {
-                correctAnswer = correctAnswersMap[answer.questionId];
-            }
-
-            if (answer.questionType === 'single_choice') {
-                const userAnswer = answer.selectedValues?.[0] || answer.selectedValue;
-                const correctValue = Array.isArray(correctAnswer) ? correctAnswer[0] : correctAnswer;
-                isCorrect = userAnswer === correctValue;
-            } else if (answer.questionType === 'true_false') {
-                const userAnswer = answer.boolValue;
-                isCorrect = userAnswer === correctAnswer;
-            } else if (answer.questionType === 'multiple_choice') {
-                const userAnswers = answer.selectedValues || [];
-                const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer];
-                isCorrect = userAnswers.length === correctAnswers.length &&
-                           userAnswers.every(ua => correctAnswers.includes(ua));
-            } else if (answer.questionType === 'short_answer') {
-                const userAnswer = (answer.textAnswer || '').toLowerCase().trim();
-                const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer];
-                isCorrect = correctAnswers.some(ca => {
-                    const normalizedCorrect = ca.toLowerCase().trim();
-                    return userAnswer.includes(normalizedCorrect) || normalizedCorrect.includes(userAnswer);
-                });
-            }
-
-            let userAnswerDisplay = 'No answer';
-            if (answer.questionType === 'single_choice') {
-                userAnswerDisplay = answer.selectedValues?.[0] || answer.selectedValue || 'No answer';
-            } else if (answer.questionType === 'true_false') {
-                userAnswerDisplay = answer.boolValue || 'No answer';
-            } else if (answer.questionType === 'multiple_choice') {
-                userAnswerDisplay = answer.selectedValues || 'No answer';
-            } else if (answer.questionType === 'short_answer') {
-                userAnswerDisplay = answer.textAnswer || 'No answer';
-            }
-
-            return {
-                questionId: answer.questionId,
-                isCorrect: isCorrect,
-                correctAnswer: correctAnswer,
-                explanation: isCorrect ? 'Correct! Well done.' : 'Review the material and try again.',
-                userAnswer: userAnswerDisplay,
-                questionType: answer.questionType
-            };
-        });
-
-        const correctCount = questionResults.filter(q => q.isCorrect).length;
-        const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
-        const passScore = 60;
-        const passed = percentage >= passScore;
-
-        let lessonCompleted = false;
-        let completedLessons = [];
-        let completedCount = 0;
-        let overallProgress = 0;
-        let maxAttempts = 3;
-
-        const curriculum = this.getDummyCurriculum(enrollmentId);
-        for (const section of curriculum.sections) {
-            const lesson = section.lessons.find(l => l.id === lessonId);
-            if (lesson && lesson.quizData && lesson.quizData.max_attempts) {
-                maxAttempts = lesson.quizData.max_attempts;
-                break;
-            }
-        }
-
-        const attemptStatus = this.getDummyQuizAttemptStatus(enrollmentId, lessonId);
-        const newAttemptNumber = attemptStatus.attempts_used + 1;
-        const previousBestScore = attemptStatus.best_score;
-        const bestScore = Math.max(percentage, previousBestScore);
-
-        if (passed) {
-            const progressData = this.getDummyProgress(enrollmentId);
-            completedLessons = progressData.completedLessons || [];
-            if (!completedLessons.includes(lessonId)) {
-                completedLessons.push(lessonId);
-            }
-            completedCount = completedLessons.length;
-            overallProgress = Math.round((completedCount / (progressData.totalLessons || 12)) * 100);
-            lessonCompleted = true;
-
-            try {
-                localStorage.setItem('progress_' + enrollmentId, JSON.stringify({
-                    enrollmentId: enrollmentId,
-                    overallProgress: overallProgress,
-                    completedLessons: completedLessons,
-                    completedCount: completedCount,
-                    totalLessons: progressData.totalLessons || 12,
-                    bookmarkedLessons: progressData.bookmarkedLessons || []
-                }));
-            } catch (e) {}
-        }
-
-        const quizStateKey = `quiz_state_${enrollmentId}`;
-        let allResults = {};
-        const savedQuizState = localStorage.getItem(quizStateKey);
-        if (savedQuizState) {
-            try {
-                const parsed = JSON.parse(savedQuizState);
-                allResults = parsed.quizResults || {};
-            } catch (e) {}
-        }
-
-        if (!allResults[lessonId]) {
-            allResults[lessonId] = {};
-        }
-        allResults[lessonId].bestScore = bestScore;
-        allResults[lessonId].lastScore = percentage;
-        allResults[lessonId].attempts = newAttemptNumber;
-        allResults[lessonId].lastResult = {
-            score: correctCount,
-            totalQuestions: totalQuestions,
-            percentage: percentage,
-            passed: passed,
-            questionResults: questionResults
-        };
-
-        try {
-            localStorage.setItem(quizStateKey, JSON.stringify({
-                quizResults: allResults
-            }));
-        } catch (e) {}
-
-        return {
-            success: true,
-            score: correctCount,
-            totalQuestions: totalQuestions,
-            percentage: percentage,
-            passed: passed,
-            passScore: passScore,
-            max_attempts: maxAttempts,
-            attempts_used: newAttemptNumber,
-            attempts_remaining: Math.max(0, maxAttempts - newAttemptNumber),
-            best_score: bestScore,
-            questionResults: questionResults,
-            includeCorrectAnswers: true,
-            lessonCompleted: lessonCompleted,
-            completedLessons: lessonCompleted ? completedLessons : null,
-            completedCount: lessonCompleted ? completedCount : null,
-            overallProgress: lessonCompleted ? overallProgress : null,
-            message: passed ? `Passed with ${percentage}%!` : `Scored ${percentage}%. Need ${passScore}% to pass.`
-        };
-    }
-
-    static getDummyAssignmentDetails(enrollmentId, lessonId) {
-        const curriculum = this.getDummyCurriculum(enrollmentId);
-        let assignmentData = null;
-
-        for (const section of curriculum.sections) {
-            const lesson = section.lessons.find(l => l.id === lessonId);
-            if (lesson && lesson.assignmentData) {
-                assignmentData = lesson.assignmentData;
-                break;
-            }
-        }
-
-        const savedSubmissions = localStorage.getItem(`assignment_submissions_${enrollmentId}_${lessonId}`);
-        let submissions = [];
-        if (savedSubmissions) {
-            try {
-                submissions = JSON.parse(savedSubmissions);
-            } catch (e) {}
-        }
-
-        return {
-            success: true,
-            lessonId: lessonId,
-            assignment: assignmentData,
-            submissions: submissions,
-            attempts_used: submissions.length,
-            max_attempts: assignmentData?.maxAttempts || 1,
-            attempts_remaining: Math.max(0, (assignmentData?.maxAttempts || 1) - submissions.length),
-            can_submit: submissions.length < (assignmentData?.maxAttempts || 1)
-        };
-    }
-
-    static getDummyAssignmentSubmission(enrollmentId, lessonId, submissionText, files) {
-        const savedSubmissions = localStorage.getItem(`assignment_submissions_${enrollmentId}_${lessonId}`);
-        let submissions = [];
-        if (savedSubmissions) {
-            try {
-                submissions = JSON.parse(savedSubmissions);
-            } catch (e) {}
-        }
-
-        // Process files to store name and create object URL for display
-        const processedFiles = [];
-        if (files && files.length > 0) {
-            for (const file of files) {
-                processedFiles.push({
-                    name: file.name,
-                    file: URL.createObjectURL(file), // Create object URL for preview/download
-                    size: file.size
-                });
-            }
-        }
-
-        const newSubmission = {
-            attemptNumber: submissions.length + 1,
-            status: 'submitted',
-            submissionText: submissionText || '',
-            files: processedFiles,
-            score: null,
-            feedback: '',
-            submittedAt: new Date().toISOString(),
-            gradedAt: null
-        };
-
-        submissions.push(newSubmission);
-
-        try {
-            localStorage.setItem(`assignment_submissions_${enrollmentId}_${lessonId}`, JSON.stringify(submissions));
-        } catch (e) {}
-
-        return {
-            success: true,
-            submission: newSubmission,
-            attempts_used: submissions.length,
-            message: 'Assignment submitted successfully!'
-        };
     }
 }
 
@@ -929,8 +620,9 @@ class LearningInterface {
         this.progressData = null;
         this.bookmarkedLessons = new Set();
         this.activeTab = 'overview';
-        this.lessonContentCache = new Map();
         this.isInitialLoad = true;
+        this.courseCompleted = false;
+        this.certificateData = null;
 
         this.videoPlayer = null;
         this.videoWatchPercentage = 0;
@@ -947,6 +639,21 @@ class LearningInterface {
         this.hideControlsTimeout = null;
         this.controlsVisible = true;
         this.videoResumeTimestamp = 0;
+
+        this.watchedSegments = [];
+        this.currentSegmentStart = 0;
+        this.lastSaveTime = 0;
+        this.saveInterval = 5000;
+        this.seekThreshold = 2;
+        this.isSeeking = false;
+        this.videoMetadataLoaded = false;
+        this.videoResumeApplied = false;
+        this.videoSaveQueue = [];
+        this.isSavingVideo = false;
+        this.maxWatchedSegments = 100;
+        this.videoCompletionMinWatchTime = 60;
+        this.videoResumeLoading = false;
+        this.videoResumeLoaded = false;
 
         this.isCompleting = false;
 
@@ -1023,51 +730,22 @@ class LearningInterface {
         this.setupVideoTracking();
 
         window.addEventListener('resize', () => this.handleResponsiveSidebar());
-        window.addEventListener('popstate', (event) => this.handleBrowserNavigation(event));
 
-        setInterval(() => this.saveLocalProgress(), 30000);
+        setInterval(() => this.saveProgressToBackend(), 15000);
 
         window.addEventListener('beforeunload', () => {
             this.stopVideoTracking();
             this.stopArticleScrollTracking();
-            this.saveLocalProgress();
+            this.saveVideoProgressImmediate();
         });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.saveVideoProgressImmediate();
+            }
+        });
+
         this.isInitialLoad = false;
-    }
-
-    handleBrowserNavigation(event) {
-        if (event.state) {
-            if (event.state.lessonId && event.state.lessonId !== this.currentLessonId) {
-                this.navigateToLessonById(event.state.lessonId, false, true);
-            }
-            if (event.state.tab && event.state.tab !== this.activeTab) {
-                this.switchTab(event.state.tab, true);
-            }
-        } else {
-            const lessonIdFromUrl = this.getLessonIdFromUrl();
-            if (lessonIdFromUrl && lessonIdFromUrl !== this.currentLessonId) {
-                this.navigateToLessonById(lessonIdFromUrl, false, true);
-            }
-            const tabFromUrl = this.getTabFromUrl();
-            if (tabFromUrl && tabFromUrl !== this.activeTab) {
-                this.switchTab(tabFromUrl, true);
-            }
-        }
-    }
-
-    updateBrowserUrl(lessonId = null, tab = null) {
-        let url = `/enrollment/${this.enrollmentId}/learn/`;
-        if (lessonId) url += `${lessonId}`;
-        if (tab && tab !== 'overview') {
-            const separator = url.includes('?') ? '&' : '?';
-            url += `${separator}tab=${tab}`;
-        }
-        const state = {
-            enrollmentId: this.enrollmentId,
-            lessonId: lessonId || this.currentLessonId,
-            tab: tab || this.activeTab
-        };
-        window.history.pushState(state, '', url);
     }
 
     bindEvents() {
@@ -1093,13 +771,13 @@ class LearningInterface {
         if (mobileNext) mobileNext.addEventListener('click', () => this.navigateLesson(1));
 
         const mainComplete = document.getElementById('mainMarkCompleteBtn');
-        if (mainComplete) mainComplete.addEventListener('click', () => this.markLessonComplete());
+        if (mainComplete) mainComplete.addEventListener('click', () => this.handleManualCompletion());
 
         const articleComplete = document.getElementById('articleMarkCompleteBtn');
-        if (articleComplete) articleComplete.addEventListener('click', () => this.markLessonComplete());
+        if (articleComplete) articleComplete.addEventListener('click', () => this.handleManualCompletion());
 
         const mobileComplete = document.getElementById('mobileMarkCompleteBtn');
-        if (mobileComplete) mobileComplete.addEventListener('click', () => this.markLessonComplete());
+        if (mobileComplete) mobileComplete.addEventListener('click', () => this.handleManualCompletion());
 
         const videoPlay = document.getElementById('videoBigPlayBtn');
         if (videoPlay) videoPlay.addEventListener('click', (e) => {
@@ -1274,8 +952,10 @@ class LearningInterface {
         });
 
         videoElement.addEventListener('loadedmetadata', () => {
+            this.videoMetadataLoaded = true;
             this.updateVideoTimeDisplay();
             this.updateProgressBar();
+            this.applyVideoResumePoint();
         });
 
         videoElement.addEventListener('play', () => this.onVideoPlay());
@@ -1284,6 +964,15 @@ class LearningInterface {
         videoElement.addEventListener('waiting', () => this.onVideoWaiting());
         videoElement.addEventListener('canplay', () => this.onVideoCanPlay());
         videoElement.addEventListener('error', (e) => this.onVideoError(e));
+
+        videoElement.addEventListener('seeking', () => {
+            this.isSeeking = true;
+        });
+
+        videoElement.addEventListener('seeked', () => {
+            this.isSeeking = false;
+            this.handleVideoSeekComplete();
+        });
     }
 
     setupVideoProgressBar() {
@@ -1643,6 +1332,10 @@ class LearningInterface {
         if (bigPlayBtn) { bigPlayBtn.style.opacity = '0'; bigPlayBtn.style.pointerEvents = 'none'; }
         if (playBtn) playBtn.innerHTML = '<i class="fas fa-pause"></i>';
         this.startControlsAutoHide();
+
+        if (!this.isSeeking) {
+            this.currentSegmentStart = this.videoPlayer.currentTime;
+        }
     }
 
     onVideoPause() {
@@ -1653,6 +1346,8 @@ class LearningInterface {
         if (bigPlayBtn) { bigPlayBtn.style.opacity = '1'; bigPlayBtn.style.pointerEvents = 'auto'; }
         if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
         this.showVideoControls(); this.stopControlsAutoHide();
+
+        this.endCurrentWatchSegment();
     }
 
     onVideoEnded() {
@@ -1663,11 +1358,32 @@ class LearningInterface {
         if (overlay) { overlay.classList.remove('playing'); overlay.style.opacity = '1'; overlay.style.pointerEvents = 'auto'; }
         if (bigPlayBtn) { bigPlayBtn.innerHTML = '<i class="fas fa-redo"></i>'; bigPlayBtn.style.opacity = '1'; bigPlayBtn.style.pointerEvents = 'auto'; }
         this.stopControlsAutoHide(); this.showVideoControls();
+
+        this.endCurrentWatchSegment();
+        this.videoWatchPercentage = 100;
+
+        if (this.videoPlayer && this.videoPlayer.duration) {
+            this.addWatchedSegment(0, this.videoPlayer.duration);
+        }
+
+        const lesson = this.getCurrentLesson();
+        if (lesson && this.canAutoComplete(lesson)) {
+            this.markLessonComplete(true);
+        }
+        this.updateVideoCompletionIndicator();
     }
 
     onVideoWaiting() {}
-    onVideoCanPlay() { const bigPlayBtn = document.getElementById('videoBigPlayBtn'); if (bigPlayBtn && bigPlayBtn.querySelector('.fa-redo')) bigPlayBtn.innerHTML = '<i class="fas fa-play"></i>'; }
-    onVideoError(e) { console.error('Video error:', e); this.showToast('Error loading video. Please try again.'); }
+    onVideoCanPlay() {
+        const bigPlayBtn = document.getElementById('videoBigPlayBtn');
+        if (bigPlayBtn && bigPlayBtn.querySelector('.fa-redo')) {
+            bigPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
+        }
+    }
+    onVideoError(e) {
+        console.error('Video error:', e);
+        this.showToast('Error loading video. Please try again.');
+    }
 
     toggleFullscreen() {
         const videoContainer = document.getElementById('videoContainer');
@@ -1696,18 +1412,78 @@ class LearningInterface {
         }
     }
 
-    skipVideo(seconds) { if (!this.videoPlayer) return; this.videoPlayer.currentTime = Math.max(0, Math.min(this.videoPlayer.duration || 0, this.videoPlayer.currentTime + seconds)); this.showToast(`${seconds > 0 ? '+' : ''}${seconds}s`); }
-    adjustVolume(delta) { if (!this.videoPlayer) return; this.videoPlayer.volume = Math.max(0, Math.min(1, this.videoPlayer.volume + delta)); this.showToast(`Volume: ${Math.round(this.videoPlayer.volume * 100)}%`); }
-    toggleMute() { if (!this.videoPlayer) return; this.videoPlayer.muted = !this.videoPlayer.muted; this.showToast(this.videoPlayer.muted ? 'Muted' : 'Unmuted'); }
+    skipVideo(seconds) {
+        if (!this.videoPlayer) return;
+        this.videoPlayer.currentTime = Math.max(0, Math.min(this.videoPlayer.duration || 0, this.videoPlayer.currentTime + seconds));
+        this.showToast(`${seconds > 0 ? '+' : ''}${seconds}s`);
+    }
 
-    showVideoControls() { const controls = document.getElementById('videoControls'); if (!controls) return; controls.style.opacity = '1'; controls.style.pointerEvents = 'auto'; this.controlsVisible = true; this.startControlsAutoHide(); }
-    hideVideoControls() { if (!this.videoPlayer || this.videoPlayer.paused) return; const controls = document.getElementById('videoControls'); if (!controls) return; controls.style.opacity = '0'; controls.style.pointerEvents = 'none'; this.controlsVisible = false; const speedMenu = document.querySelector('.speed-menu'); if (speedMenu) speedMenu.style.display = 'none'; }
-    startControlsAutoHide() { this.stopControlsAutoHide(); this.hideControlsTimeout = setTimeout(() => this.hideVideoControls(), 3000); }
-    stopControlsAutoHide() { if (this.hideControlsTimeout) { clearTimeout(this.hideControlsTimeout); this.hideControlsTimeout = null; } }
-    toggleSpeedMenu() { const menu = document.querySelector('.speed-menu'); if (!menu) return; menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; }
+    adjustVolume(delta) {
+        if (!this.videoPlayer) return;
+        this.videoPlayer.volume = Math.max(0, Math.min(1, this.videoPlayer.volume + delta));
+        this.showToast(`Volume: ${Math.round(this.videoPlayer.volume * 100)}%`);
+    }
 
-    updateVideoTimeDisplay() { const video = this.videoPlayer; if (!video) return; const timeDisplay = document.querySelector('.time-display'); if (!timeDisplay) return; timeDisplay.textContent = `${this.formatVideoTime(video.currentTime)} / ${this.formatVideoTime(video.duration)}`; }
-    formatVideoTime(seconds) { if (isNaN(seconds) || !isFinite(seconds)) return '0:00'; const hrs = Math.floor(seconds / 3600); const mins = Math.floor((seconds % 3600) / 60); const secs = Math.floor(seconds % 60); if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`; return `${mins}:${secs.toString().padStart(2, '0')}`; }
+    toggleMute() {
+        if (!this.videoPlayer) return;
+        this.videoPlayer.muted = !this.videoPlayer.muted;
+        this.showToast(this.videoPlayer.muted ? 'Muted' : 'Unmuted');
+    }
+
+    showVideoControls() {
+        const controls = document.getElementById('videoControls');
+        if (!controls) return;
+        controls.style.opacity = '1';
+        controls.style.pointerEvents = 'auto';
+        this.controlsVisible = true;
+        this.startControlsAutoHide();
+    }
+
+    hideVideoControls() {
+        if (!this.videoPlayer || this.videoPlayer.paused) return;
+        const controls = document.getElementById('videoControls');
+        if (!controls) return;
+        controls.style.opacity = '0';
+        controls.style.pointerEvents = 'none';
+        this.controlsVisible = false;
+        const speedMenu = document.querySelector('.speed-menu');
+        if (speedMenu) speedMenu.style.display = 'none';
+    }
+
+    startControlsAutoHide() {
+        this.stopControlsAutoHide();
+        this.hideControlsTimeout = setTimeout(() => this.hideVideoControls(), 3000);
+    }
+
+    stopControlsAutoHide() {
+        if (this.hideControlsTimeout) {
+            clearTimeout(this.hideControlsTimeout);
+            this.hideControlsTimeout = null;
+        }
+    }
+
+    toggleSpeedMenu() {
+        const menu = document.querySelector('.speed-menu');
+        if (!menu) return;
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    updateVideoTimeDisplay() {
+        const video = this.videoPlayer;
+        if (!video) return;
+        const timeDisplay = document.querySelector('.time-display');
+        if (!timeDisplay) return;
+        timeDisplay.textContent = `${this.formatVideoTime(video.currentTime)} / ${this.formatVideoTime(video.duration)}`;
+    }
+
+    formatVideoTime(seconds) {
+        if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
 
     setupQuizEventDelegation() {
         const quizSection = document.getElementById('quizSection');
@@ -1758,10 +1534,21 @@ class LearningInterface {
         if (!lesson) return false;
         const criteria = this.parseCompletionCriteria(lesson);
         switch (criteria.criteriaType) {
-            case 'watch_video': return this.videoWatchPercentage >= criteria.videoWatchPercentage;
-            case 'pass_quiz': return this.quizCompleted && this.quizResultData && this.quizResultData.passed;
-            case 'read_article': return this.articleScrollPercentage >= criteria.articleScrollPercentage;
-            default: return false;
+            case 'watch_video':
+                const actualWatchTime = this.calculateUniqueWatchTime();
+                if (this.videoWatchPercentage >= 100) {
+                    return true;
+                }
+                return this.videoWatchPercentage >= criteria.videoWatchPercentage &&
+                       actualWatchTime >= this.videoCompletionMinWatchTime;
+            case 'pass_quiz':
+                return this.quizCompleted && this.quizResultData && this.quizResultData.passed;
+            case 'read_article':
+                return this.articleScrollPercentage >= criteria.articleScrollPercentage;
+            case 'submit_assignment':
+                return false;
+            default:
+                return false;
         }
     }
 
@@ -1777,52 +1564,374 @@ class LearningInterface {
         }
     }
 
-    getQuestionTypeLabel(qt) { return { 'single_choice': 'Single Choice', 'multiple_choice': 'Multiple Choice', 'true_false': 'True / False', 'short_answer': 'Short Answer' }[qt] || 'Question'; }
-    getQuestionTypeIcon(qt) { return { 'single_choice': '<i class="fas fa-dot-circle"></i>', 'multiple_choice': '<i class="fas fa-check-square"></i>', 'true_false': '<i class="fas fa-toggle-on"></i>', 'short_answer': '<i class="fas fa-pen"></i>' }[qt] || '<i class="fas fa-question-circle"></i>'; }
-    getQuestionInstruction(qt) { return { 'single_choice': 'Select one correct answer', 'multiple_choice': 'Select all correct answers', 'true_false': 'Select True or False', 'short_answer': 'Type your answer below' }[qt] || 'Answer the question'; }
+    getQuestionTypeLabel(qt) {
+        return { 'single_choice': 'Single Choice', 'multiple_choice': 'Multiple Choice', 'true_false': 'True / False', 'short_answer': 'Short Answer' }[qt] || 'Question';
+    }
+
+    getQuestionTypeIcon(qt) {
+        return { 'single_choice': '<i class="fas fa-dot-circle"></i>', 'multiple_choice': '<i class="fas fa-check-square"></i>', 'true_false': '<i class="fas fa-toggle-on"></i>', 'short_answer': '<i class="fas fa-pen"></i>' }[qt] || '<i class="fas fa-question-circle"></i>';
+    }
+
+    getQuestionInstruction(qt) {
+        return { 'single_choice': 'Select one correct answer', 'multiple_choice': 'Select all correct answers', 'true_false': 'Select True or False', 'short_answer': 'Type your answer below' }[qt] || 'Answer the question';
+    }
 
     setupVideoTracking() {
         this.stopVideoTracking();
         this.videoAutoCompleted = false;
-        this.videoWatchPercentage = 0;
+
+        if (!this.videoResumeTimestamp || this.videoResumeTimestamp <= 0) {
+            this.watchedSegments = [];
+            this.videoWatchPercentage = 0;
+        } else {
+            this.currentSegmentStart = this.videoResumeTimestamp;
+            this.lastVideoTimeUpdate = this.videoResumeTimestamp;
+
+            if (this.watchedSegments.length === 0) {
+                this.initializeWatchedSegmentsFromResume(this.videoResumeTimestamp);
+            }
+
+            const duration = this.videoPlayer?.duration || 0;
+            if (duration > 0) {
+                this.videoWatchPercentage = Math.round((this.videoResumeTimestamp / duration) * 100);
+            }
+        }
+
+        this.videoMetadataLoaded = false;
+        this.videoResumeApplied = false;
+
         const lesson = this.getCurrentLesson();
         if (!lesson || lesson.type !== 'video') return;
+
         const videoElement = this.videoPlayer;
         if (!videoElement) return;
+
         const criteria = this.parseCompletionCriteria(lesson);
         this.videoCompletionThreshold = criteria.videoWatchPercentage || 90;
+
         videoElement.addEventListener('timeupdate', this.handleVideoTimeUpdate);
         videoElement.addEventListener('ended', this.handleVideoEnded);
-        this.videoTrackingInterval = setInterval(() => this.checkVideoProgress(videoElement), 5000);
+        videoElement.addEventListener('play', this.handleVideoPlay);
+        videoElement.addEventListener('pause', this.handleVideoPause);
+
+        this.videoTrackingInterval = setInterval(() => this.checkVideoProgress(videoElement), 2000);
+
         this.updateCompleteButtonLabel();
         this.updateVideoCompletionIndicator();
     }
 
-    handleVideoTimeUpdate = () => { if (this.videoPlayer) { this.lastVideoTimeUpdate = this.videoPlayer.currentTime; this.updateVideoCompletionIndicator(); } };
-    handleVideoEnded = () => { this.videoWatchPercentage = 100; const lesson = this.getCurrentLesson(); if (lesson && this.canAutoComplete(lesson)) this.markLessonComplete(true); this.updateVideoCompletionIndicator(); };
+    initializeWatchedSegmentsFromResume(timestamp) {
+        if (!timestamp || timestamp <= 0) return;
 
-    checkVideoProgress(videoElement) {
-        if (!videoElement || videoElement.duration === 0 || this.videoAutoCompleted) return;
-        this.videoWatchPercentage = Math.round((videoElement.currentTime / videoElement.duration) * 100);
-        if (this.videoWatchPercentage >= this.videoCompletionThreshold) {
-            this.videoAutoCompleted = true;
-            const lesson = this.getCurrentLesson();
-            if (lesson && this.canAutoComplete(lesson)) { this.markLessonComplete(true); this.showToast(`🎉 Watched ${this.videoCompletionThreshold}% - Lesson auto-completed!`); }
+        this.watchedSegments = [{
+            start: 0,
+            end: timestamp
+        }];
+
+        this.currentSegmentStart = timestamp;
+        this.lastVideoTimeUpdate = timestamp;
+
+        console.log(`Initialized watched segments from resume point: 0 - ${timestamp} seconds`);
+    }
+
+    handleVideoTimeUpdate = () => {
+        if (this.videoPlayer) {
+            const currentTime = this.videoPlayer.currentTime;
+
+            if (!this.isSeeking && this.lastVideoTimeUpdate > 0) {
+                const timeDiff = Math.abs(currentTime - this.lastVideoTimeUpdate);
+                if (timeDiff > this.seekThreshold) {
+                    this.handleVideoSeek(this.lastVideoTimeUpdate, currentTime);
+                }
+            }
+
+            this.lastVideoTimeUpdate = currentTime;
+            this.updateVideoCompletionIndicator();
+
+            const now = Date.now();
+            if (now - this.lastSaveTime >= this.saveInterval && !this.isSavingVideo) {
+                this.saveVideoProgress();
+                this.lastSaveTime = now;
+            }
+        }
+    };
+
+    handleVideoPlay = () => {
+        if (!this.isSeeking && this.videoPlayer) {
+            this.currentSegmentStart = this.videoPlayer.currentTime;
+        }
+    };
+
+    handleVideoPause = () => {
+        this.endCurrentWatchSegment();
+    };
+
+    handleVideoSeek(fromTime, toTime) {
+        if (this.videoPlayer && !this.videoPlayer.paused) {
+            this.endCurrentWatchSegment();
+            this.currentSegmentStart = toTime;
         }
     }
 
-    updateVideoCompletionIndicator() {
+    handleVideoSeekComplete() {
+        if (this.videoPlayer && !this.videoPlayer.paused) {
+            this.currentSegmentStart = this.videoPlayer.currentTime;
+        }
+    }
+
+    endCurrentWatchSegment() {
+        if (this.videoPlayer && this.currentSegmentStart > 0 && !this.isSeeking) {
+            const endTime = this.videoPlayer.currentTime;
+            if (endTime > this.currentSegmentStart) {
+                this.addWatchedSegment(this.currentSegmentStart, endTime);
+            }
+            this.currentSegmentStart = 0;
+        }
+    }
+
+    addWatchedSegment(start, end) {
+        if (start >= end || start < 0 || end <= 0) return;
+
+        let merged = false;
+        for (let i = 0; i < this.watchedSegments.length; i++) {
+            const seg = this.watchedSegments[i];
+
+            if (start <= seg.end && end >= seg.start) {
+                seg.start = Math.min(seg.start, start);
+                seg.end = Math.max(seg.end, end);
+                merged = true;
+                break;
+            }
+        }
+
+        if (!merged) {
+            this.watchedSegments.push({ start, end });
+        }
+
+        this.watchedSegments.sort((a, b) => a.start - b.start);
+
+        if (this.watchedSegments.length > this.maxWatchedSegments) {
+            this.mergeOldSegments();
+        }
+    }
+
+    mergeOldSegments() {
+        if (this.watchedSegments.length <= 1) return;
+
+        const first = this.watchedSegments[0];
+        const second = this.watchedSegments[1];
+
+        first.end = Math.max(first.end, second.end);
+        this.watchedSegments.splice(1, 1);
+    }
+
+    calculateUniqueWatchTime() {
+        let totalTime = 0;
+        for (const seg of this.watchedSegments) {
+            totalTime += (seg.end - seg.start);
+        }
+        return totalTime;
+    }
+
+    async applyVideoResumePoint() {
+        if (this.videoResumeApplied || !this.videoPlayer || !this.videoMetadataLoaded) return;
+
+        const resumeTime = this.videoResumeTimestamp;
+        if (resumeTime > 0) {
+            try {
+                if (!this.videoPlayer.duration) {
+                    await this.waitForVideoMetadata();
+                }
+
+                const duration = this.videoPlayer.duration;
+                if (duration > 0) {
+                    this.videoWatchPercentage = Math.round((resumeTime / duration) * 100);
+
+                    if (this.watchedSegments.length === 0) {
+                        this.initializeWatchedSegmentsFromResume(resumeTime);
+                    }
+
+                    this.updateVideoCompletionIndicator();
+                }
+
+                if (resumeTime < this.videoPlayer.duration - 5) {
+                    this.videoPlayer.currentTime = resumeTime;
+                    this.lastVideoTimeUpdate = resumeTime;
+                    this.currentSegmentStart = resumeTime;
+
+                    this.showVideoResumeIndicator(resumeTime);
+                }
+            } catch (e) {
+                console.warn('Failed to apply resume point:', e);
+            }
+        }
+
+        this.videoResumeApplied = true;
+    }
+
+    waitForVideoMetadata() {
+        if (this.videoPlayer.duration) {
+            return Promise.resolve();
+        }
+
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Timeout waiting for video metadata'));
+            }, 10000);
+
+            const checkMetadata = () => {
+                if (this.videoPlayer.duration) {
+                    clearTimeout(timeout);
+                    resolve();
+                } else if (this.videoPlayer.readyState >= 2) {
+                    clearTimeout(timeout);
+                    resolve();
+                } else {
+                    setTimeout(checkMetadata, 100);
+                }
+            };
+
+            checkMetadata();
+        });
+    }
+
+    showVideoResumeIndicator(timestamp) {
+        const resumeIndicator = document.createElement('div');
+        resumeIndicator.className = 'video-resume-indicator';
+        resumeIndicator.style.cssText = 'position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(139,92,246,0.9);color:#FFF;padding:8px 16px;border-radius:20px;font-size:0.85rem;z-index:100;animation:fadeInOut 3s forwards;';
+        resumeIndicator.textContent = `Resumed from ${this.formatVideoTime(timestamp)}`;
+
+        const videoContainer = document.getElementById('videoContainer');
+        if (videoContainer) {
+            videoContainer.appendChild(resumeIndicator);
+            setTimeout(() => {
+                if (resumeIndicator.parentNode) {
+                    resumeIndicator.parentNode.removeChild(resumeIndicator);
+                }
+            }, 3000);
+        }
+
+        if (!document.getElementById('videoResumeAnimation')) {
+            const style = document.createElement('style');
+            style.id = 'videoResumeAnimation';
+            style.textContent = '@keyframes fadeInOut{0%{opacity:0;}10%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}';
+            document.head.appendChild(style);
+        }
+    }
+
+    handleVideoEnded = () => {
+        this.videoWatchPercentage = 100;
+        this.endCurrentWatchSegment();
+
+        if (this.videoPlayer && this.videoPlayer.duration) {
+            this.addWatchedSegment(0, this.videoPlayer.duration);
+        }
+
+        const lesson = this.getCurrentLesson();
+        if (lesson && this.canAutoComplete(lesson)) {
+            this.markLessonComplete(true);
+        }
+        this.updateVideoCompletionIndicator();
+    };
+
+    checkVideoProgress(videoElement) {
+        if (!videoElement || videoElement.duration === 0 || this.videoAutoCompleted) return;
+
+        const currentTime = videoElement.currentTime;
+        const duration = videoElement.duration;
+
+        const effectiveWatchTime = Math.max(currentTime, this.videoResumeTimestamp);
+        this.videoWatchPercentage = Math.round((effectiveWatchTime / duration) * 100);
+
+        const uniqueWatchTime = this.calculateUniqueWatchTime();
+        const minWatchTimeMet = uniqueWatchTime >= this.videoCompletionMinWatchTime;
+
+        if (this.videoWatchPercentage >= 100) {
+            this.videoAutoCompleted = true;
+            const lesson = this.getCurrentLesson();
+            if (lesson && this.canAutoComplete(lesson)) {
+                this.markLessonComplete(true);
+                this.showToast(`🎉 Video fully watched - Lesson auto-completed!`);
+            }
+            this.updateVideoCompletionIndicator();
+            return;
+        }
+
+        if (this.videoWatchPercentage >= this.videoCompletionThreshold && minWatchTimeMet) {
+            this.videoAutoCompleted = true;
+            const lesson = this.getCurrentLesson();
+            if (lesson && this.canAutoComplete(lesson)) {
+                this.markLessonComplete(true);
+                this.showToast(`🎉 Watched ${this.videoCompletionThreshold}% - Lesson auto-completed!`);
+            }
+        } else if (this.videoWatchPercentage >= this.videoCompletionThreshold && !minWatchTimeMet) {
+            const remainingTime = Math.ceil(this.videoCompletionMinWatchTime - uniqueWatchTime);
+            this.updateVideoCompletionIndicator(`Need ${remainingTime} more seconds of actual watch time`);
+        }
+    }
+
+    updateVideoCompletionIndicator(customMessage) {
         const indicator = document.getElementById('videoCompletionIndicator');
         if (!indicator) return;
-        indicator.innerHTML = `<span style="font-size:0.75rem;color:#888;">📊 ${this.videoWatchPercentage}% watched (${this.videoCompletionThreshold}% needed)${this.videoAutoCompleted ? ' ✅' : ''}</span>`;
+
+        const uniqueWatchTime = this.calculateUniqueWatchTime();
+        const minWatchTimeMet = uniqueWatchTime >= this.videoCompletionMinWatchTime;
+
+        if (customMessage) {
+            indicator.innerHTML = `<span style="font-size:0.75rem;color:#F59E0B;">⚠️ ${customMessage}</span>`;
+        } else if (this.videoWatchPercentage >= 100) {
+            indicator.innerHTML = `
+                <span style="font-size:0.75rem;color:#10B981;">
+                    ✅ Video fully watched
+                    ${this.videoAutoCompleted ? ' - Completed!' : ''}
+                </span>
+            `;
+        } else {
+            indicator.innerHTML = `
+                <span style="font-size:0.75rem;color:#888;">
+                    📊 ${this.videoWatchPercentage}% watched (${this.videoCompletionThreshold}% needed)
+                    ${!minWatchTimeMet && this.videoWatchPercentage >= this.videoCompletionThreshold ?
+                        ` | ⏱️ ${Math.ceil(this.videoCompletionMinWatchTime - uniqueWatchTime)}s more needed` : ''}
+                    ${this.videoAutoCompleted ? ' ✅' : ''}
+                </span>
+            `;
+        }
     }
 
     stopVideoTracking() {
-        if (this.videoPlayer) { this.videoPlayer.removeEventListener('timeupdate', this.handleVideoTimeUpdate); this.videoPlayer.removeEventListener('ended', this.handleVideoEnded); }
-        if (this.videoTrackingInterval) { clearInterval(this.videoTrackingInterval); this.videoTrackingInterval = null; }
+        if (this.videoPlayer) {
+            this.videoPlayer.removeEventListener('timeupdate', this.handleVideoTimeUpdate);
+            this.videoPlayer.removeEventListener('ended', this.handleVideoEnded);
+            this.videoPlayer.removeEventListener('play', this.handleVideoPlay);
+            this.videoPlayer.removeEventListener('pause', this.handleVideoPause);
+        }
+        if (this.videoTrackingInterval) {
+            clearInterval(this.videoTrackingInterval);
+            this.videoTrackingInterval = null;
+        }
+
+        this.endCurrentWatchSegment();
     }
 
     saveVideoProgress() {
+        const lesson = this.getCurrentLesson();
+        if (this.videoPlayer && lesson && lesson.type === 'video') {
+            const currentTime = Math.floor(this.videoPlayer.currentTime);
+            if (currentTime > 0 && currentTime !== this.lastSaveTime) {
+                this.lastSaveTime = currentTime;
+
+                this.videoSaveQueue.push({
+                    enrollmentId: this.enrollmentId,
+                    lessonId: lesson.id,
+                    timestamp: currentTime
+                });
+
+                this.processVideoSaveQueue();
+            }
+        }
+    }
+
+    saveVideoProgressImmediate() {
         const lesson = this.getCurrentLesson();
         if (this.videoPlayer && lesson && lesson.type === 'video') {
             const currentTime = Math.floor(this.videoPlayer.currentTime);
@@ -1834,12 +1943,59 @@ class LearningInterface {
                         }
                     })
                     .catch(err => console.error('Failed to save video resume point:', err));
-
-                try {
-                    localStorage.setItem(`video_resume_${this.enrollmentId}_${lesson.id}`, JSON.stringify({ lessonId: lesson.id, timestamp: currentTime, savedAt: new Date().toISOString() }));
-                } catch (e) {}
             }
         }
+    }
+
+    async processVideoSaveQueue() {
+        if (this.isSavingVideo || this.videoSaveQueue.length === 0) return;
+
+        this.isSavingVideo = true;
+
+        try {
+            const latestSave = this.videoSaveQueue.pop();
+            this.videoSaveQueue = [];
+
+            const result = await ApiService.saveVideoResumePoint(
+                latestSave.enrollmentId,
+                latestSave.lessonId,
+                latestSave.timestamp
+            );
+
+            if (result.success) {
+                console.log('Video resume point saved to backend');
+            }
+        } catch (e) {
+            console.error('Failed to save video resume point:', e);
+        } finally {
+            this.isSavingVideo = false;
+
+            if (this.videoSaveQueue.length > 0) {
+                setTimeout(() => this.processVideoSaveQueue(), 1000);
+            }
+        }
+    }
+
+    async loadVideoResumePoint(enrollmentId, lessonId) {
+        if (this.videoResumeLoading) return this.videoResumeTimestamp;
+
+        this.videoResumeLoading = true;
+
+        try {
+            const result = await ApiService.getVideoResumePoint(enrollmentId, lessonId);
+            console.log("loadVideoResumePoint", result)
+            if (result && result.success && result.timestamp > 0) {
+                this.videoResumeTimestamp = result.timestamp;
+                this.videoResumeLoaded = true;
+                return result.timestamp;
+            }
+        } catch (e) {
+            console.warn('Failed to load video resume point:', e);
+        } finally {
+            this.videoResumeLoading = false;
+        }
+
+        return 0;
     }
 
     setupArticleScrollTracking() {
@@ -2039,9 +2195,12 @@ class LearningInterface {
             durationSeconds: lesson.duration_seconds || 0, order: lesson.order,
             preview: lesson.preview || false, hasResources: lesson.has_resources || false,
             completion_criteria: lesson.completion_criteria || null,
+            description: lesson.description || '',
             file_url: lesson.file_url || null, file_name: lesson.file_name || null,
             quizData: lesson.quizData || null,
             assignmentData: lesson.assignmentData || null,
+            resources: lesson.resources || [],
+            transcript: lesson.transcript || null,
             _raw: lesson
         };
     }
@@ -2054,19 +2213,23 @@ class LearningInterface {
         return `${minutes} min`;
     }
 
-    async loadLessonContent(lessonId) {
-        if (this.lessonContentCache.has(lessonId)) return this.lessonContentCache.get(lessonId);
-        this.showContentLoading();
-        const content = await this.fetchLessonContent(lessonId);
-        this.lessonContentCache.set(lessonId, content);
-        return content;
-    }
-
     async fetchLessonContent(lessonId) {
         const data = await ApiService.getLessonContent(this.enrollmentId, lessonId);
-        if (data && data.video_progress) {
+
+        if (data && data.type === 'video') {
+            const resumeTimestamp = await this.loadVideoResumePoint(this.enrollmentId, lessonId);
+            if (resumeTimestamp > 0) {
+                this.videoResumeTimestamp = resumeTimestamp;
+                data.video_progress = { timestamp: resumeTimestamp };
+                this.initializeWatchedSegmentsFromResume(resumeTimestamp);
+            }
+        } else if (data && data.video_progress) {
             this.videoResumeTimestamp = data.video_progress.timestamp || 0;
+            if (this.videoResumeTimestamp > 0) {
+                this.initializeWatchedSegmentsFromResume(this.videoResumeTimestamp);
+            }
         }
+
         return data;
     }
 
@@ -2109,6 +2272,15 @@ class LearningInterface {
         this.updateBookmarkUI();
     }
 
+    checkCourseCompletion() {
+        if (!this.progressData || !this.courseData) return false;
+        const totalLessons = this.courseData.totalLessons || this.getAllLessons().length;
+        const completedCount = this.progressData.completedCount ||
+                              (this.progressData.completedLessons?.length || 0);
+
+        return totalLessons > 0 && completedCount >= totalLessons;
+    }
+
     async determineStartingLesson() {
         let targetId = this.getLessonIdFromUrl();
         const all = this.getAllLessons();
@@ -2130,17 +2302,119 @@ class LearningInterface {
                 return `<div class="curriculum-lesson-item ${isDone?'completed':''} ${isAct?'active':''}" data-lesson="${l.id}" onclick="navigateToLesson(${l.id})"><div class="lesson-item-left"><span class="lesson-status-icon ${isDone?'completed':''}">${isDone?'<i class="fas fa-check-circle"></i>':'<span class="status-circle"></span>'}</span><span class="lesson-item-title">${this.escapeHtml(l.title)}</span></div><div class="lesson-item-right"><span class="lesson-item-type ${l.type}">${this.getTypeIcon(l.type)}</span><span class="lesson-item-duration">${l.duration}</span>${isBm?'<i class="fas fa-bookmark" style="color:#F59E0B;font-size:0.7rem;margin-left:4px;"></i>':''}</div></div>`;
             }).join('')}</div></div>`;
         });
+
+        if (this.checkCourseCompletion()) {
+            this.courseCompleted = true;
+            html += this.renderCertificateSection();
+        }
+
         sc.innerHTML = html;
         if (this.currentLessonId) this.updateSidebarActive();
     }
 
-    async navigateToLessonById(lessonId, isInit=false, isBrowserNav=false) {
-        this.saveVideoProgress();
+    renderCertificateSection() {
+        return `
+            <div class="curriculum-section certificate-section" style="margin-top:16px;border-top:2px solid rgba(139,92,246,0.3);padding-top:16px;">
+                <div class="curriculum-section-header" style="background:rgba(139,92,246,0.1);border-radius:8px;cursor:pointer;" onclick="toggleCertificateSection(this)">
+                    <div class="section-header-left">
+                        <i class="fas fa-chevron-down section-chevron" style="color:#F59E0B;"></i>
+                        <span class="section-number" style="color:#F59E0B;">🎓</span>
+                    </div>
+                    <div class="section-header-right">
+                        <span class="section-title-text" style="color:#F59E0B;font-weight:600;">Certificate</span>
+                        <span class="section-progress" style="color:#10B981;">✓ Earned</span>
+                    </div>
+                </div>
+                <div class="curriculum-certificate-content" style="display:block;padding:16px;">
+                    <div class="certificate-card" onclick="showCertificate()" style="background:linear-gradient(135deg,rgba(139,92,246,0.15) 0%,rgba(16,185,129,0.1) 100%);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.3s ease;" onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 8px 24px rgba(139,92,246,0.2)';" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none';">
+                        <div style="font-size:3rem;margin-bottom:12px;">
+                            <i class="fas fa-trophy" style="color:#F59E0B;"></i>
+                        </div>
+                        <h4 style="color:#F59E0B;margin-bottom:8px;font-size:1.1rem;font-weight:600;">Congratulations!</h4>
+                        <p style="color:#AAA;font-size:0.85rem;margin-bottom:12px;">You have completed this course</p>
+                        <div style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(139,92,246,0.2);color:#A78BFA;border-radius:6px;font-size:0.85rem;font-weight:500;">
+                            <i class="fas fa-certificate"></i> View Certificate
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    showCertificateModal() {
+        const existingModal = document.getElementById('certificateModal');
+        if (existingModal) existingModal.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'certificateModal';
+        modal.style.cssText = 'display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10001;overflow:auto;align-items:center;justify-content:center;padding:20px;';
+
+        const courseTitle = this.courseData?.courseTitle || 'Course';
+
+        modal.innerHTML = `
+            <div style="max-width:800px;width:100%;background:linear-gradient(135deg,#1F2937 0%,#111827 100%);border:2px solid rgba(139,92,246,0.3);border-radius:16px;padding:40px;text-align:center;position:relative;overflow:hidden;">
+                <button onclick="closeCertificateModal()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.1);border:none;color:#FFF;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <div style="position:absolute;top:-50px;left:-50px;width:150px;height:150px;background:rgba(139,92,246,0.1);border-radius:50%;"></div>
+                <div style="position:absolute;bottom:-50px;right:-50px;width:150px;height:150px;background:rgba(139,92,246,0.1);border-radius:50%;"></div>
+
+                <div style="position:relative;z-index:1;">
+                    <div style="margin-bottom:20px;">
+                        <i class="fas fa-trophy" style="font-size:4rem;color:#F59E0B;"></i>
+                    </div>
+                    <h2 style="color:#F59E0B;font-size:1.8rem;margin-bottom:8px;font-weight:700;">CONGRATULATIONS!</h2>
+                    <p style="color:#FFF;font-size:1.2rem;margin-bottom:24px;">You have successfully completed the course</p>
+
+                    <div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:20px;margin-bottom:24px;">
+                        <h3 style="color:#A78BFA;font-size:1.5rem;margin-bottom:8px;">${this.escapeHtml(courseTitle)}</h3>
+                    </div>
+
+                    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                        <a href="/dashboard/certificates"
+                           style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(16,185,129,0.15);color:#10B981;border:1px solid rgba(16,185,129,0.3);border-radius:8px;text-decoration:none;font-weight:600;">
+                            <i class="fas fa-external-link-alt"></i> Go to Dashboard > Certificates
+                        </a>
+                    </div>
+                    <p style="color:#888;font-size:0.85rem;margin-top:16px;">
+                        You can visit and download your certificate in the Certificates section of your dashboard.
+                    </p>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeCertificateModal();
+            }
+        });
+    }
+
+    async navigateToLessonById(lessonId, isInit=false) {
+        this.saveVideoProgressImmediate();
+
         this.stopVideoTracking();
         this.stopArticleScrollTracking();
         this.resetQuizState();
         this.resetAssignmentState();
+
+        const oldLessonId = this.currentLessonId;
+
         this.videoResumeTimestamp = 0;
+        this.videoMetadataLoaded = false;
+        this.videoResumeApplied = false;
+
+        if (oldLessonId !== lessonId) {
+            this.watchedSegments = [];
+            this.currentSegmentStart = 0;
+            this.lastVideoTimeUpdate = 0;
+            this.videoWatchPercentage = 0;
+        }
+
         let found = false;
         for (let si=0; si<this.courseData.sections.length; si++) {
             const sec = this.courseData.sections[si];
@@ -2155,19 +2429,34 @@ class LearningInterface {
             }
             if (found) break;
         }
+
         if (found) {
-            const lesson = this.getCurrentLesson();
-            if (lesson && !this.lessonContentCache.has(lessonId)) {
-                const content = await this.loadLessonContent(lessonId);
-                Object.assign(lesson, content);
-            } else if (lesson && this.lessonContentCache.has(lessonId)) {
-                Object.assign(lesson, this.lessonContentCache.get(lessonId));
+            const lesson = this.courseData.sections[this.currentSectionIndex].lessons[this.currentLessonIndex];
+
+            if (lesson) {
+                const content = await this.fetchLessonContent(lessonId);
+
+                if (content) {
+                    this.courseData.sections[this.currentSectionIndex].lessons[this.currentLessonIndex] = {
+                        ...lesson,
+                        ...content,
+                        id: lesson.id,
+                        type: lesson.type,
+                        completion_criteria: lesson.completion_criteria || content.completion_criteria,
+                        description: content.description || lesson.description || '',
+                        resources: content.resources || lesson.resources || [],
+                        transcript: content.transcript || lesson.transcript || null
+                    };
+                }
             }
-            if (lesson?.type === 'quiz' && lesson.quizData) {
-                this.prepareQuizQuestions(lesson);
+
+            const updatedLesson = this.courseData.sections[this.currentSectionIndex].lessons[this.currentLessonIndex];
+
+            if (updatedLesson?.type === 'quiz' && updatedLesson.quizData) {
+                this.prepareQuizQuestions(updatedLesson);
                 await this.loadQuizAttemptStatus(lessonId);
             }
-            if (lesson?.type === 'assignment' && lesson.assignmentData) {
+            if (updatedLesson?.type === 'assignment' && updatedLesson.assignmentData) {
                 await this.loadAssignmentDetails(lessonId);
             }
 
@@ -2176,8 +2465,6 @@ class LearningInterface {
             this.scrollToActiveLesson();
             this.setupVideoTracking();
             this.setupArticleScrollTracking();
-            if (!isInit && !isBrowserNav) this.updateBrowserUrl(lessonId, this.activeTab!=='overview'?this.activeTab:null);
-            if (!isInit) this.saveLocalProgress();
         }
     }
 
@@ -2248,6 +2535,13 @@ class LearningInterface {
         this.currentLessonType = lesson.type;
         ['videoPlayerSection','articleSection','quizSection','assignmentSection','fileSection'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 
+        this.updateTranscriptTabVisibility(lesson.type === 'video');
+
+        const resources = lesson.resources || [];
+        this.updateResourcesTabBadge(resources.length);
+
+        this.renderOverviewContent(lesson);
+
         switch(lesson.type) {
             case 'video':
                 const vs = document.getElementById('videoPlayerSection'); if (vs) vs.style.display = '';
@@ -2255,10 +2549,9 @@ class LearningInterface {
                 if (this.videoPlayer && lesson.videoUrl) {
                     this.videoPlayer.src = lesson.videoUrl;
                     this.videoPlayer.load();
-                    const resumeTime = this.videoResumeTimestamp;
-                    if (resumeTime > 0) {
-                        this.videoPlayer.currentTime = resumeTime;
-                    }
+
+                    this.videoMetadataLoaded = false;
+                    this.videoResumeApplied = false;
                 }
                 const desc = document.getElementById('videoDescription'); if (desc && lesson.description) desc.innerHTML = `<p style="color:#AAA;padding:16px;">${this.escapeHtml(lesson.description)}</p>`;
                 const ph = document.getElementById('videoPlaceholder'); if (ph) ph.style.display = (this.videoPlayer && lesson.videoUrl) ? 'none' : '';
@@ -2267,6 +2560,8 @@ class LearningInterface {
                 this.updateVideoCompletionIndicator();
                 const ov = document.getElementById('videoOverlay'); if (ov) { ov.style.display = ''; ov.classList.remove('playing'); }
                 const bp = document.getElementById('videoBigPlayBtn'); if (bp) { bp.innerHTML = '<i class="fas fa-play"></i>'; bp.style.opacity = '1'; bp.style.pointerEvents = 'auto'; }
+
+                this.renderTranscriptContent(lesson);
                 break;
             case 'article':
                 const as = document.getElementById('articleSection'); if (as) as.style.display = '';
@@ -2313,20 +2608,292 @@ class LearningInterface {
         const mc = document.querySelector('.mobile-lesson-count'); if (mc) mc.textContent = `${fi+1} / ${all.length}`;
         this.updateBookmarkUI(); this.renderResources(lesson.resources||[]); this.updateCompleteButtonLabel();
         document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play"></i>';
-        this.setCompleteButtonState((this.progressData?.completedLessons||[]).includes(lesson.id));
+        this.updateCompletionButtonUI(lesson);
+
+        if (this.activeTab === 'transcript' && lesson.type !== 'video') {
+            this.switchTab('overview', true);
+        }
+    }
+
+    renderOverviewContent(lesson) {
+        const overviewPanel = document.getElementById('tabOverview');
+        if (!overviewPanel) return;
+
+        const description = lesson.description || 'No description available for this lesson.';
+        const resourcesCount = lesson.resources ? lesson.resources.length : 0;
+
+        overviewPanel.innerHTML = `
+            <div style="padding:20px;">
+                <div style="background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:12px;padding:24px;margin-bottom:20px;">
+                    <h3 style="color:#FFF;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-info-circle" style="color:#8B5CF6;"></i> About This Lesson
+                    </h3>
+                    <p style="color:#AAA;line-height:1.8;font-size:0.95rem;">${this.escapeHtml(description)}</p>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:12px;padding:20px;text-align:center;">
+                        <div style="font-size:2rem;color:#8B5CF6;margin-bottom:8px;">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h4 style="color:#FFF;margin-bottom:4px;">Duration</h4>
+                        <p style="color:#888;font-size:0.9rem;">${this.escapeHtml(lesson.duration || 'N/A')}</p>
+                    </div>
+
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:12px;padding:20px;text-align:center;">
+                        <div style="font-size:2rem;color:#10B981;margin-bottom:8px;">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h4 style="color:#FFF;margin-bottom:4px;">Resources</h4>
+                        <p style="color:#888;font-size:0.9rem;">${resourcesCount > 0 ? resourcesCount + ' file' + (resourcesCount > 1 ? 's' : '') + ' available' : 'No resources'}</p>
+                    </div>
+
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:12px;padding:20px;text-align:center;">
+                        <div style="font-size:2rem;color:#F59E0B;margin-bottom:8px;">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <h4 style="color:#FFF;margin-bottom:4px;">Type</h4>
+                        <p style="color:#888;font-size:0.9rem;">${this.getTypeLabel(lesson.type)}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    updateTranscriptTabVisibility(isVideoLesson) {
+        const transcriptTab = document.querySelector('.lesson-tab[data-tab="transcript"]');
+        if (transcriptTab) {
+            if (isVideoLesson) {
+                transcriptTab.style.display = 'flex';
+            } else {
+                transcriptTab.style.display = 'none';
+            }
+        }
+    }
+
+    updateResourcesTabBadge(count) {
+        const badge = document.querySelector('.lesson-tab[data-tab="resources"] .tab-badge');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-flex';
+            } else {
+                badge.textContent = '0';
+                badge.style.display = 'none';
+            }
+        }
+    }
+
+    renderTranscriptContent(lesson) {
+        const transcriptPanel = document.getElementById('tabTranscript');
+        if (!transcriptPanel) return;
+
+        const transcriptData = lesson.transcript || lesson.transcriptData || null;
+
+        if (!transcriptData) {
+            transcriptPanel.innerHTML = `
+                <div style="text-align:center;padding:40px 20px;">
+                    <i class="fas fa-closed-captioning" style="font-size:3rem;color:#6B7280;display:block;margin-bottom:16px;"></i>
+                    <h3 style="color:#FFF;margin-bottom:8px;">No Transcript Available</h3>
+                    <p style="color:#888;">Transcript for this video is not available yet.</p>
+                </div>
+            `;
+            return;
+        }
+
+        if (typeof transcriptData === 'string') {
+            transcriptPanel.innerHTML = `
+                <div style="padding:20px;">
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:8px;padding:20px;color:#DDD;line-height:1.8;font-size:0.9rem;">
+                        ${this.escapeHtml(transcriptData).replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        if (Array.isArray(transcriptData)) {
+            const transcriptHTML = transcriptData.map(segment => {
+                const time = segment.time || segment.timestamp || '';
+                const text = segment.text || '';
+                return `
+                    <div class="transcript-segment" data-time="${this.escapeHtml(time)}" style="display:flex;gap:12px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='rgba(139,92,246,0.1)';" onmouseout="this.style.background='transparent';" onclick="seekToTranscriptTime('${this.escapeHtml(time)}')">
+                        <span style="color:#8B5CF6;font-weight:600;min-width:60px;">${this.escapeHtml(time)}</span>
+                        <span style="color:#DDD;flex:1;">${this.escapeHtml(text)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            transcriptPanel.innerHTML = `
+                <div style="padding:20px;">
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:8px;overflow:hidden;">
+                        ${transcriptHTML}
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        transcriptPanel.innerHTML = `
+            <div style="text-align:center;padding:40px 20px;">
+                <i class="fas fa-closed-captioning" style="font-size:3rem;color:#6B7280;display:block;margin-bottom:16px;"></i>
+                <h3 style="color:#FFF;margin-bottom:8px;">No Transcript Available</h3>
+                <p style="color:#888;">Transcript for this video is not available yet.</p>
+            </div>
+        `;
+    }
+
+    seekToTranscriptTime(timeString) {
+        if (!this.videoPlayer || !timeString) return;
+
+        const parts = timeString.split(':').map(Number);
+        let seconds = 0;
+
+        if (parts.length === 3) {
+            seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+        } else if (parts.length === 2) {
+            seconds = parts[0] * 60 + parts[1];
+        } else if (parts.length === 1) {
+            seconds = parts[0];
+        }
+
+        if (seconds > 0 && this.videoPlayer.duration) {
+            this.videoPlayer.currentTime = seconds;
+            if (this.videoPlayer.paused) {
+                this.videoPlayer.play();
+            }
+        }
+    }
+
+    updateCompletionButtonUI(lesson) {
+        if (!lesson) return;
+
+        const criteria = this.parseCompletionCriteria(lesson);
+        const isDone = (this.progressData?.completedLessons||[]).includes(lesson.id);
+
+        document.querySelectorAll('.mark-complete-btn, .mark-complete-btn-main').forEach(btn => {
+            const parent = btn.parentElement;
+            if (parent) {
+                const existingStatus = parent.querySelector('.auto-completion-status');
+                if (existingStatus) existingStatus.remove();
+            }
+
+            if (isDone) {
+                btn.style.display = '';
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+                btn.style.background = 'rgba(16,185,129,0.25)';
+                btn.style.borderColor = 'rgba(16,185,129,0.5)';
+                btn.style.color = '#10B981';
+                btn.style.cursor = 'default';
+                btn.style.pointerEvents = 'none';
+                btn.disabled = true;
+            } else if (criteria.criteriaType === 'manual') {
+                btn.style.display = '';
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Mark as Complete';
+                btn.style.background = 'rgba(16,185,129,0.15)';
+                btn.style.borderColor = 'rgba(16,185,129,0.3)';
+                btn.style.color = '#10B981';
+                btn.style.cursor = 'pointer';
+                btn.style.pointerEvents = 'auto';
+                btn.disabled = false;
+            } else if (criteria.criteriaType === 'submit_assignment') {
+                btn.style.display = 'none';
+
+                if (parent && !parent.querySelector('.auto-completion-status')) {
+                    const statusDiv = document.createElement('div');
+                    statusDiv.className = 'auto-completion-status';
+                    statusDiv.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#93C5FD;font-size:0.85rem;font-weight:500;';
+                    statusDiv.innerHTML = '📤 Waiting for instructor review';
+                    parent.appendChild(statusDiv);
+                }
+            } else {
+                btn.style.display = 'none';
+
+                if (parent && !parent.querySelector('.auto-completion-status')) {
+                    const statusDiv = document.createElement('div');
+                    statusDiv.className = 'auto-completion-status';
+                    statusDiv.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:8px;color:#A78BFA;font-size:0.85rem;font-weight:500;';
+
+                    let statusText = '';
+                    switch(criteria.criteriaType) {
+                        case 'watch_video':
+                            statusText = `📺 Watch ${criteria.videoWatchPercentage}% to complete`;
+                            break;
+                        case 'read_article':
+                            statusText = `📖 Read ${criteria.articleScrollPercentage}% to complete`;
+                            break;
+                        case 'pass_quiz':
+                            statusText = `📝 Pass quiz (${criteria.quizPassingScore}%) to complete`;
+                            break;
+                        case 'submit_assignment':
+                            statusText = '📤 Submit assignment for review';
+                            break;
+                        default:
+                            statusText = 'Complete requirements to finish';
+                    }
+
+                    statusDiv.innerHTML = statusText;
+                    parent.appendChild(statusDiv);
+                }
+            }
+        });
+    }
+
+    async handleManualCompletion() {
+        const lesson = this.getCurrentLesson();
+        if (!lesson) return;
+
+        const criteria = this.parseCompletionCriteria(lesson);
+
+        if (criteria.criteriaType !== 'manual') {
+            this.showToast('This lesson will auto-complete when requirements are met');
+            return;
+        }
+
+        await this.markLessonComplete(false);
     }
 
     updateCompleteButtonLabel() {
         const lesson = this.getCurrentLesson(); if (!lesson) return;
+        const criteria = this.parseCompletionCriteria(lesson);
         const label = this.getCompletionActionLabel(lesson);
         const isDone = (this.progressData?.completedLessons||[]).includes(lesson.id);
-        document.querySelectorAll('.mark-complete-btn, .mark-complete-btn-main').forEach(btn => { if (!isDone && !btn.disabled) btn.innerHTML = `<i class="fas fa-check-circle"></i> ${label}`; });
+
+        document.querySelectorAll('.mark-complete-btn, .mark-complete-btn-main').forEach(btn => {
+            if (isDone) {
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+            } else if (criteria.criteriaType === 'manual') {
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Mark as Complete';
+            } else {
+                btn.style.display = 'none';
+            }
+        });
     }
 
     setCompleteButtonState(isDone) {
+        const lesson = this.getCurrentLesson();
+        if (!lesson) return;
+
+        const criteria = this.parseCompletionCriteria(lesson);
+
         document.querySelectorAll('.mark-complete-btn, .mark-complete-btn-main').forEach(btn => {
-            if (isDone) { btn.innerHTML = '<i class="fas fa-check-circle"></i> Completed'; btn.style.background = 'rgba(16,185,129,0.25)'; btn.style.borderColor = 'rgba(16,185,129,0.5)'; btn.style.color = '#10B981'; }
-            else { const lesson = this.getCurrentLesson(); btn.innerHTML = `<i class="fas fa-check-circle"></i> ${lesson ? this.getCompletionActionLabel(lesson) : 'Mark as Complete'}`; btn.style.background = 'rgba(16,185,129,0.15)'; btn.style.borderColor = 'rgba(16,185,129,0.3)'; btn.style.color = '#10B981'; }
+            if (isDone) {
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+                btn.style.background = 'rgba(16,185,129,0.25)';
+                btn.style.borderColor = 'rgba(16,185,129,0.5)';
+                btn.style.color = '#10B981';
+                btn.style.display = '';
+                btn.disabled = true;
+            } else if (criteria.criteriaType === 'manual') {
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Mark as Complete';
+                btn.style.background = 'rgba(16,185,129,0.15)';
+                btn.style.borderColor = 'rgba(16,185,129,0.3)';
+                btn.style.color = '#10B981';
+                btn.style.display = '';
+                btn.disabled = false;
+            } else {
+                btn.style.display = 'none';
+            }
         });
     }
 
@@ -2347,9 +2914,20 @@ class LearningInterface {
     renderResources(resources) {
         const c = document.querySelector('.resources-area'); if (!c) return;
         const normalizedResources = this.normalizeResources(resources);
-        if (!normalizedResources.length) { c.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">No resources available.</p>'; return; }
+
+        this.updateResourcesTabBadge(normalizedResources.length);
+
+        if (!normalizedResources.length) {
+            c.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">No resources available.</p>';
+            return;
+        }
         c.innerHTML = normalizedResources.map(r => `<div class="resource-item-card"><div class="resource-icon"><i class="fas ${this.getResourceIconClass(r.type || 'zip')}"></i></div><div class="resource-info"><span class="resource-name">${this.escapeHtml(r.name)}</span><span class="resource-size">${this.escapeHtml(r.size)}</span></div><a href="${r.url || '#'}" class="resource-download-btn" download="${this.escapeHtml(r.name)}"><i class="fas fa-download"></i> Download</a></div>`).join('');
-        const badge = document.querySelector('.lesson-tab[data-tab="resources"] .tab-badge'); if (badge) badge.textContent = normalizedResources.length;
+
+        const badge = document.querySelector('.lesson-tab[data-tab="resources"] .tab-badge');
+        if (badge) {
+            badge.textContent = normalizedResources.length;
+            badge.style.display = normalizedResources.length > 0 ? 'inline-flex' : 'none';
+        }
     }
 
     prepareQuizQuestions(lesson) {
@@ -2585,7 +3163,6 @@ class LearningInterface {
 
                 this.updateProgressUI();
                 this.renderSidebar();
-                this.saveLocalProgress();
                 this.setCompleteButtonState(true);
 
                 if (result.passed) {
@@ -2748,23 +3325,36 @@ class LearningInterface {
         this.showToast(`Quiz restarted! Attempt ${this.quizAttemptsUsed + 1}/${this.maxQuizAttempts}`);
     }
 
-    buildAssignmentUI() {
-        const asg = document.getElementById('assignmentSection');
-        if (!asg) return;
-        const lesson = this.getCurrentLesson();
-        if (!lesson?.assignmentData) return;
+buildAssignmentUI() {
+    const asg = document.getElementById('assignmentSection');
+    if (!asg) return;
+    const lesson = this.getCurrentLesson();
+    if (!lesson?.assignmentData) return;
 
-        const data = this.assignmentData || lesson.assignmentData;
-        const submissions = this.assignmentSubmissions || [];
-        const maxAttempts = data.maxAttempts || 1;
-        const canSubmit = submissions.length < maxAttempts;
+    const data = this.assignmentData || lesson.assignmentData;
+    const submissions = this.assignmentSubmissions || [];
+    const maxAttempts = data.maxAttempts || 1;
+    const canSubmit = submissions.length < maxAttempts;
 
-        let submissionsHTML = '';
-        if (submissions.length > 0) {
-            submissionsHTML = `
-                <div style="margin-top:24px;">
-                    <h4 style="color:#FFF;margin-bottom:12px;">Previous Submissions:</h4>
-                    ${submissions.map(sub => `
+    let submissionsHTML = '';
+    if (submissions.length > 0) {
+        submissionsHTML = `
+            <div style="margin-top:24px;">
+                <h4 style="color:#FFF;margin-bottom:12px;">Previous Submissions:</h4>
+                ${submissions.map(sub => {
+                    const fileUrl = sub.files && sub.files.length > 0 ? sub.files.map(f => {
+                        const fileUrl = f.file || f.url || '';
+                        const fileName = f.name || this.getDisplayFileName(fileUrl, '');
+                        return `<a href="${this.escapeHtml(fileUrl)}" download="${this.escapeHtml(fileName)}" style="display:inline-flex;align-items:center;margin-right:8px;padding:6px 10px;background:rgba(139,92,246,0.1);border-radius:4px;font-size:0.8rem;color:#A78BFA;text-decoration:none;gap:6px;"><i class="fas fa-file-download"></i> ${this.escapeHtml(fileName)}</a>`;
+                    }).join('') : '';
+
+                    let scoreHTML = '';
+                    if (sub.score !== null && sub.score !== undefined) {
+                        const scoreColor = sub.score < data.passingScore ? '#EF4444' : '#10B981';
+                        scoreHTML = `<span style="color:${scoreColor};">Score: ${sub.score}/${data.maxScore}</span>`;
+                    }
+
+                    return `
                         <div style="background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:8px;padding:16px;margin-bottom:12px;">
                             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                                 <span style="color:#8B5CF6;font-weight:600;">Attempt ${sub.attemptNumber}</span>
@@ -2773,91 +3363,92 @@ class LearningInterface {
                             ${sub.submissionText ? `<p style="color:#AAA;margin:8px 0;">${this.escapeHtml(sub.submissionText)}</p>` : ''}
                             ${sub.files && sub.files.length > 0 ? `
                                 <div style="margin:8px 0;">
-                                    ${sub.files.map(f => {
-                                        const fileUrl = f.file || f.url || '';
-                                        const fileName = f.name || this.getDisplayFileName(fileUrl, '');
-                                        return `<a href="${this.escapeHtml(fileUrl)}" download="${this.escapeHtml(fileName)}" style="display:inline-flex;align-items:center;margin-right:8px;padding:6px 10px;background:rgba(139,92,246,0.1);border-radius:4px;font-size:0.8rem;color:#A78BFA;text-decoration:none;gap:6px;"><i class="fas fa-file-download"></i> ${this.escapeHtml(fileName)}</a>`;
-                                    }).join('')}
+                                    ${fileUrl}
                                 </div>
                             ` : ''}
                             <div style="display:flex;gap:16px;margin-top:8px;font-size:0.8rem;color:#666;">
                                 <span>Submitted: ${sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : 'N/A'}</span>
-                                ${sub.score !== null && sub.score !== undefined ? `<span style="color:#10B981;">Score: ${sub.score}/${data.maxScore}</span>` : ''}
+                                ${scoreHTML}
                                 ${sub.gradedAt ? `<span>Graded: ${new Date(sub.gradedAt).toLocaleString()}</span>` : ''}
                             </div>
                             ${sub.feedback ? `<div style="margin-top:8px;padding:8px;background:rgba(16,185,129,0.1);border-radius:4px;"><span style="color:#10B981;">Feedback:</span> ${this.escapeHtml(sub.feedback)}</div>` : ''}
                         </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        let submissionFormHTML = '';
-        if (canSubmit) {
-            submissionFormHTML = `
-                <div style="margin-top:24px;background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:8px;padding:20px;">
-                    <h4 style="color:#FFF;margin-bottom:12px;">Submit Assignment (Attempt ${submissions.length + 1} of ${maxAttempts})</h4>
-                    <textarea id="assignmentSubmissionText" placeholder="Write your submission text here (optional)..." rows="5" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid #2A2A3E;border-radius:8px;color:#FFF;padding:12px 16px;font-size:0.95rem;resize:vertical;min-height:100px;outline:none;box-sizing:border-box;margin-bottom:12px;"></textarea>
-                    <input type="file" id="assignmentFileInput" multiple style="display:none;" accept="${this.escapeHtml(data.acceptedFileTypes || '')}">
-                    <div id="selectedFilesList" style="margin-bottom:12px;"></div>
-                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                        <button type="button" id="assignmentFileInputBtn" class="quiz-btn quiz-btn-secondary"><i class="fas fa-paperclip"></i> Attach Files</button>
-                        <button type="button" id="assignmentSubmitBtn" class="quiz-btn quiz-btn-primary">Submit Assignment</button>
-                    </div>
-                    <p style="color:#666;font-size:0.75rem;margin-top:8px;">
-                        Accepted file types: ${data.acceptedFileTypes || 'Any'} | Max file size: ${data.maxFileSizeMB || 50}MB
-                    </p>
-                </div>
-            `;
-        } else {
-            submissionFormHTML = `
-                <div style="margin-top:24px;text-align:center;padding:20px;background:rgba(239,68,68,0.1);border-radius:8px;">
-                    <p style="color:#EF4444;">Maximum attempts reached. You cannot submit anymore.</p>
-                </div>
-            `;
-        }
-
-        asg.innerHTML = `
-            <div class="assignment-container" style="padding:20px;">
-                <div style="background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:12px;padding:24px;margin-bottom:20px;">
-                    <h3 style="color:#FFF;margin-bottom:16px;">Assignment Details</h3>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px;">
-                        <div>
-                            <span style="color:#888;font-size:0.8rem;">Maximum Score:</span>
-                            <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.maxScore || 100} points</p>
-                        </div>
-                        <div>
-                            <span style="color:#888;font-size:0.8rem;">Due Date:</span>
-                            <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.dueDate ? new Date(data.dueDate).toLocaleString() : 'No due date'}</p>
-                        </div>
-                        <div>
-                            <span style="color:#888;font-size:0.8rem;">Maximum Attempts:</span>
-                            <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${maxAttempts === 0 ? 'Unlimited' : maxAttempts}</p>
-                        </div>
-                        <div>
-                            <span style="color:#888;font-size:0.8rem;">Accepted File Types:</span>
-                            <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.acceptedFileTypes || 'Any'}</p>
-                        </div>
-                        <div>
-                            <span style="color:#888;font-size:0.8rem;">Max File Size:</span>
-                            <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.maxFileSizeMB || 50} MB</p>
-                        </div>
-                        <div>
-                            <span style="color:#888;font-size:0.8rem;">Late Submission:</span>
-                            <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.allowLateSubmission ? 'Allowed' : 'Not Allowed'}</p>
-                        </div>
-                    </div>
-                    <div style="margin-top:16px;">
-                        <span style="color:#888;font-size:0.8rem;">Instructions:</span>
-                        <div style="color:#DDD;margin-top:8px;line-height:1.6;">${this.escapeHtml(data.instructions || 'No instructions provided.')}</div>
-                    </div>
-                </div>
-                ${submissionsHTML}
-                ${submissionFormHTML}
+                    `;
+                }).join('')}
             </div>
         `;
-        this.setupAssignmentEventDelegation();
     }
+
+    let submissionFormHTML = '';
+    if (canSubmit) {
+        submissionFormHTML = `
+            <div style="margin-top:24px;background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:8px;padding:20px;">
+                <h4 style="color:#FFF;margin-bottom:12px;">Submit Assignment (Attempt ${submissions.length + 1} of ${maxAttempts})</h4>
+                <textarea id="assignmentSubmissionText" placeholder="Write your submission text here (optional)..." rows="5" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid #2A2A3E;border-radius:8px;color:#FFF;padding:12px 16px;font-size:0.95rem;resize:vertical;min-height:100px;outline:none;box-sizing:border-box;margin-bottom:12px;"></textarea>
+                <input type="file" id="assignmentFileInput" multiple style="display:none;" accept="${this.escapeHtml(data.acceptedFileTypes || '')}">
+                <div id="selectedFilesList" style="margin-bottom:12px;"></div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                    <button type="button" id="assignmentFileInputBtn" class="quiz-btn quiz-btn-secondary"><i class="fas fa-paperclip"></i> Attach Files</button>
+                    <button type="button" id="assignmentSubmitBtn" class="quiz-btn quiz-btn-primary">Submit Assignment</button>
+                </div>
+                <p style="color:#666;font-size:0.75rem;margin-top:8px;">
+                    Accepted file types: ${data.acceptedFileTypes || 'Any'} | Max file size: ${data.maxFileSizeMB || 50}MB
+                </p>
+            </div>
+        `;
+    } else {
+        submissionFormHTML = `
+            <div style="margin-top:24px;text-align:center;padding:20px;background:rgba(239,68,68,0.1);border-radius:8px;">
+                <p style="color:#EF4444;">Maximum attempts reached. You cannot submit anymore.</p>
+            </div>
+        `;
+    }
+
+    asg.innerHTML = `
+        <div class="assignment-container" style="padding:20px;">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid #2A2A3E;border-radius:12px;padding:24px;margin-bottom:20px;">
+                <h3 style="color:#FFF;margin-bottom:16px;">Assignment Details</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px;">
+                    <div>
+                        <span style="color:#888;font-size:0.8rem;">Passing Score:</span>
+                        <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.passingScore || 100} points</p>
+                    </div>
+                    <div>
+                        <span style="color:#888;font-size:0.8rem;">Max Score:</span>
+                        <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.maxScore || 100} points</p>
+                    </div>
+                    <div>
+                        <span style="color:#888;font-size:0.8rem;">Due Date:</span>
+                        <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.dueDate ? new Date(data.dueDate).toLocaleString() : 'No due date'}</p>
+                    </div>
+                    <div>
+                        <span style="color:#888;font-size:0.8rem;">Maximum Attempts:</span>
+                        <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${maxAttempts === 0 ? 'Unlimited' : maxAttempts}</p>
+                    </div>
+                    <div>
+                        <span style="color:#888;font-size:0.8rem;">Accepted File Types:</span>
+                        <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.acceptedFileTypes || 'Any'}</p>
+                    </div>
+                    <div>
+                        <span style="color:#888;font-size:0.8rem;">Max File Size:</span>
+                        <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.maxFileSizeMB || 50} MB</p>
+                    </div>
+                    <div>
+                        <span style="color:#888;font-size:0.8rem;">Late Submission:</span>
+                        <p style="color:#FFF;font-weight:600;margin:4px 0 0;">${data.allowLateSubmission ? 'Allowed' : 'Not Allowed'}</p>
+                    </div>
+                </div>
+                <div style="margin-top:16px;">
+                    <span style="color:#888;font-size:0.8rem;">Instructions:</span>
+                    <div style="color:#DDD;margin-top:8px;line-height:1.6;">${this.escapeHtml(data.instructions || 'No instructions provided.')}</div>
+                </div>
+            </div>
+            ${submissionsHTML}
+            ${submissionFormHTML}
+        </div>
+    `;
+    this.setupAssignmentEventDelegation();
+}
 
     getAssignmentStatusColor(status) {
         const colors = {
@@ -2901,7 +3492,6 @@ class LearningInterface {
                 }
             }
 
-            // Store actual File object for FormData submission
             this.selectedFiles.push(file);
         }
 
@@ -2947,7 +3537,7 @@ class LearningInterface {
             );
 
             if (result.success) {
-                this.showToast('Assignment submitted successfully!');
+                this.showToast('Assignment submitted successfully! Waiting for instructor review.');
                 this.selectedFiles = [];
                 await this.loadAssignmentDetails(this.currentLessonId);
                 this.buildAssignmentUI();
@@ -2965,12 +3555,15 @@ class LearningInterface {
         if(!l||this.isCompleting) return;
         const cl=this.progressData?.completedLessons||[], isDone=cl.includes(l.id);
         const crit=this.parseCompletionCriteria(l);
+
         if(!isDone&&!isAuto){
             if(crit.criteriaType==='watch_video'&&this.videoWatchPercentage<crit.videoWatchPercentage){this.showToast(`Watch ${crit.videoWatchPercentage}% (current: ${this.videoWatchPercentage}%)`);return;}
             if(crit.criteriaType==='read_article'&&this.articleScrollPercentage<crit.articleScrollPercentage){this.showToast(`Read ${crit.articleScrollPercentage}% (current: ${this.articleScrollPercentage}%)`);return;}
             if(crit.criteriaType==='pass_quiz'&&!this.quizCompleted){this.showToast('Complete quiz first');return;}
             if(crit.criteriaType==='pass_quiz'&&this.quizResultData&&!this.quizResultData.passed){this.showToast(`Need ${crit.quizPassingScore}%`);return;}
+            if(crit.criteriaType==='submit_assignment'){this.showToast('Assignment must be approved by instructor');return;}
         }
+
         this.isCompleting=true;
         this.setCompletionButtonsDisabled(true);
         try {
@@ -2990,14 +3583,20 @@ class LearningInterface {
                 this.showToast(isDone?'Marked incomplete':(isAuto?'Auto-completed!':'Completed!'));
                 this.updateProgressUI();
 
+                if (this.checkCourseCompletion()) {
+                    this.courseCompleted = true;
+                    setTimeout(() => {
+                        this.showToast('🎉 Congratulations! Course completed!');
+                        this.renderSidebar();
+                    }, 1000);
+                }
+
                 if (l.type === 'quiz' && this.quizPhase === 'results') {
                     this.renderSidebar();
                     this.setCompleteButtonState(true);
-                    this.saveLocalProgress();
                 } else {
                     this.renderLesson();
                     this.renderSidebar();
-                    this.saveLocalProgress();
                     if(!isDone&&!isAuto)setTimeout(()=>{const all=this.getAllLessons();const i=all.findIndex(x=>x.id===l.id);if(i>=0&&i<all.length-1)this.navigateLesson(1);},1500);
                 }
             }
@@ -3050,7 +3649,6 @@ class LearningInterface {
 
                 this.updateBookmarkUI();
                 this.renderSidebar();
-                this.saveLocalProgress();
             }
         } catch(e) {
             console.error('Failed to toggle bookmark:', e);
@@ -3082,7 +3680,13 @@ class LearningInterface {
         document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
         const tp=document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1));
         if(tp)tp.style.display='block';
-        if(!skip)this.updateBrowserUrl(this.currentLessonId,tab);
+
+        if (tab === 'transcript') {
+            const lesson = this.getCurrentLesson();
+            if (lesson && lesson.type === 'video') {
+                this.renderTranscriptContent(lesson);
+            }
+        }
     }
 
     updateProgressUI(){
@@ -3100,25 +3704,14 @@ class LearningInterface {
         });
         const ce=document.getElementById('sidebarProgressCount');
         if(ce)ce.textContent=`${c} / ${t} completed`;
+
+        this.courseCompleted = this.checkCourseCompletion();
     }
 
-    async saveLocalProgress(){
+    async saveProgressToBackend(){
         if(!this.progressData)return;
 
         this.saveVideoProgress();
-
-        try{
-            localStorage.setItem('progress_'+this.enrollmentId,JSON.stringify({
-                enrollmentId:this.enrollmentId,
-                overallProgress:this.progressData.overallProgress||0,
-                completedLessons:this.progressData.completedLessons||[],
-                completedCount:this.progressData.completedCount||0,
-                totalLessons:this.progressData.totalLessons||12,
-                bookmarkedLessons:[...this.bookmarkedLessons]
-            }));
-        }catch(e){
-            console.error('Failed to save progress to localStorage:', e);
-        }
     }
 
     getFileIconColor(ft){return{image:'#EC4899',pdf:'#EF4444',text:'#10B981',code:'#F59E0B',video:'#3B82F6',audio:'#8B5CF6',other:'#6B7280'}[ft]||'#6B7280';}
@@ -3142,5 +3735,9 @@ class LearningInterface {
 // GLOBAL FUNCTIONS
 // ============================================
 function toggleSection(h){if(!h)return;h.classList.toggle('open');const l=h.nextElementSibling;if(l)l.style.display=l.style.display==='none'?'':'none';}
+function toggleCertificateSection(h){if(!h)return;h.classList.toggle('open');const l=h.nextElementSibling;if(l)l.style.display=l.style.display==='none'?'':'none';}
 function navigateToLesson(id){if(window.learningInterface)window.learningInterface.navigateToLessonById(id);}
+function showCertificate(){if(window.learningInterface)window.learningInterface.showCertificateModal();}
+function closeCertificateModal(){const modal=document.getElementById('certificateModal');if(modal){modal.remove();document.body.style.overflow='';}}
+function seekToTranscriptTime(timeString){if(window.learningInterface)window.learningInterface.seekToTranscriptTime(timeString);}
 document.addEventListener('DOMContentLoaded',()=>{window.learningInterface=new LearningInterface();});

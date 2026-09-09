@@ -22,15 +22,8 @@ class MyLearningPage {
         console.log('MyLearningPage initializing...');
         this.bindEvents();
 
-        try {
-            await this.loadCourses();
-        } catch (error) {
-            console.error('Error during initialization:', error);
-            this.allCourses = this.getDummyCourses();
-            this.applyFilters();
-        } finally {
-            this.forceHideLoader();
-        }
+        await this.loadCourses();
+
     }
 
     bindEvents() {
@@ -145,7 +138,7 @@ class MyLearningPage {
     }
 
     async loadCourses() {
-        console.log('Loading courses...');
+        console.log('Loading courses1...');
         this.showSkeletons();
         this.isLoading = true;
 
@@ -183,7 +176,7 @@ class MyLearningPage {
 
         } catch (error) {
             console.error('Failed to load courses:', error);
-            this.allCourses = this.getDummyCourses();
+            this.allCourses = [];
             this.applyFilters();
         } finally {
             this.isLoading = false;
@@ -862,6 +855,7 @@ class MyLearningPage {
     }
 
     showSkeletons() {
+        console.log("show skleton")
         const grid = document.getElementById('courseGrid');
         if (grid) {
             let skeletonHtml = '';

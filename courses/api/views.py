@@ -20,7 +20,7 @@ from courses.models import (
     CourseFeedbackInteraction,
     CourseWishlist,
 )
-from curriculums.models import Lesson, LessonContent, Section
+from curriculums.models import Lesson, Section
 from enrollments.api.permissions import IsStudent
 from enrollments.models import Enrollment
 from profiles.models import InstructorProfile
@@ -296,23 +296,18 @@ class CourseDetailCurriculumApiView(ListAPIView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        main_contents = LessonContent.objects.filter(is_main_content=True)
-
-        lesson_qs = Lesson.objects.filter(
-            contents__is_main_content=True
-        ).prefetch_related(
-            Prefetch("contents", queryset=main_contents, to_attr="main_contents")
+        lesson_qs = Lesson.objects.filter(content__is_main_content=True).select_related(
+            "content"
         )
+
         return (
             Section.objects.filter(course_id=self.kwargs["course_id"])
             .annotate(
                 section_duration=Sum(
                     "lessons__duration",
-                    filter=Q(lessons__contents__is_main_content=True),
                 ),
                 lessons_count=Count(
                     "lessons",
-                    filter=Q(lessons__contents__is_main_content=True),
                     distinct=True,
                 ),
             )

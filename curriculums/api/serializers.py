@@ -94,7 +94,7 @@ class CompletionCriteraSerializer(serializers.ModelSerializer):
 
 
 class LessonSerializer(serializers.ModelSerializer):
-    contents = LessonContentSerializer(many=True)
+    content = LessonContentSerializer()
     completion_criteria = CompletionCriteraSerializer()
     id = serializers.IntegerField(required=False)
 
@@ -105,7 +105,7 @@ class LessonSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "duration",
-            "contents",
+            "content",
             "is_published",
             "is_preview",
             "completion_criteria",

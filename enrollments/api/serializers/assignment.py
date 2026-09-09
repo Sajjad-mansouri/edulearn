@@ -8,6 +8,7 @@ from assessments.models import (
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
+    passingScore = serializers.IntegerField(source="passing_score")
     maxScore = serializers.IntegerField(source="max_score")
     dueDate = serializers.DateTimeField(source="due_date")
     allowLateSubmission = serializers.BooleanField(source="allow_late_submission")
@@ -20,6 +21,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "instructions",
+            "passingScore",
             "maxScore",
             "dueDate",
             "allowLateSubmission",

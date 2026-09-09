@@ -130,7 +130,6 @@ def _normalize_basic_fields(query_dict: QueryDict) -> dict:
         "subtitle": get_value(query_dict, FIELD_SUBTITLE),
         "short_description": get_value(query_dict, FIELD_SHORT_DESCRIPTION),
         "category": category,
-        "subcategory": get_value(query_dict, FIELD_SUBCATEGORY),
         "level": get_value(query_dict, FIELD_LEVEL),
         "language": get_value(query_dict, FIELD_LANGUAGE),
         "duration": get_value(query_dict, FIELD_DURATION),

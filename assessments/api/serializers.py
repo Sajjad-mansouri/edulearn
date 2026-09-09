@@ -74,6 +74,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "instructions",
+            "passing_score",
             "max_score",
             "due_date",
             "allow_late_submission",

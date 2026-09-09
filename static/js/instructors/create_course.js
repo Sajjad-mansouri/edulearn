@@ -2818,7 +2818,7 @@ class CreateCoursePage {
     async saveDraft(show) {
         const status = "drafted"
         const message = "Course created and saved as a draft."
-        this.CreateCourse(status, message)
+        this.createCourse(status, message)
         // if (show) this.showToast('Draft saved successfully');
     }
 

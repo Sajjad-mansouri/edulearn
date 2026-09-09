@@ -25,15 +25,17 @@ class CoursesSectionLessonSerializer(serializers.ModelSerializer):
         ]
 
     def get_type(self, obj):
-        content = obj.main_contents[0] if obj.main_contents else None
-        return content.content_type
+        if hasattr(obj, "content"):
+            return obj.content.content_type
+        return None
 
     def get_duration(self, obj):
         return format_duration(obj.duration)
 
     def get_video_url(self, obj):
-        content = obj.main_contents[0] if obj.main_contents else None
-
+        if not hasattr(obj, "content"):
+            return None
+        content = obj.content.content_type
         if not hasattr(content, "video"):
             return None
 

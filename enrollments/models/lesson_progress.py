@@ -109,6 +109,7 @@ class LessonProgress(models.Model):
             update_fields.append("started_at")
 
         self.status = self.Status.COMPLETED
+        self.progress = Decimal("100.00")
         update_fields.append("status")
 
         if self.completed_at is None:

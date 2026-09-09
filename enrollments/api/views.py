@@ -36,6 +36,7 @@ from enrollments.models import (
     VideoWatchEvent,
 )
 
+from .mixins import EnrollmentResolverMixin
 from .permissions import IsEnrolled, IsOwner, IsStudent
 from .serializers import (
     AssignmentSerializer,
@@ -58,7 +59,9 @@ class CurrentUserEnrollmentStatus(GenericAPIView):
         if course_id:
             course = get_object_or_404(Course, id=course_id)
             enrollment = Enrollment.objects.filter(
-                course=course, user=request.user
+                course=course,
+                user=request.user,
+                status__in=[Enrollment.Status.ACTIVE, Enrollment.Status.COMPLETED],
             ).first()
             enrollment_id = None
             is_enrolled = False
@@ -73,12 +76,13 @@ class CurrentUserEnrollmentStatus(GenericAPIView):
         return Response({"is_enrolled": False})
 
 
-class EnrollmentCourseApiView(RetrieveAPIView):
+class EnrollmentCourseApiView(EnrollmentResolverMixin, RetrieveAPIView):
     serializer_class = EnrollmentCourseSerializer
     permission_classes = [IsOwner | IsEnrolled]
 
     def get_queryset(self):
         # For a specific course, get all sections with lessons and attachment info
+        print("enrollment", self.enrollment)
         if self.enrollment:
             q = Q(id=self.enrollment.course_id)
         else:
@@ -98,7 +102,7 @@ class EnrollmentCourseApiView(RetrieveAPIView):
                                     )
                                 ),
                                 attachment_count=Count(
-                                    "contents__attachments", distinct=True
+                                    "content__attachments", distinct=True
                                 ),
                                 type=Subquery(
                                     LessonContent.objects.filter(
@@ -136,7 +140,7 @@ class EnrollmentCourseApiView(RetrieveAPIView):
         return Response(serializer.data)
 
 
-class LessonContentApiView(GenericAPIView):
+class LessonContentApiView(EnrollmentResolverMixin, GenericAPIView):
     lookup_url_kwarg = "lesson_id"
     permission_classes = [IsOwner | IsEnrolled]
 
@@ -155,16 +159,16 @@ class LessonContentApiView(GenericAPIView):
             q = Q(section__course__owner=self.request.user)
         return (
             Lesson.objects.filter(q)
-            .select_related("section__course")
-            .prefetch_related(
-                "contents",
-                "contents__attachments",
-                "contents__video",
-                "contents__article",
-                "contents__file",
-                "contents__quiz",
-                "contents__assignment",
+            .select_related(
+                "section__course",
+                "content",
+                "content__video",
+                "content__article",
+                "content__file",
+                "content__quiz",
+                "content__assignment",
             )
+            .prefetch_related("content__attachments")
         )
 
     def get_object(self):
@@ -193,7 +197,7 @@ class LessonContentApiView(GenericAPIView):
             base_data.update(handler(request, content, lesson))
         else:
             base_data["error"] = f"Unsupported content type: {content.content_type}"
-        print(base_data)
+
         return base_data
 
     def _handle_video_content(self, request, content, lesson):
@@ -233,12 +237,23 @@ class LessonContentApiView(GenericAPIView):
         return {"assignmentData": serializer.data}
 
     def _get_or_create_video_progress(self, user, content):
+        print("Looking for VideoProgress with:")
+        print("  enrollment_id =", self.enrollment.id)
+        print("  content_id    =", content.id)
         try:
-            return VideoProgress.objects.select_related("lesson_content_progress").get(
+            vp = VideoProgress.objects.select_related("lesson_content_progress").get(
                 lesson_content_progress__enrollment=self.enrollment,
                 lesson_content_progress__content=content,
             )
+            print(
+                "FOUND VideoProgress id =",
+                vp.id,
+                "watched_seconds =",
+                vp.watched_seconds,
+            )
+            return vp
         except VideoProgress.DoesNotExist:
+            print("NOT FOUND → creating new one")
             with transaction.atomic():
                 content_progress, created = LessonContentProgress.objects.get_or_create(
                     enrollment=self.enrollment,
@@ -264,18 +279,19 @@ class LessonContentApiView(GenericAPIView):
         return attachment_serializer.data
 
 
-class LessonCompletion(GenericAPIView):
+class LessonCompletion(EnrollmentResolverMixin, GenericAPIView):
     lookup_url_kwarg = "lesson_id"
     permission_classes = [IsEnrolled]
 
     def post(self, request, enrollment_id, lesson_id):
         instance = self.get_object()
         qs = self.get_queryset()
-        enrollment = get_object_or_404(Enrollment, id=enrollment_id, user=request.user)
-        lesson_progress, _created = LessonProgress.objects.get_or_create(
-            lesson=instance, enrollment=enrollment
+        print("instance in lessoncomletion", instance)
+        content = instance.content
+        lesson_content_progress, _created = LessonContentProgress.objects.get_or_create(
+            content=content, enrollment=self.enrollment
         )
-        lesson_progress.mark_completed()
+        lesson_content_progress.mark_completed()
         completed_lessons = qs.filter(
             progress_records__status=LessonProgress.Status.COMPLETED
         ).values_list("id", flat=True)
@@ -294,7 +310,7 @@ class LessonCompletion(GenericAPIView):
         return Lesson.objects.filter(section__course__enrollments=self.enrollment)
 
 
-class EnrollmentProgress(RetrieveAPIView):
+class EnrollmentProgress(EnrollmentResolverMixin, RetrieveAPIView):
     """
     enrollmentId: enrollmentId,
     overallProgress: 0,
@@ -340,7 +356,7 @@ class EnrollmentProgress(RetrieveAPIView):
         )
 
 
-class LessonVideoProgressApiView(GenericAPIView):
+class LessonVideoProgressApiView(EnrollmentResolverMixin, GenericAPIView):
     permission_classes = [IsEnrolled]
 
     def post(self, request, enrollment_id, lesson_id):
@@ -358,18 +374,28 @@ class LessonVideoProgressApiView(GenericAPIView):
         )
 
         # Single query - update_or_create using self.enrollment
-        video_progress, _ = VideoProgress.objects.update_or_create(
-            lesson_content_progress__enrollment=self.enrollment,
-            lesson_content_progress__content=lesson_content,
-            defaults={"watched_seconds": timestamp},
-        )
+        try:
+            video_progress = VideoProgress.objects.get(
+                lesson_content_progress__enrollment=self.enrollment,
+                lesson_content_progress__content=lesson_content,
+            )
+            instance_timestamp = video_progress.watched_seconds
+            video_progress.watched_seconds = max(timestamp, instance_timestamp)
+            video_progress.save(update_fields=["watched_seconds"])
+        except VideoProgress.DoesNotExist:
+            VideoProgress.objects.create(
+                lesson_content_progress__enrollment=self.enrollment,
+                lesson_content_progress__content=lesson_content,
+                watched_seconds=timestamp,
+            )
+
         VideoWatchEvent.objects.create(
             video_progress=video_progress, watched_seconds=timestamp
         )
         return Response({"success": True})
 
 
-class LessonBookmarkApiView(GenericAPIView):
+class LessonBookmarkApiView(EnrollmentResolverMixin, GenericAPIView):
     """
     Toggle bookmark for a lesson.
     Returns:
@@ -412,7 +438,7 @@ class LessonBookmarkApiView(GenericAPIView):
         return Response(data)
 
 
-class QuizSubmitApiViewv1(GenericAPIView):
+class QuizSubmitApiViewv1(EnrollmentResolverMixin, GenericAPIView):
     """
     get these data:
     {'answers':
@@ -538,17 +564,18 @@ class QuizSubmitApiViewv1(GenericAPIView):
         score = results.count(True)
         percentage = (score / total_questions) * 100
         passed = True if percentage >= pass_score else False
-        lesson_progress, _created = LessonProgress.objects.get_or_create(
-            lesson=lesson, enrollment=enrollment
+        content = lesson.content
+        lesson_content_progress, _created = LessonContentProgress.objects.get_or_create(
+            content=content, enrollment=enrollment
         )
         if passed:
-            lessonCompleted = self.mark_lesson_completed(
-                enrollment, lesson, lesson_progress
+            lessonCompleted = self.mark_lesson_content_completed(
+                lesson_content_progress
             )
         else:
             lessonCompleted = False
         completedLessons, completedCount, total_lessons = self.get_lesson_progress_data(
-            enrollment, lesson, lesson_progress
+            enrollment
         )
         quiz_attempts = QuizAttempt.objects.filter(enrollment=enrollment, quiz=quiz)
         max_attempts, attempts_used, attempts_remaining, best_score = (
@@ -580,12 +607,12 @@ class QuizSubmitApiViewv1(GenericAPIView):
             else f"Scored ${percentage}%. Need ${pass_score}% to pass.",
         }
 
-    def mark_lesson_completed(self, enrollment, lesson, lesson_progress):
-        lesson_progress.mark_completed()
+    def mark_lesson_content_completed(self, lesson_content_progress):
+        lesson_content_progress.mark_completed()
         lessonCompleted = True
         return lessonCompleted
 
-    def get_lesson_progress_data(self, enrollment, lesson, lesson_progress):
+    def get_lesson_progress_data(self, enrollment):
         lessons = Lesson.objects.filter(section__course__enrollments__id=enrollment.id)
         completed_lessons = lessons.filter(
             progress_records__status=LessonProgress.Status.COMPLETED
@@ -653,7 +680,7 @@ class QuizSubmitApiViewv1(GenericAPIView):
         return correctAnswer, userAnswer, isCorrect
 
 
-class QuizSubmitApiView(GenericAPIView):
+class QuizSubmitApiView(EnrollmentResolverMixin, GenericAPIView):
     permission_classes = [IsEnrolled]
 
     def post(self, request, enrollment_id, lesson_id):
@@ -731,12 +758,10 @@ class QuizSubmitApiView(GenericAPIView):
         # Use select_related for OneToOneField relations
         questions = (
             Question.objects.filter(id__in=question_ids)
-            .select_related(
-                "boolean_answer",  # OneToOneField
-                "accepted_answer",  # OneToOneField
-            )
+            .select_related("boolean_answer")
             .prefetch_related(
-                "choices"  # Forward FK relation
+                "choices",
+                "accepted_answers",
             )
         )
 
@@ -811,17 +836,24 @@ class QuizSubmitApiView(GenericAPIView):
 
         # Get accepted answer from select_related
         try:
-            accepted_answer = question.accepted_answer  # OneToOneField
-            correct_answer = accepted_answer.answer
-            is_correct = user_answer.lower().strip() == correct_answer.lower().strip()
+            accepted_answers = question.accepted_answers.values_list(
+                "answer", flat=True
+            )
+            print(accepted_answers)
+            for accepted_answer in accepted_answers:
+                is_correct = (
+                    user_answer.lower().strip() == accepted_answer.lower().strip()
+                )
+                if is_correct:
+                    break
         except AcceptedAnswer.DoesNotExist:
-            correct_answer = "No accepted answer defined"
+            accepted_answers = ["No accepted answer defined"]
             is_correct = False
 
         return {
             "questionId": question.id,
             "isCorrect": is_correct,
-            "correctAnswer": correct_answer,
+            "correctAnswer": ", ".join(accepted_answers),
             "userAnswer": user_answer,
             "questionType": "short_answer",
             "explanation": "Correct! Well done."
@@ -983,7 +1015,7 @@ class QuizSubmitApiView(GenericAPIView):
         )
 
 
-class QuizSubmitAttemptsApiViewv1(GenericAPIView):
+class QuizSubmitAttemptsApiViewv1(EnrollmentResolverMixin, GenericAPIView):
     """
     success: true,
     lessonId: lessonId,
@@ -1026,7 +1058,7 @@ class QuizSubmitAttemptsApiViewv1(GenericAPIView):
         return Response(data)
 
 
-class QuizSubmitAttemptsApiView(GenericAPIView):
+class QuizSubmitAttemptsApiView(EnrollmentResolverMixin, GenericAPIView):
     """
     Get quiz attempt statistics for a lesson.
     Returns:
@@ -1113,7 +1145,7 @@ class QuizSubmitAttemptsApiView(GenericAPIView):
         }
 
 
-class AssignmentApiView1(GenericAPIView):
+class AssignmentApiView1(EnrollmentResolverMixin, GenericAPIView):
     permission_classes = [IsEnrolled]
 
     def get(self, request, enrollment_id, lesson_id):
@@ -1181,7 +1213,7 @@ class AssignmentApiView1(GenericAPIView):
         return attempts_used, serializer.data
 
 
-class AssignmentApiView(GenericAPIView):
+class AssignmentApiView(EnrollmentResolverMixin, GenericAPIView):
     permission_classes = [IsEnrolled]
 
     def get(self, request, enrollment_id, lesson_id):
@@ -1240,7 +1272,7 @@ class AssignmentApiView(GenericAPIView):
         )
 
 
-class AssignmentSubmissionApiViewv1(GenericAPIView):
+class AssignmentSubmissionApiViewv1(EnrollmentResolverMixin, GenericAPIView):
     permission_classes = [IsEnrolled]
 
     def post(self, request, enrollment_id, lesson_id):
@@ -1288,7 +1320,7 @@ class AssignmentSubmissionApiViewv1(GenericAPIView):
         return Response(data)
 
 
-class AssignmentSubmissionApiView(GenericAPIView):
+class AssignmentSubmissionApiView(EnrollmentResolverMixin, GenericAPIView):
     permission_classes = [IsEnrolled]
 
     def post(self, request, enrollment_id, lesson_id):
@@ -1431,15 +1463,10 @@ class CourseEnrollment(APIView):
     def post(self, request, *args, **kwargs):
         course_id = kwargs.get("course_id")
         course = get_object_or_404(Course, id=course_id)
-        if Enrollment.objects.filter(course=course, user=request.user).exists():
-            enrollment, _created = Enrollment.objects.get_or_create(
-                course=course, user=request.user
-            )
 
-        else:
-            enrollment = Enrollment.objects.get_or_create(
-                course=course, user=request.user
-            )
+        enrollment, _created = Enrollment.objects.get_or_create(
+            course=course, user=request.user
+        )
         return Response({"enrollment_id": enrollment.id})
 
 
@@ -1452,7 +1479,13 @@ class StudentCoursesApiView(ListAPIView):
         user = self.request.user
         enrollment = Enrollment.objects.filter(course=OuterRef("pk"), user=user)
         return (
-            Course.objects.filter(enrollments__user=user)
+            Course.objects.filter(
+                enrollments__user=user,
+                enrollments__status__in=[
+                    Enrollment.Status.ACTIVE,
+                    Enrollment.Status.COMPLETED,
+                ],
+            )
             .annotate(
                 rating=Avg("enrollments__feedback__rating"),
                 enrollment_id=Subquery(enrollment.values("id")[:1]),
