@@ -135,13 +135,6 @@ class Course(models.Model):
         verbose_name=_("Owner"),
     )
 
-    collaborators = models.ManyToManyField(
-        settings.AUTH_USER_MODEL,
-        through="CourseCollaborator",
-        related_name="teaching_courses",
-        verbose_name=_("Collaborators"),
-    )
-
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,
@@ -164,7 +157,7 @@ class Course(models.Model):
         _("Price Type"), choices=PriceType.choices, default=PriceType.FREE, blank=True
     )
     price = models.DecimalField(
-        _("Price"), max_digits=10, decimal_places=2, default=0.00, null=True
+        _("Price"), max_digits=10, decimal_places=2, default=0.00, null=True, blank=True
     )
     price_discount = models.PositiveSmallIntegerField(
         default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True
@@ -326,50 +319,6 @@ class TargetAudience(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - {self.order}"
-
-
-class CourseCollaborator(models.Model):
-    class Role(models.TextChoices):
-        LEAD_INSTRUCTOR = "lead_instructor", _("Lead Instructor")
-        INSTRUCTOR = "instructor", _("Instructor")
-        TEACHING_ASSISTANT = "teaching_assistant", _("Teaching Assistant")
-
-    course = models.ForeignKey(
-        Course,
-        on_delete=models.CASCADE,
-        related_name="course_collaborators",
-        verbose_name=_("Course"),
-    )
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="course_collaborations",
-        verbose_name=_("User"),
-    )
-
-    role = models.CharField(
-        _("Role"),
-        max_length=25,
-        choices=Role.choices,
-        default=Role.INSTRUCTOR,
-    )
-
-    class Meta:
-        ordering = (
-            "course",
-            "role",
-            "user__username",
-        )
-        constraints = [
-            models.UniqueConstraint(
-                fields=("course", "user"),
-                name="unique_course_collaborator",
-            )
-        ]
-
-    def __str__(self):
-        return f"{self.user} ({self.get_role_display()})"
 
 
 class CourseFeature(models.Model):

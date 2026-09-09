@@ -64,7 +64,7 @@ class QuizContent(models.Model):
     def clean(self):
         super().clean()
 
-        if self.passing_score > 100:
+        if self.passing_score is not None and self.passing_score > 100:
             raise ValidationError(
                 {"passing_score": _("Passing score must be between 0 and 100.")}
             )

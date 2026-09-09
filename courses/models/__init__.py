@@ -1,7 +1,6 @@
 from .category import Category
 from .course import (
     Course,
-    CourseCollaborator,
     CourseFeature,
     LearningOutcome,
     Prerequisite,
@@ -18,7 +17,6 @@ __all__ = [
     "LearningOutcome",
     "Prerequisite",
     "TargetAudience",
-    "CourseCollaborator",
     "CourseFeedback",
     "CourseWishlist",
     "CourseFeature",
