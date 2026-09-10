@@ -21,7 +21,7 @@ def assignment_submission_upload_path(instance, filename):
         f"lesson_contents/"
         f"{instance.submission.assignment.content_id}/"
         f"assignment_submission/"
-        f"user_{user_id}"
+        f"user_{user_id}/"
         f"{filename}"
     )
 
@@ -182,12 +182,17 @@ class AssignmentSubmission(models.Model):
             return ""
 
     def save(self, *args, **kwargs):
-        if self.submitted_at > self.assignment.due_date:
+        if (
+            self.submitted_at is not None
+            and self.assignment.due_date is not None
+            and self.submitted_at > self.assignment.due_date
+        ):
             self.status = self.Status.LATE
 
-        if self.score:
+        if self.score is not None:
             self.status = self.Status.GRADED
             self.graded_at = timezone.now()
+
         super().save(*args, **kwargs)
 
 
