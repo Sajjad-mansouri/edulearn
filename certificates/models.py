@@ -6,6 +6,13 @@ from courses.models import Course
 from enrollments.models import Enrollment
 
 
+def file_upload_path(instance, filename):
+    user_id = instance.enrollment.user_id
+    course_id = instance.enrollment.course_id
+
+    return f"certificates/{user_id}/{course_id}/{filename}"
+
+
 class Certificate(models.Model):
     enrollment = models.OneToOneField(
         Enrollment,
@@ -33,7 +40,7 @@ class Certificate(models.Model):
 
     file = models.FileField(
         _("Certificate File"),
-        upload_to="certificates/",
+        upload_to=file_upload_path,
     )
 
     class Meta:
