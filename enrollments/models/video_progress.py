@@ -33,9 +33,14 @@ class VideoProgress(models.Model):
     @property
     def duration_seconds(self):
         """
-        Get video duration from Video model.
+        Get video duration in seconds.
         """
-        return self.lesson_content_progress.content.video.duration
+        duration = self.lesson_content_progress.content.video.duration
+
+        if duration is None:
+            return Decimal("0")
+
+        return Decimal(str(duration.total_seconds()))
 
     @property
     def watched_percentage(self):

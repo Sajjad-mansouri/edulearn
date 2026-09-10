@@ -110,7 +110,8 @@ class LessonProgress(models.Model):
 
         self.status = self.Status.COMPLETED
         self.progress = Decimal("100.00")
-        update_fields.append("status")
+
+        update_fields.extend(["status", "progress"])
 
         if self.completed_at is None:
             self.completed_at = now
@@ -152,6 +153,5 @@ class LessonProgress(models.Model):
 
             if self.completed_at is None:
                 self.completed_at = timezone.now()
-        self.enrollment.recalculate_progress()
-
         self.save(update_fields=["progress", "completed_at", "status", "started_at"])
+        self.enrollment.recalculate_progress()
