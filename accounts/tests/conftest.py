@@ -2,6 +2,7 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from accounts.models import Role
+from profiles.models import InstructorProfile, Profile
 
 User = get_user_model()
 
@@ -26,4 +27,21 @@ def instructor_role(db):
 def student_role(db):
     return Role.objects.create(
         name=Role.Roles.STUDENT,
+    )
+
+
+@pytest.fixture
+def profile(db, test_user):
+    return Profile.objects.create(user=test_user)
+
+
+@pytest.fixture
+def instructor_profile(db, profile):
+    return InstructorProfile.objects.create(
+        profile=profile,
+        headline="Backend Developer",
+        biography="Experienced software developer.",
+        professional_title="Senior Developer",
+        organization="Example Organization",
+        years_of_experience=5,
     )
