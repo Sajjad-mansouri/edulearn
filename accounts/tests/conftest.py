@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 
 from accounts.models import Role
 from profiles.models import InstructorProfile, Profile
@@ -51,3 +52,8 @@ def instructor_profile(db, profile):
 def registration_request(request_factory, settings):
     settings.ALLOWED_HOSTS = ["testserver"]
     return request_factory.get("/accounts/register/")
+
+
+@pytest.fixture
+def api_client():
+    return APIClient()
