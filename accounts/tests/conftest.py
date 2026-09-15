@@ -45,3 +45,9 @@ def instructor_profile(db, profile):
         organization="Example Organization",
         years_of_experience=5,
     )
+
+
+@pytest.fixture
+def registration_request(request_factory, settings):
+    settings.ALLOWED_HOSTS = ["testserver"]
+    return request_factory.get("/accounts/register/")
