@@ -276,7 +276,11 @@ class Experience(models.Model):
 
         super().clean()
 
-        if self.end_date is not None and self.end_date < self.start_date:
+        if (
+            self.end_date is not None
+            and self.start_date is not None
+            and self.end_date < self.start_date
+        ):
             raise ValidationError(
                 {
                     "end_date": _(
