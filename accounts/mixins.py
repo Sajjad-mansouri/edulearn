@@ -8,10 +8,7 @@ class InstructorRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return super().dispatch(request, *args, **kwargs)
-        print(
-            "request.user.roles.filter(name=Role.Roles.INSTRUCTOR).exists()",
-            request.user.roles.filter(name=Role.Roles.INSTRUCTOR).exists(),
-        )
+
         if not request.user.roles.filter(name=Role.Roles.INSTRUCTOR).exists():
             raise Http404()
 

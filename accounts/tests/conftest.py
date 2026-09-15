@@ -1,17 +1,29 @@
 import pytest
-from rest_framework.test import APIClient
+from django.contrib.auth import get_user_model
 
-from accounts.tests.factories import UserFactory
+from accounts.models import Role
 
-
-@pytest.fixture
-def api_client():
-    return APIClient()
+User = get_user_model()
 
 
 @pytest.fixture
-def user():
-    return UserFactory(
+def test_user(db):
+    return User.objects.create_user(
         username="test_user",
-        password="password123",
+        email="test_user@example.com",
+        password="test-password",
+    )
+
+
+@pytest.fixture
+def instructor_role(db):
+    return Role.objects.create(
+        name=Role.Roles.INSTRUCTOR,
+    )
+
+
+@pytest.fixture
+def student_role(db):
+    return Role.objects.create(
+        name=Role.Roles.STUDENT,
     )
