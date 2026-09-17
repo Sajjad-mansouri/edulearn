@@ -123,9 +123,12 @@ class Enrollment(models.Model):
             ).count()
             self.progress = round((completed / total) * 100, 2)
 
+        update_fields = ["progress", "completed_at"]
         if self.progress >= 100 and not self.completed_at:
             self.completed_at = timezone.now()
+            self.status = self.Status.COMPLETED
+            update_fields.append("status")
         elif self.progress < 100:
             self.completed_at = None
 
-        self.save(update_fields=["progress", "completed_at"])
+        self.save(update_fields=update_fields)

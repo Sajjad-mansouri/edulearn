@@ -23,12 +23,17 @@ class EnrollmentOrOwnerRequiredMixin(LoginRequiredMixin):
 
         else:
             course_id = kwargs.get("course_id")
+
             if course_id:
-                try:
-                    Course.objects.filter(id=course_id, owner=request.user)
-                    self.enrollment = None
-                except Course.DoesNotExist:
-                    raise Http404() from None
+                course_exists = Course.objects.filter(
+                    id=course_id,
+                    owner=request.user,
+                ).exists()
+
+                if not course_exists:
+                    raise Http404()
+
+                self.enrollment = None
             else:
                 raise Http404()
         return super().dispatch(request, *args, **kwargs)
