@@ -77,8 +77,10 @@ class CourseUpdateApiView(GenericAPIView):
         course_data, deleted_ids_dict = normalize_course_data(request.data)
         print("course data", course_data)
         course = self.get_object()
+        print("course data that places in course serializer\n", course_data)
         serializer = CourseSerializer(instance=course, data=course_data, partial=True)
         serializer.is_valid(raise_exception=False)
+        print(serializer.errors)
 
         course = CourseUpdateService(
             course=course, deleted_ids_dict=deleted_ids_dict

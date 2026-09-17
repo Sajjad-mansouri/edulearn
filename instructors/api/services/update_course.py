@@ -57,6 +57,7 @@ class CourseUpdateService:
         category = self._get_category_object(data)
 
         # Update only provided fields
+        print("data in _update course:", data)
         field_mapping = {
             "title": data.get("title", self.course.title),
             "subtitle": data.get("subtitle", self.course.subtitle),
@@ -187,19 +188,24 @@ class CourseUpdateService:
     def _update_sections(self, course, sections):
         """Update course sections and their contents."""
         # Delete sections not in the update payload
-
+        print(
+            "sections in _update sections",
+            sections,
+        )
         deleted_sections = self.deleted_ids_dict.get("sections", [])
 
         Section.objects.filter(id__in=deleted_sections).delete()
         # section_ids = [section.get("id") for section in sections if section.get("id")]
         # Section.objects.filter(course=course).exclude(id__in=section_ids).delete()
-
+        print("sections", sections)
+        print("before loop fo sections")
         for section_order, section_data in enumerate(sections, start=1):
+            print("**section order", section_order)
             if section_data.get("id"):
                 section = self._update_section(section_data, section_order)
             else:
                 section = self._create_section(course, section_data, section_order)
-
+            print("_update_lessons")
             self._update_lessons(section, section_data.get("lessons", []))
 
     def _update_section(self, section_data, order):
@@ -246,6 +252,7 @@ class CourseUpdateService:
 
     def _update_lesson(self, lesson_data, order):
         """Update existing lesson."""
+        print("update lesson")
 
         try:
             lesson = Lesson.objects.get(
@@ -254,6 +261,8 @@ class CourseUpdateService:
             lesson.title = lesson_data.get("title", lesson.title)
             lesson.description = lesson_data.get("description", lesson.description)
             lesson.order = order
+            print(lesson_data.get("duration"), lesson_data)
+
             lesson.duration = lesson_data.get("duration", lesson.duration)
             lesson.is_published = lesson_data.get("is_published", lesson.is_published)
             lesson.is_preview = lesson_data.get("is_preview", lesson.is_preview)

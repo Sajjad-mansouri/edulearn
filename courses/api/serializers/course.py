@@ -54,7 +54,6 @@ class CourseSerializer(serializers.ModelSerializer):
         return ""
 
     def get_duration(self, obj):
-        print(obj.duration)
         course_duration = obj.duration
         total_seconds = course_duration.total_seconds()
         hour = total_seconds / (60 * 60)
@@ -85,7 +84,6 @@ class CourseFeatureSerializer(serializers.ModelSerializer):
 
 
 class CourseDetailInfoSerializer(CourseSerializer):
-    rating = serializers.FloatField(read_only=True)
     total_ratings = serializers.IntegerField(read_only=True)
     total_students = serializers.IntegerField(read_only=True)
     subtitles = serializers.SerializerMethodField()
@@ -93,7 +91,6 @@ class CourseDetailInfoSerializer(CourseSerializer):
     prerequisites = serializers.SerializerMethodField()
     target_audience = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
-
     features = CourseFeatureSerializer(many=True)
 
     class Meta(CourseSerializer.Meta):

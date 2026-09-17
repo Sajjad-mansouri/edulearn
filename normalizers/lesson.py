@@ -56,12 +56,18 @@ def normalize_lessons(
         lessons_deleted_captions_ids.extend(captions_deleted_ids)
 
         lesson_id = get_value(query_dict, f"{lesson_base}.{FIELD_LESSON_ID}")
+        lesson_duration_min = get_value(
+            query_dict, f"{lesson_base}.{FIELD_LESSON_DURATION}"
+        )
+        print("\n\n\n", query_dict, "\n\n\n")
+        print("lesson_duration_min", lesson_duration_min)
+
         lesson = {
             "title": get_value(query_dict, f"{lesson_base}.{FIELD_LESSON_TITLE}"),
             "description": get_value(
                 query_dict, f"{lesson_base}.{FIELD_LESSON_DESCRIPTION}"
             ),
-            "duration": get_value(query_dict, f"{lesson_base}.{FIELD_LESSON_DURATION}"),
+            "duration": lesson_duration_min,
             "is_published": get_value(
                 query_dict, f"{lesson_base}.{FIELD_LESSON_PUBLISHED}"
             ),

@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.db import transaction
 
 from assessments.models import (
@@ -108,7 +110,7 @@ class CourseService:
                 title=lesson_data["title"],
                 description=lesson_data["description"],
                 order=lesson_order,
-                duration=lesson_data["duration"],
+                duration=timedelta(minutes=lesson_data["duration"]),
                 is_published=lesson_data["is_published"],
                 is_preview=lesson_data["is_preview"],
             )

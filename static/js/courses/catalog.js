@@ -190,7 +190,8 @@ class CourseCatalogPage {
                 baseUrl + `/api/v1/courses/?${params.toString()}`,
                 {
                     method: "GET",
-                }
+                },
+                false
             );
             const data = await response.json();
             this.currentCourses = this.mapData(data.results);

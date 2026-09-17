@@ -6,7 +6,6 @@ from courses.models import CourseFeedback, CourseFeedbackInteraction
 class CourseFeedbackSerializer(serializers.ModelSerializer):
     user_name = serializers.SerializerMethodField()
     user_avatar = serializers.SerializerMethodField()
-    helpful_count = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
     helpful_count = serializers.IntegerField(read_only=True)
     is_owner = serializers.SerializerMethodField()
@@ -22,7 +21,6 @@ class CourseFeedbackSerializer(serializers.ModelSerializer):
             "created_at",
             "helpful_count",
             "user_has_liked",
-            "helpful_count",
             "is_owner",
         ]
 
@@ -31,9 +29,6 @@ class CourseFeedbackSerializer(serializers.ModelSerializer):
 
     def get_user_avatar(self, obj):
         return obj.enrollment.user.avatar
-
-    def get_helpful_count(self, obj):
-        return 0
 
     def get_user_has_liked(self, obj):
         request = self.context["request"]

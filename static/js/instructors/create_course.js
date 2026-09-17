@@ -1361,7 +1361,7 @@ class CreateCoursePage {
         let html = `
         <div class="form-group"><label>Lesson Title</label><input type="text" id="lessonTitle" class="form-input" value="${this.esc(lesson.title)}"></div>
         <div class="form-group"><label>Description</label><textarea id="lessonDesc" class="form-input form-textarea" rows="3">${this.esc(lesson.description||'')}</textarea></div>
-        <div class="form-row"><div class="form-group"><label>Duration (min)</label><input type="number" id="lessonDuration" class="form-input" value="${this.esc(lesson.duration||'')}" min="1"></div><div class="form-group"><label>Preview Enabled</label><select id="lessonPreview" class="form-select"><option value="1" ${lesson.preview?'selected':''}>Yes</option><option value="0" ${!lesson.preview?'selected':''}>No</option></select></div></div>
+        <div class="form-row"><div class="form-group"><label>Duration (min)</label><input type="text" id="lessonDuration" class="form-input" value="${this.esc(lesson.duration)}" placeholder="e.g. 01:20:00"></div><div class="form-group"><label>Preview Enabled</label><select id="lessonPreview" class="form-select"><option value="1" ${lesson.preview?'selected':''}>Yes</option><option value="0" ${!lesson.preview?'selected':''}>No</option></select></div></div>
         <div class="form-row"><div class="form-group"><label>Published</label><select id="lessonPublished" class="form-select"><option value="1" ${lesson.published?'selected':''}>Yes</option><option value="0" ${!lesson.published?'selected':''}>No</option></select></div></div>`;
 
         if (lesson.type !== 'quiz' && lesson.type !== 'assignment') {

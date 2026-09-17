@@ -104,7 +104,7 @@ class Auth {
    * @param {string} [options.contentType]   - Override Content-Type (e.g. 'multipart/form-data')
    * @returns {Promise<Response>} The raw Fetch Response (caller should handle status/body)
    */
-  async authenticatedRequest(url, options = {}) {
+  async authenticatedRequest(url, options = {}, needAuthenticate=true) {
     const {
       method = 'GET',
       body,
@@ -112,7 +112,7 @@ class Auth {
       contentType,
       ...rest
     } = options;
-    if (!this.accessToken && this.refreshToken) {
+    if (needAuthenticate && !this.accessToken && this.refreshToken) {
         const refreshed = await this._refreshAccessToken();
         if (!refreshed) {
             throw new Error("Session expired");
