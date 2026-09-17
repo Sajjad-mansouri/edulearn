@@ -102,3 +102,27 @@ def assignment_submission(
         status=AssignmentSubmission.Status.DRAFT,
         submission_text="Assignment submission.",
     )
+
+
+@pytest.fixture
+def attachment_lesson_content(course):
+    section = Section.objects.create(
+        course=course,
+        title="Attachments",
+        order=1,
+    )
+
+    lesson = Lesson.objects.create(
+        section=section,
+        title="Attachment Lesson",
+        slug="attachment-lesson",
+        order=1,
+    )
+
+    return LessonContent.objects.create(
+        lesson=lesson,
+        title="Lesson Attachment",
+        content_type=LessonContent.Type.FILE,
+        order=1,
+        is_main_content=True,
+    )
