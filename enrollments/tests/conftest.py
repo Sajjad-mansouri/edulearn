@@ -1,10 +1,10 @@
-# enrollments/tests/conftest.py
-
 import pytest
 from django.contrib.auth import get_user_model
 
+from accounts.models import Role
 from courses.models.category import Category
 from courses.models.course import Course
+from enrollments.models import Enrollment
 
 User = get_user_model()
 
@@ -16,6 +16,21 @@ def test_user(db):
         email="test_user@example.com",
         password="test-password",
     )
+
+
+@pytest.fixture
+def another_user(db):
+    return User.objects.create_user(
+        username="another_user",
+        email="another_user@example.com",
+        password="test-password",
+    )
+
+
+@pytest.fixture
+def student_user(test_user):
+    test_user.roles.create(name=Role.Roles.STUDENT)
+    return test_user
 
 
 @pytest.fixture
@@ -33,4 +48,22 @@ def course(test_user, category):
         title="Django Development",
         owner=test_user,
         category=category,
+    )
+
+
+@pytest.fixture
+def enrollment(test_user, course):
+    return Enrollment.objects.create(
+        user=test_user,
+        course=course,
+        status=Enrollment.Status.ACTIVE,
+    )
+
+
+@pytest.fixture
+def another_user_enrollment(another_user, course):
+    return Enrollment.objects.create(
+        user=another_user,
+        course=course,
+        status=Enrollment.Status.ACTIVE,
     )
