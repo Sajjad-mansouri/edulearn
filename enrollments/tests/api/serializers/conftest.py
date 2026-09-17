@@ -5,7 +5,7 @@ from accounts.models import Role
 from assessments.models import Assignment, AssignmentSubmission
 from courses.models.category import Category
 from courses.models.course import Course
-from curriculums.models import Lesson, LessonContent, Section
+from curriculums.models import Lesson, LessonCompletionCriteria, LessonContent, Section
 from enrollments.models import Enrollment
 
 User = get_user_model()
@@ -125,4 +125,43 @@ def attachment_lesson_content(course):
         content_type=LessonContent.Type.FILE,
         order=1,
         is_main_content=True,
+    )
+
+
+@pytest.fixture
+def lesson_section(course):
+    return Section.objects.create(
+        course=course,
+        title="Python Basics",
+        order=1,
+    )
+
+
+@pytest.fixture
+def lesson(lesson_section):
+    return Lesson.objects.create(
+        section=lesson_section,
+        title="Introduction to Python",
+        description="Learn the fundamentals of Python.",
+        slug="introduction-to-python",
+        order=1,
+    )
+
+
+@pytest.fixture
+def lesson_content(lesson):
+    return LessonContent.objects.create(
+        lesson=lesson,
+        title="Introduction Video",
+        content_type=LessonContent.Type.VIDEO,
+        order=1,
+        is_main_content=True,
+    )
+
+
+@pytest.fixture
+def lesson_completion_criteria(lesson):
+    return LessonCompletionCriteria.objects.create(
+        lesson=lesson,
+        criteria_type=LessonCompletionCriteria.CriteriaType.MANUAL,
     )
