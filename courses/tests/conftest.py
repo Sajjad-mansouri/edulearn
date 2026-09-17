@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 
+from accounts.models import Role
 from courses.models import Category, Course
 
 User = get_user_model()
@@ -40,3 +41,9 @@ def course(test_user, category):
         owner=test_user,
         category=category,
     )
+
+
+@pytest.fixture
+def student_user(test_user):
+    test_user.roles.create(name=Role.Roles.STUDENT)
+    return test_user

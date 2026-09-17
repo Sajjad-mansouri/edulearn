@@ -42,15 +42,7 @@ from .services import (
 )
 
 
-class CategoriesApiView(ListAPIView):
-    serializer_class = CategorySerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        return Category.objects.filter(parent=None)
-
-
-class CategoriesApiViewsV1(APIView):
+class CategoriesApiViews(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
@@ -154,11 +146,17 @@ class CoursesApiView(ListAPIView):
             q_search = Q(title__icontains=search) | Q(description__icontains=search)
         else:
             q_search = Q()
-        try:
-            min_rating = float(query_params.get("min_rating", 0))
-        except ValueError:
-            min_rating = 0
-        rating_q = Q(rating__gte=min_rating)
+        min_rating = query_params.get("min_rating")
+
+        if min_rating:
+            try:
+                min_rating = float(min_rating)
+            except ValueError:
+                min_rating = 0
+
+            rating_q = Q(rating__gte=min_rating)
+        else:
+            rating_q = Q()
 
         categories = query_params.getlist("category")
 
