@@ -136,7 +136,7 @@ class EnrollmentCourseApiView(EnrollmentResolverMixin, RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        print(serializer.data)
+
         return Response(serializer.data)
 
 
@@ -152,7 +152,6 @@ class LessonContentApiView(EnrollmentResolverMixin, GenericAPIView):
         return Response(response_data)
 
     def get_queryset(self):
-        print("queryset")
         if self.enrollment:
             q = Q(section__course=self.enrollment.course)
         else:
@@ -237,9 +236,6 @@ class LessonContentApiView(EnrollmentResolverMixin, GenericAPIView):
         return {"assignmentData": serializer.data}
 
     def _get_or_create_video_progress(self, user, content):
-        print("Looking for VideoProgress with:")
-        print("  enrollment_id =", self.enrollment.id)
-        print("  content_id    =", content.id)
         try:
             vp = VideoProgress.objects.select_related("lesson_content_progress").get(
                 lesson_content_progress__enrollment=self.enrollment,
@@ -253,7 +249,6 @@ class LessonContentApiView(EnrollmentResolverMixin, GenericAPIView):
             )
             return vp
         except VideoProgress.DoesNotExist:
-            print("NOT FOUND → creating new one")
             with transaction.atomic():
                 content_progress, created = LessonContentProgress.objects.get_or_create(
                     enrollment=self.enrollment,
