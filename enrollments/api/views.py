@@ -1144,7 +1144,7 @@ class QuizSubmitAttemptsApiView(EnrollmentResolverMixin, GenericAPIView):
 
         # Handle unlimited attempts (max_attempts = 0)
         if max_attempts == 0:
-            attempts_remaining = float("inf")  # Or use None / "Unlimited"
+            attempts_remaining = None  # Or use None / "Unlimited"
             can_attempt = True
         else:
             attempts_remaining = max(0, max_attempts - attempts_used)
