@@ -327,7 +327,7 @@ class EnrollmentProgress(EnrollmentResolverMixin, RetrieveAPIView):
         completed_count = len(completed_lessons)
         bookmarked_lessons = self.get_bookmarked_lessons(enrollment)
         data = {
-            "enrollmentId": enrollment_id,
+            "enrollmentId": enrollment.id,
             "overallProgress": enrollment.progress,
             "completedLessons": completed_lessons,
             "completedCount": completed_count,
@@ -342,14 +342,19 @@ class EnrollmentProgress(EnrollmentResolverMixin, RetrieveAPIView):
         )
 
     def get_completed_lessons(self, enrollment):
-        return Lesson.objects.filter(
-            section__course__enrollments__id=enrollment.id,
-            progress_records__status=LessonProgress.Status.COMPLETED,
-        ).values_list("id", flat=True)
+        return list(
+            Lesson.objects.filter(
+                section__course=enrollment.course,
+                progress_records__enrollment=enrollment,
+                progress_records__status=LessonProgress.Status.COMPLETED,
+            ).values_list("id", flat=True)
+        )
 
     def get_bookmarked_lessons(self, enrollment):
-        return Lesson.objects.filter(bookmarks__enrollment=enrollment).values_list(
-            "id", flat=True
+        return list(
+            Lesson.objects.filter(bookmarks__enrollment=enrollment).values_list(
+                "id", flat=True
+            )
         )
 
 
