@@ -287,10 +287,12 @@ class LessonCompletion(EnrollmentResolverMixin, GenericAPIView):
             content=content, enrollment=self.enrollment
         )
         lesson_content_progress.mark_completed()
-        completed_lessons = qs.filter(
-            progress_records__status=LessonProgress.Status.COMPLETED
-        ).values_list("id", flat=True)
-        completed_count = completed_lessons.count()
+        completed_lessons = list(
+            qs.filter(
+                progress_records__status=LessonProgress.Status.COMPLETED
+            ).values_list("id", flat=True)
+        )
+        completed_count = len(completed_lessons)
         total_lessons = qs.count()
         return Response(
             {
