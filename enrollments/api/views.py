@@ -381,19 +381,32 @@ class LessonVideoProgressApiView(EnrollmentResolverMixin, GenericAPIView):
                 lesson_content_progress__enrollment=self.enrollment,
                 lesson_content_progress__content=lesson_content,
             )
+
             instance_timestamp = video_progress.watched_seconds
-            video_progress.watched_seconds = max(timestamp, instance_timestamp)
+            video_progress.watched_seconds = max(
+                timestamp,
+                instance_timestamp,
+            )
             video_progress.save(update_fields=["watched_seconds"])
+
         except VideoProgress.DoesNotExist:
-            VideoProgress.objects.create(
-                lesson_content_progress__enrollment=self.enrollment,
-                lesson_content_progress__content=lesson_content,
+            lesson_content_progress, _created = (
+                LessonContentProgress.objects.get_or_create(
+                    enrollment=self.enrollment,
+                    content=lesson_content,
+                )
+            )
+
+            video_progress = VideoProgress.objects.create(
+                lesson_content_progress=lesson_content_progress,
                 watched_seconds=timestamp,
             )
 
         VideoWatchEvent.objects.create(
-            video_progress=video_progress, watched_seconds=timestamp
+            video_progress=video_progress,
+            watched_seconds=timestamp,
         )
+
         return Response({"success": True})
 
 
