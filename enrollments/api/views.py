@@ -772,7 +772,10 @@ class QuizSubmitApiView(EnrollmentResolverMixin, GenericAPIView):
         # Single query for all questions with related data
         # Use select_related for OneToOneField relations
         questions = (
-            Question.objects.filter(id__in=question_ids)
+            Question.objects.filter(
+                id__in=question_ids,
+                quiz=quiz_attempt.quiz,
+            )
             .select_related("boolean_answer")
             .prefetch_related(
                 "choices",
@@ -844,26 +847,21 @@ class QuizSubmitApiView(EnrollmentResolverMixin, GenericAPIView):
         }, is_correct
 
     def process_short_answer_question(self, question, user_answer, quiz_attempt):
-        """Process short answer question"""
+        """Process short answer question."""
         QuizAnswer.objects.create(
-            attempt=quiz_attempt, question=question, text_answer=user_answer
+            attempt=quiz_attempt,
+            question=question,
+            text_answer=user_answer,
         )
 
-        # Get accepted answer from select_related
-        try:
-            accepted_answers = question.accepted_answers.values_list(
-                "answer", flat=True
-            )
-            print(accepted_answers)
-            for accepted_answer in accepted_answers:
-                is_correct = (
-                    user_answer.lower().strip() == accepted_answer.lower().strip()
-                )
-                if is_correct:
-                    break
-        except AcceptedAnswer.DoesNotExist:
-            accepted_answers = ["No accepted answer defined"]
-            is_correct = False
+        accepted_answers = list(
+            question.accepted_answers.values_list("answer", flat=True)
+        )
+
+        is_correct = any(
+            user_answer.lower().strip() == accepted_answer.lower().strip()
+            for accepted_answer in accepted_answers
+        )
 
         return {
             "questionId": question.id,
@@ -871,9 +869,11 @@ class QuizSubmitApiView(EnrollmentResolverMixin, GenericAPIView):
             "correctAnswer": ", ".join(accepted_answers),
             "userAnswer": user_answer,
             "questionType": "short_answer",
-            "explanation": "Correct! Well done."
-            if is_correct
-            else "Review the material and try again.",
+            "explanation": (
+                "Correct! Well done."
+                if is_correct
+                else "Review the material and try again."
+            ),
         }, is_correct
 
     def process_true_false_question(self, question, user_answer, quiz_attempt):
