@@ -1402,7 +1402,9 @@ class AssignmentSubmissionApiView(EnrollmentResolverMixin, GenericAPIView):
             # Create file records
             for file in files:
                 AssignmentSubmissionFile.objects.create(
-                    submission=submission, file=file
+                    submission=submission,
+                    file=file,
+                    original_filename=file.name,
                 )
 
         # Serialize the new submission
@@ -1452,9 +1454,11 @@ class AssignmentSubmissionApiView(EnrollmentResolverMixin, GenericAPIView):
         # if max_files and len(files) > max_files:
         #     return False
 
-        accepted_types = (
-            getattr(assignment, "accepted_file_types", "").lower().split(",")
-        )
+        accepted_types = [
+            extension.strip().lower()
+            for extension in getattr(assignment, "accepted_file_types", "").split(",")
+            if extension.strip()
+        ]
         max_size_mb = getattr(assignment, "max_file_size_mb", 50)
         max_size_bytes = max_size_mb * 1024 * 1024
 
