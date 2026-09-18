@@ -4,6 +4,7 @@ import tempfile
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import override_settings
+from rest_framework.test import APIClient
 
 from accounts.models import Role
 from courses.models.category import Category
@@ -21,6 +22,11 @@ def media_root():
         yield
 
     shutil.rmtree(temp_dir)
+
+
+@pytest.fixture
+def api_client():
+    return APIClient()
 
 
 @pytest.fixture
