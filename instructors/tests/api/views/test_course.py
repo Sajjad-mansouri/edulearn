@@ -1,3 +1,4 @@
+from decimal import Decimal
 from unittest.mock import Mock, patch
 
 import pytest
@@ -8,7 +9,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient, APIRequestFactory
 
 from courses.models import Course
-from instructors.api.views import CourseUpdateApiView
+from instructors.api.views import CourseUpdateApiView, InstructorCoursesApiView
+from payments.models import Payment
 
 User = get_user_model()
 
@@ -2019,3 +2021,614 @@ class TestCourseApiView:
         from instructors.api.views import CourseApiView
 
         assert match.func.view_class is CourseApiView
+
+
+@pytest.mark.django_db
+class TestInstructorCoursesApiView:
+    @pytest.fixture
+    def course_list_url(self):
+        return reverse("instructor_api:instructor_course_list")
+
+    def test_unauthenticated_user_cannot_list_courses(
+        self,
+        api_client,
+        course_list_url,
+    ):
+        # Arrange
+        # The client is unauthenticated.
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_student_cannot_list_instructor_courses(
+        self,
+        api_client,
+        student_user,
+        course_list_url,
+    ):
+        # Arrange
+        api_client.force_authenticate(user=student_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_instructor_can_list_courses(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        course_list_url,
+    ):
+        # Arrange
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_list_contains_only_courses_owned_by_request_user(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        student_user,
+        course_list_url,
+    ):
+        # Arrange
+        other_course = Course.objects.create(
+            owner=student_user,
+            title="Another Instructor Course",
+        )
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        returned_ids = {item["id"] for item in response.data["results"]}
+
+        assert instructor_course.id in returned_ids
+        assert other_course.id not in returned_ids
+
+    def test_get_queryset_returns_only_request_users_courses(
+        self,
+        instructor_user,
+        instructor_course,
+        student_user,
+    ):
+        # Arrange
+        other_course = Course.objects.create(
+            owner=student_user,
+            title="Another Instructor Course",
+        )
+
+        request = type(
+            "Request",
+            (),
+            {"user": instructor_user},
+        )()
+
+        view = InstructorCoursesApiView()
+        view.request = request
+
+        # Act
+        queryset = view.get_queryset()
+
+        # Assert
+        assert instructor_course in queryset
+        assert other_course not in queryset
+
+    def test_get_queryset_filters_by_request_user(
+        self,
+        instructor_user,
+        instructor_course,
+        student_user,
+    ):
+        # Arrange
+        other_course = Course.objects.create(
+            owner=student_user,
+            title="Student Course",
+        )
+
+        request = type(
+            "Request",
+            (),
+            {"user": instructor_user},
+        )()
+
+        view = InstructorCoursesApiView()
+        view.request = request
+
+        # Act
+        queryset = view.get_queryset()
+
+        # Assert
+        assert queryset.filter(owner=instructor_user).count() == queryset.count()
+        assert not queryset.filter(pk=other_course.pk).exists()
+
+    def test_course_with_no_payments_has_zero_revenue(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        course_list_url,
+    ):
+        # Arrange
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        course_data = next(
+            item
+            for item in response.data["results"]
+            if item["id"] == instructor_course.id
+        )
+
+        assert course_data["revenue"] == "0.00"
+
+    def test_succeeded_payment_is_included_in_revenue(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        instructor_enrollment,
+        course_list_url,
+    ):
+        # Arrange
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("100.00"),
+            status=Payment.Status.SUCCEEDED,
+        )
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        course_data = next(
+            item
+            for item in response.data["results"]
+            if item["id"] == instructor_course.id
+        )
+
+        assert course_data["revenue"] == "100.00"
+
+    def test_refunded_payment_is_subtracted_from_revenue(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        instructor_enrollment,
+        course_list_url,
+    ):
+        # Arrange
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("100.00"),
+            status=Payment.Status.SUCCEEDED,
+        )
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("30.00"),
+            status=Payment.Status.REFUNDED,
+        )
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        course_data = next(
+            item
+            for item in response.data["results"]
+            if item["id"] == instructor_course.id
+        )
+
+        assert course_data["revenue"] == "70.00"
+
+    def test_multiple_succeeded_payments_are_summed(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        instructor_enrollment,
+        course_list_url,
+    ):
+        # Arrange
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("100.00"),
+            status=Payment.Status.SUCCEEDED,
+        )
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("250.50"),
+            status=Payment.Status.SUCCEEDED,
+        )
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("49.50"),
+            status=Payment.Status.SUCCEEDED,
+        )
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        course_data = next(
+            item
+            for item in response.data["results"]
+            if item["id"] == instructor_course.id
+        )
+
+        assert course_data["revenue"] == "400.00"
+
+    def test_multiple_refunded_payments_are_subtracted(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        instructor_enrollment,
+        course_list_url,
+    ):
+        # Arrange
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("500.00"),
+            status=Payment.Status.SUCCEEDED,
+        )
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("100.00"),
+            status=Payment.Status.REFUNDED,
+        )
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("50.00"),
+            status=Payment.Status.REFUNDED,
+        )
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        course_data = next(
+            item
+            for item in response.data["results"]
+            if item["id"] == instructor_course.id
+        )
+
+        assert course_data["revenue"] == "350.00"
+
+    def test_failed_payment_does_not_affect_revenue(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        instructor_enrollment,
+        course_list_url,
+    ):
+        # Arrange
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("100.00"),
+            status=Payment.Status.SUCCEEDED,
+        )
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("500.00"),
+            status=Payment.Status.FAILED,
+        )
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        course_data = next(
+            item
+            for item in response.data["results"]
+            if item["id"] == instructor_course.id
+        )
+
+        assert course_data["revenue"] == "100.00"
+
+    def test_pending_payment_does_not_affect_revenue(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        instructor_enrollment,
+        course_list_url,
+    ):
+        # Arrange
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("100.00"),
+            status=Payment.Status.SUCCEEDED,
+        )
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("500.00"),
+            status=Payment.Status.PENDING,
+        )
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        course_data = next(
+            item
+            for item in response.data["results"]
+            if item["id"] == instructor_course.id
+        )
+
+        assert course_data["revenue"] == "100.00"
+
+    def test_revenue_is_net_of_succeeded_and_refunded_payments(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        instructor_enrollment,
+        course_list_url,
+    ):
+        # Arrange
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("1000.00"),
+            status=Payment.Status.SUCCEEDED,
+        )
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("250.00"),
+            status=Payment.Status.SUCCEEDED,
+        )
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("125.00"),
+            status=Payment.Status.REFUNDED,
+        )
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("25.00"),
+            status=Payment.Status.REFUNDED,
+        )
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        course_data = next(
+            item
+            for item in response.data["results"]
+            if item["id"] == instructor_course.id
+        )
+
+        # 1000 + 250 - 125 - 25 = 1100
+        assert course_data["revenue"] == "1100.00"
+
+    def test_revenue_does_not_include_payments_from_another_course(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        instructor_enrollment,
+        course_list_url,
+    ):
+        # Arrange
+        other_course = Course.objects.create(
+            owner=instructor_user,
+            title="Second Course",
+        )
+
+        other_enrollment = instructor_enrollment.__class__.objects.create(
+            user=instructor_enrollment.user,
+            course=other_course,
+        )
+
+        Payment.objects.create(
+            enrollment=instructor_enrollment,
+            amount=Decimal("100.00"),
+            status=Payment.Status.SUCCEEDED,
+        )
+        Payment.objects.create(
+            enrollment=other_enrollment,
+            amount=Decimal("900.00"),
+            status=Payment.Status.SUCCEEDED,
+        )
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        course_data = next(
+            item
+            for item in response.data["results"]
+            if item["id"] == instructor_course.id
+        )
+
+        assert course_data["revenue"] == "100.00"
+
+    def test_queryset_has_revenue_annotation(
+        self,
+        instructor_user,
+        instructor_course,
+    ):
+        # Arrange
+        request = type(
+            "Request",
+            (),
+            {"user": instructor_user},
+        )()
+
+        view = InstructorCoursesApiView()
+        view.request = request
+
+        # Act
+        course = view.get_queryset().get(pk=instructor_course.pk)
+
+        # Assert
+        assert course.revenue == Decimal("0.00")
+
+    def test_response_uses_instructor_course_serializer(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:instructor_course_list")
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+
+        result = response.data["results"][0]
+
+        expected_fields = {
+            "id",
+            "title",
+            "version",
+            "rating",
+            "students",
+            "revenue",
+            "thumbnail",
+            "last_updated",
+            "slug",
+            "status",
+            "review_status",
+        }
+
+        assert set(result.keys()) == expected_fields
+
+        assert result["id"] == instructor_course.id
+        assert result["title"] == instructor_course.title
+        assert result["version"] == instructor_course.version
+        assert result["rating"] is None
+        assert result["students"] == instructor_course.enrollments.count()
+        assert result["revenue"] == "0.00"
+        assert result["thumbnail"] is None
+        assert result["slug"] == instructor_course.slug
+        assert result["status"] == instructor_course.status
+        assert result["review_status"] == instructor_course.review_status
+
+    def test_list_returns_empty_results_when_instructor_has_no_courses(
+        self,
+        api_client,
+        instructor_user,
+        course_list_url,
+    ):
+        # Arrange
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["results"] == []
+
+    def test_course_list_does_not_modify_courses(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        course_list_url,
+    ):
+        # Arrange
+        original_title = instructor_course.title
+        original_status = instructor_course.status
+        original_review_status = instructor_course.review_status
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_list_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        instructor_course.refresh_from_db()
+
+        assert instructor_course.title == original_title
+        assert instructor_course.status == original_status
+        assert instructor_course.review_status == original_review_status
+
+    def test_course_list_url_resolves_to_correct_view(
+        self,
+        course_list_url,
+    ):
+        # Arrange
+        from django.urls import resolve
+
+        # Act
+        match = resolve(course_list_url)
+
+        # Assert
+        assert match.func.view_class is InstructorCoursesApiView
+
+    def test_get_queryset_has_deterministic_ordering(
+        self,
+        instructor_user,
+    ):
+        factory = APIRequestFactory()
+        request = factory.get(reverse("instructor_api:instructor_course_list"))
+        request.user = instructor_user
+
+        view = InstructorCoursesApiView()
+        view.request = request
+
+        queryset = view.get_queryset()
+
+        assert queryset.query.order_by == (
+            "-last_updated",
+            "-pk",
+        )

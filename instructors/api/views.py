@@ -113,23 +113,29 @@ class InstructorCoursesApiView(ListAPIView):
     permission_classes = [IsInstructor]
 
     def get_queryset(self):
-        return Course.objects.filter(owner=self.request.user).annotate(
-            revenue=Coalesce(
-                Sum(
-                    "enrollments__payments__amount",
-                    filter=Q(enrollments__payments__status=Payment.Status.SUCCEEDED),
-                ),
-                Value(Decimal("0.00")),
-                output_field=DecimalField(max_digits=12, decimal_places=2),
+        return (
+            Course.objects.filter(owner=self.request.user)
+            .annotate(
+                revenue=Coalesce(
+                    Sum(
+                        "enrollments__payments__amount",
+                        filter=Q(
+                            enrollments__payments__status=Payment.Status.SUCCEEDED
+                        ),
+                    ),
+                    Value(Decimal("0.00")),
+                    output_field=DecimalField(max_digits=12, decimal_places=2),
+                )
+                - Coalesce(
+                    Sum(
+                        "enrollments__payments__amount",
+                        filter=Q(enrollments__payments__status=Payment.Status.REFUNDED),
+                    ),
+                    Value(Decimal("0.00")),
+                    output_field=DecimalField(max_digits=12, decimal_places=2),
+                )
             )
-            - Coalesce(
-                Sum(
-                    "enrollments__payments__amount",
-                    filter=Q(enrollments__payments__status=Payment.Status.REFUNDED),
-                ),
-                Value(Decimal("0.00")),
-                output_field=DecimalField(max_digits=12, decimal_places=2),
-            )
+            .order_by("-last_updated", "-pk")
         )
 
 
