@@ -38,7 +38,9 @@ urlpatterns = [
         name="instructor_course_list",
     ),
     path("students/", views.InstructorStudentsApiView.as_view(), name="students"),
-    path("assignments/", views.InstructorAssignmentsApiView.as_view(), name="students"),
+    path(
+        "assignments/", views.InstructorAssignmentsApiView.as_view(), name="assignments"
+    ),
     path(
         "assignments/<int:id>/download/",
         views.SubmissionDownloadView.as_view(),
