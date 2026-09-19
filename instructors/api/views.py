@@ -57,7 +57,7 @@ class CourseBuilder(APIView):
         course_data, _ = normalize_course_data(request.data)
 
         serializer = CourseSerializer(data=course_data)
-        serializer.is_valid(raise_exception=False)
+        serializer.is_valid(raise_exception=True)
         print(serializer.errors)
         course = CourseService(instructor=request.user).create(
             serializer.validated_data
@@ -75,12 +75,9 @@ class CourseUpdateApiView(GenericAPIView):
     def patch(self, request, *args, **kwargs):
         course_status = kwargs.get("course_status")
         course_data, deleted_ids_dict = normalize_course_data(request.data)
-        print("course data", course_data)
         course = self.get_object()
-        print("course data that places in course serializer\n", course_data)
         serializer = CourseSerializer(instance=course, data=course_data, partial=True)
-        serializer.is_valid(raise_exception=False)
-        print(serializer.errors)
+        serializer.is_valid(raise_exception=True)
 
         course = CourseUpdateService(
             course=course, deleted_ids_dict=deleted_ids_dict
