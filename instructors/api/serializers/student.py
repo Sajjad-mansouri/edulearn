@@ -33,7 +33,7 @@ class InstructorStudentSerializer(serializers.ModelSerializer):
 
     def get_enrollments(self, obj):
         instructor = self.context["request"].user
-        return Enrollment.objects.filter(course__owner=instructor, user=obj)
+        return Enrollment.objects.filter(course__owner=instructor, user=obj.id)
 
     def get_name(self, obj):
         return obj.get_full_name()
@@ -59,7 +59,7 @@ class InstructorStudentSerializer(serializers.ModelSerializer):
         return last.last_activity_at if last else None
 
     def get_status(self, obj):
-        last = obj.enrollments.order_by("-last_activity_at").first()
+        last = self.get_enrollments(obj).order_by("-last_activity_at").first()
 
         return last.activity_status if last else "not_started"
 
