@@ -2,6 +2,7 @@
 from datetime import timedelta
 from decimal import Decimal
 
+from dateutil.relativedelta import relativedelta
 from django.db.models import F, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
@@ -183,9 +184,9 @@ class RevenueService:
             second=0,
             microsecond=0,
         )
-        # Previous YTD: same window last year
-        previous_range_from = range_from - timedelta(days=365)
-        previous_range_to = self.now - timedelta(days=365)
+
+        previous_range_from = range_from - relativedelta(years=1)
+        previous_range_to = self.now - relativedelta(years=1)
 
         return self._period_revenue(
             range_from,

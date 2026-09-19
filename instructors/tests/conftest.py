@@ -6,6 +6,8 @@ from django.contrib.auth import get_user_model
 from django.test import override_settings
 
 from accounts.models import Role
+from courses.models import Course
+from enrollments.models import Enrollment
 
 User = get_user_model()
 
@@ -50,3 +52,20 @@ def student_user(db):
     user.roles.add(role)
 
     return user
+
+
+@pytest.fixture
+def instructor_course(db, instructor_user):
+    return Course.objects.create(
+        title="Django Testing",
+        slug="django-testing",
+        owner=instructor_user,
+    )
+
+
+@pytest.fixture
+def instructor_enrollment(db, instructor_user, instructor_course):
+    return Enrollment.objects.create(
+        user=instructor_user,
+        course=instructor_course,
+    )
