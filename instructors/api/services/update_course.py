@@ -98,67 +98,86 @@ class CourseUpdateService:
             )
 
     def _update_outcomes(self, course, data):
-        """Update course outcomes."""
-
         outcomes = self.deleted_ids_dict.get("outcomes", [])
-        LearningOutcome.objects.filter(id__in=outcomes).delete()
-        for _index, outcome_dict in enumerate(data.get("learning_outcomes", [])):
-            outcome, _ = LearningOutcome.objects.get_or_create(
-                course=course, description=outcome_dict["description"]
+
+        LearningOutcome.objects.filter(
+            course=course,
+            id__in=outcomes,
+        ).delete()
+
+        for outcome_dict in data.get("learning_outcomes", []):
+            LearningOutcome.objects.get_or_create(
+                course=course,
+                description=outcome_dict["description"],
             )
 
     def _update_prerequisites(self, course, data):
-        """Update course prerequisite."""
-
         prerequisites = self.deleted_ids_dict.get("prerequisites", [])
-        Prerequisite.objects.filter(id__in=prerequisites).delete()
+
+        Prerequisite.objects.filter(
+            course=course,
+            id__in=prerequisites,
+        ).delete()
 
         for index, prerequisite_dict in enumerate(data.get("prerequisites", [])):
             prerequisite_id = prerequisite_dict.get("id")
             description = prerequisite_dict["description"]
+
             if prerequisite_id:
                 try:
                     prerequisite = Prerequisite.objects.get(
-                        course=course, id=prerequisite_id
+                        course=course,
+                        id=prerequisite_id,
                     )
-                    prerequisite.description = description
-                    prerequisite.order = index
-                    prerequisite.save()
                 except Prerequisite.DoesNotExist:
                     raise ValidationError(
                         f"Prerequisite with id {prerequisite_id} not found"
                     ) from None
 
+                prerequisite.description = description
+                prerequisite.order = index
+                prerequisite.save()
             else:
-                prerequisite = Prerequisite.objects.create(
-                    course=course, description=description, order=index
+                Prerequisite.objects.create(
+                    course=course,
+                    description=description,
+                    order=index,
                 )
 
     def _update_target_audiences(self, course, data):
-        """Update course target_audience."""
+        target_audiences = self.deleted_ids_dict.get(
+            "target_audiences",
+            [],
+        )
 
-        target_audiences = self.deleted_ids_dict.get("target_audiences", [])
-        TargetAudience.objects.filter(id__in=target_audiences).delete()
+        TargetAudience.objects.filter(
+            course=course,
+            id__in=target_audiences,
+        ).delete()
+
         for index, target_audience_dict in enumerate(data.get("target_audiences", [])):
-            target_audiences_id = target_audience_dict.get("id")
+            target_audience_id = target_audience_dict.get("id")
             description = target_audience_dict.get("description")
 
-            if target_audiences_id:
+            if target_audience_id:
                 try:
                     target_audience = TargetAudience.objects.get(
-                        course=course, id=target_audiences_id
+                        course=course,
+                        id=target_audience_id,
                     )
-                    target_audience.description = description
-                    target_audience.order = index
-                    target_audience.save()
                 except TargetAudience.DoesNotExist:
                     raise ValidationError(
-                        f"TargetAudience with id {target_audiences_id} not found"
+                        f"TargetAudience with id {target_audience_id} not found"
                     ) from None
 
+                target_audience.description = description
+                target_audience.order = index
+                target_audience.save()
             else:
-                target_audience = TargetAudience.objects.create(
-                    course=course, description=description, order=index
+                TargetAudience.objects.create(
+                    course=course,
+                    description=description,
+                    order=index,
                 )
 
     def _update_tags(self, course, data):
@@ -171,42 +190,56 @@ class CourseUpdateService:
             course.tags.set(tags_list)
 
     def _update_course_attachments(self, course, attachments):
-        """Update course attachments."""
+        deleted_attachments = self.deleted_ids_dict.get(
+            "attachments",
+            [],
+        )
 
-        deleted_attachments = self.deleted_ids_dict.get("attachments", [])
-
-        Attachment.objects.filter(id__in=deleted_attachments).delete()
+        Attachment.objects.filter(
+            course=course,
+            id__in=deleted_attachments,
+        ).delete()
 
         for attachment in attachments:
             if attachment.get("id"):
-                Attachment.objects.filter(id=attachment["id"], course=course).update(
-                    file=attachment["file"]
-                )
+                Attachment.objects.filter(
+                    id=attachment["id"],
+                    course=course,
+                ).update(file=attachment["file"])
             elif attachment.get("file"):
-                Attachment.objects.create(course=course, file=attachment["file"])
+                Attachment.objects.create(
+                    course=course,
+                    file=attachment["file"],
+                )
 
     def _update_sections(self, course, sections):
-        """Update course sections and their contents."""
-        # Delete sections not in the update payload
-        print(
-            "sections in _update sections",
-            sections,
-        )
         deleted_sections = self.deleted_ids_dict.get("sections", [])
 
-        Section.objects.filter(id__in=deleted_sections).delete()
-        # section_ids = [section.get("id") for section in sections if section.get("id")]
-        # Section.objects.filter(course=course).exclude(id__in=section_ids).delete()
-        print("sections", sections)
-        print("before loop fo sections")
-        for section_order, section_data in enumerate(sections, start=1):
-            print("**section order", section_order)
+        Section.objects.filter(
+            course=course,
+            id__in=deleted_sections,
+        ).delete()
+
+        for section_order, section_data in enumerate(
+            sections,
+            start=1,
+        ):
             if section_data.get("id"):
-                section = self._update_section(section_data, section_order)
+                section = self._update_section(
+                    section_data,
+                    section_order,
+                )
             else:
-                section = self._create_section(course, section_data, section_order)
-            print("_update_lessons")
-            self._update_lessons(section, section_data.get("lessons", []))
+                section = self._create_section(
+                    course,
+                    section_data,
+                    section_order,
+                )
+
+            self._update_lessons(
+                section,
+                section_data.get("lessons", []),
+            )
 
     def _update_section(self, section_data, order):
         """Update existing section."""
@@ -235,20 +268,37 @@ class CourseUpdateService:
         )
 
     def _update_lessons(self, section, lessons):
-        """Update lessons within a section."""
         deleted_lessons = self.deleted_ids_dict.get("lessons", [])
-        Lesson.objects.filter(id__in=deleted_lessons).delete()
 
-        for lesson_order, lesson_data in enumerate(lessons, start=1):
+        Lesson.objects.filter(
+            section__course=self.course,
+            id__in=deleted_lessons,
+        ).delete()
+
+        for lesson_order, lesson_data in enumerate(
+            lessons,
+            start=1,
+        ):
             if lesson_data.get("id"):
-                lesson = self._update_lesson(lesson_data, lesson_order)
+                lesson = self._update_lesson(
+                    lesson_data,
+                    lesson_order,
+                )
             else:
-                lesson = self._create_lesson(section, lesson_data, lesson_order)
+                lesson = self._create_lesson(
+                    section,
+                    lesson_data,
+                    lesson_order,
+                )
 
             self._update_lesson_completion_criteria(
-                lesson, lesson_data.get("completion_criteria")
+                lesson,
+                lesson_data.get("completion_criteria"),
             )
-            self._update_lesson_content(lesson, lesson_data.get("content", {}))
+            self._update_lesson_content(
+                lesson,
+                lesson_data.get("content", {}),
+            )
 
     def _update_lesson(self, lesson_data, order):
         """Update existing lesson."""
@@ -313,13 +363,21 @@ class CourseUpdateService:
             )
 
     def _update_lesson_content(self, lesson, content):
-        """Update lesson content items."""
+        if not content:
+            return
+
         if content.get("id"):
             lesson_content = self._update_lesson_content_item(content)
         else:
-            lesson_content = self._create_lesson_content(lesson, content)
+            lesson_content = self._create_lesson_content(
+                lesson,
+                content,
+            )
 
-        self._update_specific_content(lesson_content, content)
+        self._update_specific_content(
+            lesson_content,
+            content,
+        )
 
     def _update_lesson_content_item(self, content_data, order=0):
         """Update existing lesson content."""
@@ -348,11 +406,11 @@ class CourseUpdateService:
                 f"Lesson content with id {content_data['id']} not found"
             ) from None
 
-    def _create_lesson_content(self, lesson, content_data, order):
-        """Create new lesson content."""
-
+    def _create_lesson_content(self, lesson, content_data):
         return LessonContent.objects.create(
-            lesson=lesson, content_type=content_data["content_type"], order=order
+            lesson=lesson,
+            content_type=content_data["content_type"],
+            order=0,
         )
 
     def _delete_specific_content(self, lesson_content, pre_lesson_content_type):
@@ -458,7 +516,7 @@ class CourseUpdateService:
 
     def _update_video_captions(self, video, captions):
         """Update video captions."""
-        deleted_captions_ids = self.deleted_ids_dict["captions"]
+        deleted_captions_ids = self.deleted_ids_dict.get("captions", [])
         # caption_ids = [caption.get("id") for caption in captions if caption.get("id")]
         VideoCaption.objects.filter(id__in=deleted_captions_ids).delete()
 
@@ -634,14 +692,22 @@ class CourseUpdateService:
             Assignment.objects.create(
                 content=lesson_content,
                 instructions=assignment_content.get("instructions", ""),
-                max_score=assignment_content.get("max_score"),
+                passing_score=assignment_content.get("passing_score", 70),
+                max_score=assignment_content.get("max_score", 100),
                 due_date=assignment_content.get("due_date"),
                 allow_late_submission=assignment_content.get(
-                    "allow_late_submission", False
+                    "allow_late_submission",
+                    False,
                 ),
-                max_attempts=assignment_content.get("max_attempts"),
-                accepted_file_types=assignment_content.get("accepted_file_types"),
-                max_file_size_mb=assignment_content.get("max_file_size_mb"),
+                max_attempts=assignment_content.get("max_attempts", 1),
+                accepted_file_types=assignment_content.get(
+                    "accepted_file_types",
+                    "",
+                ),
+                max_file_size_mb=assignment_content.get(
+                    "max_file_size_mb",
+                    50,
+                ),
             )
 
     def _get_category_object(self, data):
