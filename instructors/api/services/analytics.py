@@ -1,7 +1,9 @@
 # services.py
-from datetime import timedelta
+
+from datetime import datetime, timedelta
 from decimal import Decimal
 
+from dateutil.relativedelta import relativedelta
 from django.db.models import Avg, Count, F, Max, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import TruncDay, TruncMonth, TruncWeek
 from django.utils import timezone
@@ -445,7 +447,15 @@ class AnalyticService:
         return result
 
     def _trends_last_12_months(self, qs) -> list[dict]:
-        start = (self.now.replace(day=1) - timedelta(days=365)).replace(day=1)
+        current = self.now.replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+
+        start = current - relativedelta(months=11)
 
         monthly = (
             qs.filter(enrolled_at__gte=start)
@@ -456,22 +466,26 @@ class AnalyticService:
         )
 
         month_map = {}
+
         for item in monthly:
-            if item["month"]:
-                label = item["month"].strftime("%b")
-                month_map[label] = item["count"]
+            month = item["month"]
+
+            if month:
+                month_map[(month.year, month.month)] = item["count"]
 
         result = []
-        current = self.now.replace(day=1)
-        for i in range(11, -1, -1):
-            m = (current - timedelta(days=32 * i)).replace(day=1)
-            label = m.strftime("%b")
+
+        for i in range(12):
+            month = start + relativedelta(months=i)
+            key = (month.year, month.month)
+
             result.append(
                 {
-                    "label": label,
-                    "count": month_map.get(label, 0),
+                    "label": month.strftime("%b"),
+                    "count": month_map.get(key, 0),
                 }
             )
+
         return result
 
     # ------------------------------------------------------------------
@@ -587,7 +601,17 @@ class AnalyticService:
         return result
 
     def _revenue_last_12_months(self, qs) -> list[dict]:
-        start = (self.now.replace(day=1) - timedelta(days=365)).replace(day=1)
+        current = self.now.replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+
+        start = current.replace(
+            year=current.year - 1,
+        )
 
         monthly = (
             qs.filter(created_at__gte=start)
@@ -598,27 +622,44 @@ class AnalyticService:
         )
 
         month_map = {}
+
         for item in monthly:
-            if item["month"]:
-                label = item["month"].strftime("%b")
-                amount = item["amount"] or Decimal("0")
+            month = item["month"]
+
+            if month:
+                amount = item["amount"] or Decimal("0.00")
+
                 if isinstance(amount, Decimal):
                     amount = amount.quantize(Decimal("0.01"))
-                month_map[label] = amount
+
+                month_map[(month.year, month.month)] = amount
 
         result = []
-        current = self.now.replace(day=1)
-        for i in range(11, -1, -1):
-            m = (current - timedelta(days=32 * i)).replace(day=1)
-            label = m.strftime("%b")
+
+        for i in range(12):
+            month_number = current.month - 11 + i
+            year = current.year
+
+            while month_number <= 0:
+                month_number += 12
+                year -= 1
+
+            key = (year, month_number)
+
             result.append(
                 {
-                    "label": label,
+                    "label": datetime(
+                        year,
+                        month_number,
+                        1,
+                    ).strftime("%b"),
                     "amount": month_map.get(
-                        label, Decimal("0.00").quantize(Decimal("0.01"))
+                        key,
+                        Decimal("0.00"),
                     ),
                 }
             )
+
         return result
 
     # ------------------------------------------------------------------
@@ -691,27 +732,29 @@ class AnalyticService:
             submitted_at__isnull=False,
             enrollment__status__in=["active", "completed"],
         )
+
         if self.course_slug:
             filters &= Q(enrollment__course__slug=self.course_slug)
 
         if self.range_from is not None:
             filters &= Q(submitted_at__gte=self.range_from)
 
-        best_score_sq = (
+        best_attempt_id = (
             QuizAttempt.objects.filter(
                 enrollment_id=OuterRef("enrollment_id"),
                 quiz_id=OuterRef("quiz_id"),
                 submitted_at__isnull=False,
             )
-            .order_by("-score")
-            .values("score")[:1]
+            .order_by("-score", "-attempt_number")
+            .values("pk")[:1]
         )
 
         qs = (
             QuizAttempt.objects.filter(filters)
-            .annotate(best_score=Subquery(best_score_sq))
+            .annotate(best_attempt_id=Subquery(best_attempt_id))
+            .filter(pk=F("best_attempt_id"))
             .values(course_title=F("enrollment__course__title"))
-            .annotate(avg=Avg("best_score"))
+            .annotate(avg=Avg("score"))
             .order_by("-avg")
         )
 
