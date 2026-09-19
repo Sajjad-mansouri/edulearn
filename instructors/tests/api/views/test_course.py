@@ -1695,3 +1695,327 @@ class TestCourseUpdateApiView:
         view.request = request
 
         return view
+
+
+class TestCourseApiView:
+    @pytest.fixture
+    def course_url(self, instructor_course):
+        return reverse(
+            "instructor_api:course_data",
+            kwargs={"pk": instructor_course.pk},
+        )
+
+    def test_unauthenticated_user_cannot_retrieve_course(
+        self,
+        api_client,
+        course_url,
+    ):
+        # Arrange
+        # api_client is unauthenticated.
+
+        # Act
+        response = api_client.get(course_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_student_cannot_retrieve_instructor_course(
+        self,
+        api_client,
+        student_user,
+        course_url,
+    ):
+        # Arrange
+        api_client.force_authenticate(user=student_user)
+
+        # Act
+        response = api_client.get(course_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_instructor_can_retrieve_owned_course(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        course_url,
+    ):
+        # Arrange
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["id"] == instructor_course.id
+
+    def test_retrieve_returns_course_data(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        course_url,
+    ):
+        # Arrange
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["id"] == instructor_course.id
+        assert response.data["title"] == instructor_course.title
+        assert response.data["subtitle"] == instructor_course.subtitle
+        assert response.data["short_description"] == (
+            instructor_course.short_description
+        )
+        assert response.data["level"] == instructor_course.level
+        assert response.data["language"] == instructor_course.language
+        assert response.data["visibility"] == instructor_course.visibility
+        assert response.data["description"] == instructor_course.description
+        assert response.data["price_type"] == instructor_course.price_type
+
+        assert response.data["price"] == (
+            format(instructor_course.price, ".2f")
+            if instructor_course.price is not None
+            else None
+        )
+
+    def test_retrieve_uses_course_serializer_output(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        course_url,
+    ):
+        # Arrange
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        expected_fields = {
+            "id",
+            "title",
+            "subtitle",
+            "short_description",
+            "category",
+            "level",
+            "language",
+            "duration",
+            "visibility",
+            "description",
+            "price_type",
+            "price",
+            "price_discount",
+            "thumbnail",
+            "promotional_video",
+            "course_trailer",
+            "version",
+            "version_note",
+            "seo_title",
+            "seo_description",
+            "tags",
+            "learning_outcomes",
+            "prerequisites",
+            "target_audiences",
+            "features",
+            "sections",
+            "attachments",
+        }
+
+        assert set(response.data.keys()) == expected_fields
+
+    def test_instructor_cannot_retrieve_course_owned_by_another_user(
+        self,
+        api_client,
+        instructor_user,
+        student_user,
+        instructor_course,
+    ):
+        # Arrange
+        instructor_course.owner = student_user
+        instructor_course.save(update_fields=["owner"])
+
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse(
+            "instructor_api:course_data",
+            kwargs={"pk": instructor_course.pk},
+        )
+
+        # Act
+        response = api_client.get(url)
+
+        # Assert
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_course_owned_by_another_user_is_not_exposed(
+        self,
+        api_client,
+        instructor_user,
+        student_user,
+        instructor_course,
+    ):
+        # Arrange
+        instructor_course.owner = student_user
+        instructor_course.save(update_fields=["owner"])
+
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse(
+            "instructor_api:course_data",
+            kwargs={"pk": instructor_course.pk},
+        )
+
+        # Act
+        response = api_client.get(url)
+
+        # Assert
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["detail"]
+
+    def test_get_queryset_returns_courses_owned_by_request_user(
+        self,
+        instructor_user,
+        instructor_course,
+    ):
+        # Arrange
+        from rest_framework.test import APIRequestFactory
+
+        from instructors.api.views import CourseApiView
+
+        factory = APIRequestFactory()
+        request = factory.get("/courses/")
+        request.user = instructor_user
+
+        view = CourseApiView()
+        view.request = request
+
+        # Act
+        queryset = view.get_queryset()
+
+        # Assert
+        assert instructor_course in queryset
+        assert queryset.filter(owner=instructor_user).count() == queryset.count()
+
+    def test_get_queryset_excludes_courses_owned_by_other_users(
+        self,
+        instructor_user,
+        student_user,
+        instructor_course,
+    ):
+        # Arrange
+        instructor_course.owner = student_user
+        instructor_course.save(update_fields=["owner"])
+
+        from rest_framework.test import APIRequestFactory
+
+        from instructors.api.views import CourseApiView
+
+        factory = APIRequestFactory()
+        request = factory.get("/courses/")
+        request.user = instructor_user
+
+        view = CourseApiView()
+        view.request = request
+
+        # Act
+        queryset = view.get_queryset()
+
+        # Assert
+        assert instructor_course not in queryset
+
+    def test_get_queryset_is_filtered_by_request_user(
+        self,
+        instructor_user,
+        student_user,
+        instructor_course,
+    ):
+        # Arrange
+        from rest_framework.test import APIRequestFactory
+
+        from instructors.api.views import CourseApiView
+
+        factory = APIRequestFactory()
+        request = factory.get("/courses/")
+        request.user = student_user
+
+        view = CourseApiView()
+        view.request = request
+
+        # Act
+        queryset = view.get_queryset()
+
+        # Assert
+        assert instructor_course not in queryset
+        assert not queryset.filter(pk=instructor_course.pk).exists()
+
+    def test_nonexistent_course_returns_404(
+        self,
+        api_client,
+        instructor_user,
+    ):
+        # Arrange
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse(
+            "instructor_api:course_data",
+            kwargs={"pk": 999999999},
+        )
+
+        # Act
+        response = api_client.get(url)
+
+        # Assert
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_retrieve_does_not_modify_course(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        course_url,
+    ):
+        # Arrange
+        original_title = instructor_course.title
+        original_status = instructor_course.status
+        original_review_status = instructor_course.review_status
+
+        api_client.force_authenticate(user=instructor_user)
+
+        # Act
+        response = api_client.get(course_url)
+
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+
+        instructor_course.refresh_from_db()
+
+        assert instructor_course.title == original_title
+        assert instructor_course.status == original_status
+        assert instructor_course.review_status == original_review_status
+
+    def test_course_url_resolves_to_course_api_view(
+        self,
+        instructor_course,
+    ):
+        # Arrange
+        url = reverse(
+            "instructor_api:course_data",
+            kwargs={"pk": instructor_course.pk},
+        )
+
+        # Act
+        match = __import__("django.urls").urls.resolve(url)
+
+        # Assert
+        from instructors.api.views import CourseApiView
+
+        assert match.func.view_class is CourseApiView

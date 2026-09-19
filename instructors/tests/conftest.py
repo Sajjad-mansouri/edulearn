@@ -4,6 +4,7 @@ import tempfile
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import override_settings
+from rest_framework.test import APIClient
 
 from accounts.models import Role
 from courses.models import Course
@@ -69,3 +70,8 @@ def instructor_enrollment(db, instructor_user, instructor_course):
         user=instructor_user,
         course=instructor_course,
     )
+
+
+@pytest.fixture
+def api_client():
+    return APIClient()
