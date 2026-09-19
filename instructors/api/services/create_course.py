@@ -56,23 +56,24 @@ class CourseService:
             title=data.get("title", ""),
             subtitle=data.get("subtitle", ""),
             short_description=data.get("short_description", ""),
-            description=data.get("description"),
+            description=data.get("description", ""),
             thumbnail=data.get("thumbnail"),
-            promotional_video=data.get("promotional_video"),
-            course_trailer=data.get("course_trailer"),
-            language=data.get("language", ""),
-            level=data.get("level"),
-            visibility=data.get("visibility"),
+            promotional_video=data.get("promotional_video", ""),
+            course_trailer=data.get("course_trailer", ""),
+            language=data.get("language", Course.LANGUAGE.ENGLISH),
+            level=data.get("level", Course.Level.ALL_LEVELS),
+            visibility=data.get("visibility", Course.Visibility.PUBLIC),
             category=category,
             duration=data.get("duration"),
-            price_type=data.get("price_type"),
+            price_type=data.get("price_type", Course.PriceType.FREE),
             price=data.get("price"),
-            price_discount=data.get("price_discount"),
-            version=data.get("version"),
-            version_note=data.get("version_note"),
-            seo_title=data.get("seo_title"),
-            seo_description=data.get("seo_description"),
+            price_discount=data.get("price_discount", 0),
+            version=data.get("version", "1.0.0"),
+            version_note=data.get("version_note", ""),
+            seo_title=data.get("seo_title", ""),
+            seo_description=data.get("seo_description", ""),
         )
+
         return course
 
     def _create_course_attachments(self, course, attachments):
@@ -86,7 +87,7 @@ class CourseService:
 
     def _add_tags(self, course, data):
         tags_list = []
-        for tag_dict in data.get("tags"):
+        for tag_dict in data.get("tags", []):
             tag, _ = Tag.objects.get_or_create(name=tag_dict["name"])
             tags_list.append(tag)
         course.tags.add(*tags_list)
@@ -133,7 +134,10 @@ class CourseService:
     def _create_lesson_content(self, lesson, content):
         content_type = content["content_type"]
         lesson_content = LessonContent.objects.create(
-            lesson=lesson, content_type=content_type, order=0
+            lesson=lesson,
+            title=content.get("title", lesson.title),
+            content_type=content_type,
+            order=0,
         )
 
         self._create_lesson_content_attachments(lesson, lesson_content, content)
@@ -260,6 +264,7 @@ class CourseService:
         Assignment.objects.create(
             content=lesson_content,
             instructions=assignment_content.get("instructions"),
+            passing_score=assignment_content.get("passing_score"),
             max_score=assignment_content.get("max_score"),
             due_date=assignment_content.get("due_date"),
             allow_late_submission=assignment_content.get("allow_late_submission"),
