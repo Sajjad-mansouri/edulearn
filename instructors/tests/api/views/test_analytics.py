@@ -6,9 +6,14 @@ from unittest.mock import Mock
 import pytest
 from django.urls import resolve, reverse
 from rest_framework import status
+from rest_framework.test import APIRequestFactory
 
 from instructors.api import views
-from instructors.api.serializers import AnalyticSerializer
+from instructors.api.serializers import (
+    AnalyticFilterCoursesSerializer,
+    AnalyticSerializer,
+)
+from instructors.api.views import InstructorAnalyticsCoursesApiView
 
 
 @pytest.fixture
@@ -695,3 +700,314 @@ class TestInstructorAnalyticsApiView:
         url = reverse("instructor_api:analytics")
 
         assert url.endswith("/analytics/")
+
+
+@pytest.mark.django_db
+class TestInstructorAnalyticsCoursesApiView:
+    def test_unauthenticated_user_cannot_list_analytics_courses(
+        self,
+        api_client,
+    ):
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_student_cannot_list_analytics_courses(
+        self,
+        api_client,
+        student_user,
+    ):
+        api_client.force_authenticate(user=student_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_instructor_can_list_analytics_courses(
+        self,
+        api_client,
+        instructor_user,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_returns_only_authenticated_instructors_courses(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        assert response.data == [
+            {
+                "slug": instructor_course.slug,
+                "title": instructor_course.title,
+            }
+        ]
+
+    def test_does_not_return_courses_owned_by_another_user(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+        student_user,
+    ):
+        instructor_course.owner = student_user
+        instructor_course.save(update_fields=["owner"])
+
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == []
+
+    def test_get_queryset_returns_only_authenticated_instructors_courses(
+        self,
+        instructor_user,
+        instructor_course,
+    ):
+        factory = APIRequestFactory()
+        request = factory.get(reverse("instructor_api:analytics_courses"))
+        request.user = instructor_user
+
+        view = InstructorAnalyticsCoursesApiView()
+        view.request = request
+
+        queryset = view.get_queryset()
+
+        assert list(queryset) == [instructor_course]
+
+    def test_get_queryset_excludes_courses_owned_by_other_users(
+        self,
+        instructor_user,
+        instructor_course,
+        student_user,
+    ):
+        instructor_course.owner = student_user
+        instructor_course.save(update_fields=["owner"])
+
+        factory = APIRequestFactory()
+        request = factory.get(reverse("instructor_api:analytics_courses"))
+        request.user = instructor_user
+
+        view = InstructorAnalyticsCoursesApiView()
+        view.request = request
+
+        queryset = view.get_queryset()
+
+        assert not queryset.filter(pk=instructor_course.pk).exists()
+
+    def test_get_queryset_uses_request_user_as_owner_filter(
+        self,
+        instructor_user,
+        instructor_course,
+    ):
+        factory = APIRequestFactory()
+        request = factory.get(reverse("instructor_api:analytics_courses"))
+        request.user = instructor_user
+
+        view = InstructorAnalyticsCoursesApiView()
+        view.request = request
+
+        queryset = view.get_queryset()
+
+        assert queryset.model is instructor_course.__class__
+        assert list(queryset.values_list("owner_id", flat=True)) == [instructor_user.pk]
+
+    def test_instructor_with_no_courses_gets_empty_list(
+        self,
+        api_client,
+        instructor_user,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == []
+
+    def test_response_contains_course_slug_and_title(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        course_data = response.data[0]
+
+        assert course_data["slug"] == instructor_course.slug
+        assert course_data["title"] == instructor_course.title
+
+    def test_response_does_not_contain_unexpected_course_fields(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        assert set(response.data[0].keys()) == {
+            "slug",
+            "title",
+        }
+
+    def test_response_is_not_paginated(
+        self,
+        api_client,
+        instructor_user,
+        instructor_course,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.data, list)
+        assert "results" not in response.data
+
+    def test_uses_expected_serializer(
+        self,
+        instructor_user,
+    ):
+        factory = APIRequestFactory()
+        request = factory.get(reverse("instructor_api:analytics_courses"))
+        request.user = instructor_user
+
+        view = InstructorAnalyticsCoursesApiView()
+        view.request = request
+
+        assert view.get_serializer_class() is AnalyticFilterCoursesSerializer
+
+    def test_pagination_is_disabled(
+        self,
+        instructor_user,
+    ):
+        factory = APIRequestFactory()
+        request = factory.get(reverse("instructor_api:analytics_courses"))
+        request.user = instructor_user
+
+        view = InstructorAnalyticsCoursesApiView()
+        view.request = request
+
+        assert view.pagination_class is None
+
+    def test_serializer_contains_only_slug_and_title_fields(self):
+        serializer = AnalyticFilterCoursesSerializer()
+
+        assert set(serializer.fields.keys()) == {
+            "slug",
+            "title",
+        }
+
+    def test_serializer_serializes_course(
+        self,
+        instructor_course,
+    ):
+        serializer = AnalyticFilterCoursesSerializer(
+            instance=instructor_course,
+        )
+
+        assert serializer.data == {
+            "slug": instructor_course.slug,
+            "title": instructor_course.title,
+        }
+
+    def test_post_method_is_not_allowed(
+        self,
+        api_client,
+        instructor_user,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.post(url)
+
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_put_method_is_not_allowed(
+        self,
+        api_client,
+        instructor_user,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.put(url)
+
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_patch_method_is_not_allowed(
+        self,
+        api_client,
+        instructor_user,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.patch(url)
+
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_delete_method_is_not_allowed(
+        self,
+        api_client,
+        instructor_user,
+    ):
+        api_client.force_authenticate(user=instructor_user)
+
+        url = reverse("instructor_api:analytics_courses")
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_url_resolves_to_expected_view(self):
+        url = reverse("instructor_api:analytics_courses")
+
+        match = resolve(url)
+
+        assert match.func.view_class is InstructorAnalyticsCoursesApiView
+
+    def test_url_has_expected_path(self):
+        url = reverse("instructor_api:analytics_courses")
+
+        assert url.endswith("/analytics/courses/")
