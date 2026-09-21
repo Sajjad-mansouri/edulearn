@@ -6,9 +6,27 @@ from django.contrib.auth import get_user_model
 from django.test import override_settings
 
 from courses.models import Course
-from curriculums.models import Lesson, Section
+from curriculums.models import FileContent, Lesson, LessonContent, Section
 
 User = get_user_model()
+
+
+@pytest.fixture
+def lesson_content(db, lesson):
+    return LessonContent.objects.create(
+        lesson=lesson,
+        title="File Content",
+        content_type=LessonContent.Type.FILE,
+        order=1,
+    )
+
+
+@pytest.fixture
+def file_content(db, lesson_content):
+    return FileContent.objects.create(
+        content=lesson_content,
+        file_url="https://example.com/material.pdf",
+    )
 
 
 @pytest.fixture
