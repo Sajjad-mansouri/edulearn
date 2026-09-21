@@ -24,7 +24,7 @@ def handle_checkout_session_completed(session: dict) -> None:
         )
     except Payment.DoesNotExist:
         logger.error("Payment %s not found for completed session", payment_id)
-
+        return
     if payment.status == Payment.Status.SUCCEEDED:
         return
 
