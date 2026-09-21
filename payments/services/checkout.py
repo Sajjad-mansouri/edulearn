@@ -1,3 +1,5 @@
+# payments/services/checkout.py
+
 import logging
 from datetime import timedelta
 from decimal import Decimal
@@ -18,80 +20,132 @@ from payments.exceptions import (
 from payments.models import Payment
 
 logger = logging.getLogger(__name__)
+
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 class CheckoutService:
     @staticmethod
-    @transaction.atomic
     def create_checkout_session(*, enrollment: Enrollment, user) -> Payment:
         """
         Create a pending Payment record and a Stripe Checkout Session.
-        Raises domain exceptions on validation/bussiness rule failures.
+
+        The enrollment/payment validation and creation are performed inside
+        a short database transaction. Stripe is called after that transaction
+        has committed so that a Stripe failure does not roll back the Payment
+        audit record.
+
+        Raises:
+            EnrollmentAccessDenied:
+                When the enrollment does not belong to the user.
+
+            EnrollmentNotPayable:
+                When the enrollment is not pending.
+
+            CourseNotPriced:
+                When the course has no valid positive price.
+
+            EnrollmentAlreadyPaid:
+                When the enrollment already has a successful payment.
+
+            StripeSessionCreationFailed:
+                When Stripe fails to create the Checkout Session.
         """
 
-        enrollment = (
-            Enrollment.objects.select_for_update()
-            .select_related("course", "user")
-            .get(pk=enrollment.pk)
-        )
-        if enrollment.user_id != user.id:
-            raise EnrollmentAccessDenied("You do not have access to this enrollment.")
+        # ---------------------------------------------------------------
+        # Phase 1:
+        # Validate the enrollment and create/reuse the Payment.
+        #
+        # Keep this transaction short. Do not call Stripe while holding
+        # the database row lock.
+        # ---------------------------------------------------------------
+        with transaction.atomic():
+            enrollment = (
+                Enrollment.objects.select_for_update()
+                .select_related("course", "user")
+                .get(pk=enrollment.pk)
+            )
 
-        if enrollment.status != Enrollment.Status.PENDING:
-            raise EnrollmentNotPayable("This enrollment is not available for payment.")
+            if enrollment.user_id != user.id:
+                raise EnrollmentAccessDenied(
+                    "You do not have access to this enrollment."
+                )
 
-        course = enrollment.course
+            if enrollment.status != Enrollment.Status.PENDING:
+                raise EnrollmentNotPayable(
+                    "This enrollment is not available for payment."
+                )
 
-        if course.price is None:
-            raise CourseNotPriced("This course does not have a price.")
+            course = enrollment.course
 
-        if course.price <= Decimal("0"):
-            raise CourseNotPriced("This course does not require payment.")
+            if course.price is None:
+                raise CourseNotPriced("This course does not have a price.")
 
-        if enrollment.payments.filter(status=Payment.Status.SUCCEEDED).exists():
-            raise EnrollmentAlreadyPaid("A payment for this enrollment already exists.")
-        existing_pending = (
-            enrollment.payments.filter(status=Payment.Status.PENDING)
-            .order_by("-created_at")
-            .first()
-        )
+            if course.price <= Decimal("0"):
+                raise CourseNotPriced("This course does not require payment.")
 
-        if existing_pending:
-            if timezone.now() - existing_pending.created_at > timedelta(minutes=1):
-                existing_pending.status = Payment.Status.CANCELLED
-                existing_pending.save(update_fields=["status", "updated_at"])
+            if enrollment.payments.filter(status=Payment.Status.SUCCEEDED).exists():
+                raise EnrollmentAlreadyPaid(
+                    "A payment for this enrollment already exists."
+                )
 
-            else:
-                if existing_pending.stripe_checkout_url:
+            existing_pending = (
+                enrollment.payments.filter(status=Payment.Status.PENDING)
+                .order_by("-created_at")
+                .first()
+            )
+
+            if existing_pending:
+                payment_age = timezone.now() - existing_pending.created_at
+
+                if payment_age > timedelta(minutes=1):
+                    existing_pending.status = Payment.Status.CANCELLED
+                    existing_pending.save(
+                        update_fields=[
+                            "status",
+                            "updated_at",
+                        ]
+                    )
+                elif existing_pending.stripe_checkout_url:
                     return existing_pending
 
-        currency = getattr(course, "currency", "usd").lower()
-        payment = Payment.objects.create(
-            enrollment=enrollment,
-            amount=course.price,
-            currency=currency,
-            status=Payment.Status.PENDING,
-            payment_type=Payment.Type.ONE_TIME,
-            description=f"Enrollment payment for {course.title}",
-            metadata={
-                "enrollment_id": str(enrollment.id),
-                "course_id": str(course.id),
-                "user_id": str(user.id),
-            },
-        )
+            currency = getattr(course, "currency", "usd").lower()
 
+            payment = Payment.objects.create(
+                enrollment=enrollment,
+                amount=course.price,
+                currency=currency,
+                status=Payment.Status.PENDING,
+                payment_type=Payment.Type.ONE_TIME,
+                description=f"Enrollment payment for {course.title}",
+                metadata={
+                    "enrollment_id": str(enrollment.id),
+                    "course_id": str(course.id),
+                    "user_id": str(user.id),
+                },
+            )
+
+        # ---------------------------------------------------------------
+        # Phase 2:
+        # Stripe API call.
+        #
+        # The database transaction above has already committed.
+        # Therefore, if Stripe fails, the Payment remains available
+        # for auditing and can be marked FAILED.
+        # ---------------------------------------------------------------
         try:
+            unit_amount = int((payment.amount * Decimal("100")).quantize(Decimal("1")))
+
             session = stripe.checkout.Session.create(
                 mode="payment",
                 line_items=[
                     {
                         "price_data": {
                             "currency": payment.currency,
-                            "product_data": {"name": course.title},
-                            "unit_amount": int(
-                                (payment.amount * Decimal("100")).quantize(Decimal("1"))
-                            ),
+                            "product_data": {
+                                "name": course.title,
+                            },
+                            "unit_amount": unit_amount,
                         },
                         "quantity": 1,
                     }
@@ -111,20 +165,35 @@ class CheckoutService:
                 ),
                 cancel_url=(f"{settings.FRONTEND_URL}/payment/cancel"),
             )
+
         except stripe.StripeError as exc:
             logger.exception(
-                "Stripe checkout session creation failed for payment_id%s", payment.id
+                "Stripe checkout session creation failed for payment_id=%s",
+                payment.id,
             )
+
             payment.status = Payment.Status.FAILED
             payment.error_message = str(exc)
-            payment.save(update_fields=["status", "error_message", "updated_at"])
+
+            payment.save(
+                update_fields=[
+                    "status",
+                    "error_message",
+                    "updated_at",
+                ]
+            )
 
             raise StripeSessionCreationFailed(
-                "Unable to create then payment session."
+                "Unable to create the payment session."
             ) from exc
 
+        # ---------------------------------------------------------------
+        # Phase 3:
+        # Persist the successful Stripe Checkout Session information.
+        # ---------------------------------------------------------------
         payment.stripe_checkout_session_id = session.id
         payment.stripe_checkout_url = session.url
+
         payment.save(
             update_fields=[
                 "stripe_checkout_session_id",
@@ -132,4 +201,5 @@ class CheckoutService:
                 "updated_at",
             ]
         )
+
         return payment
