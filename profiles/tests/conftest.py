@@ -4,6 +4,7 @@ import tempfile
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import override_settings
+from rest_framework.test import APIClient
 
 from profiles.models import Profile
 
@@ -18,6 +19,11 @@ def media_root():
         yield
 
     shutil.rmtree(temp_dir)
+
+
+@pytest.fixture
+def api_client():
+    return APIClient()
 
 
 @pytest.fixture
@@ -50,3 +56,9 @@ def another_profile(db, another_user):
     return Profile.objects.create(
         user=another_user,
     )
+
+
+@pytest.fixture
+def authenticated_client(api_client, test_user):
+    api_client.force_authenticate(user=test_user)
+    return api_client
