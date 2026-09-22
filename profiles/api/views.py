@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import generics, mixins, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -71,28 +72,44 @@ class StudentProfileUpdateView(generics.UpdateAPIView):
     def get_object(self):
         return self.request.user.profile.student_profile
 
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.serializer_class(instance, data=request.data)
+
+        serializer = self.serializer_class(
+            instance,
+            data=request.data,
+            partial=kwargs.get("partial", False),
+        )
         serializer.is_valid(raise_exception=True)
 
         self.perform_update(serializer)
-        serializer = StudentProfileSerializer(request.user.profile.student_profile)
-        return Response(serializer.data)
+
+        response_serializer = StudentProfileSerializer(
+            request.user.profile.student_profile
+        )
+
+        return Response(response_serializer.data)
 
     def perform_update(self, serializer):
-        # This is where we update BOTH models in one request
         user_serializer = UserUpdateSerializer(
-            self.request.user, data=self.request.data, partial=True
+            self.request.user,
+            data=self.request.data,
+            partial=True,
         )
         user_serializer.is_valid(raise_exception=True)
-        user_serializer.save()
+
         profile_serializer = ProfileSerializer(
-            self.request.user.profile, data=self.request.data, partial=True
+            self.request.user.profile,
+            data=self.request.data,
+            partial=True,
         )
         profile_serializer.is_valid(raise_exception=True)
+
+        user_serializer.save()
         profile_serializer.save()
         serializer.save()
+
         return user_serializer, profile_serializer, serializer
 
 
