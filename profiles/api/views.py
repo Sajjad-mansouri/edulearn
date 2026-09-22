@@ -126,31 +126,45 @@ class InstructorProfileUpdateView(generics.UpdateAPIView):
     def get_object(self):
         return self.request.user.profile.instructor_profile
 
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.serializer_class(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=False)
-        print("error", serializer.errors)
+
+        serializer = self.serializer_class(
+            instance,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
 
         self.perform_update(serializer)
-        serializer = InstructorProfileSerializer(
+
+        response_serializer = InstructorProfileSerializer(
             request.user.profile.instructor_profile
         )
-        return Response(serializer.data)
+
+        return Response(response_serializer.data)
 
     def perform_update(self, serializer):
-        # This is where we update BOTH models in one request
         user_serializer = UserUpdateSerializer(
-            self.request.user, data=self.request.data, partial=True
+            self.request.user,
+            data=self.request.data,
+            partial=True,
         )
-        user_serializer.is_valid(raise_exception=True)
-        user_serializer.save()
+
         profile_serializer = ProfileSerializer(
-            self.request.user.profile, data=self.request.data, partial=True
+            self.request.user.profile,
+            data=self.request.data,
+            partial=True,
         )
+
+        user_serializer.is_valid(raise_exception=True)
         profile_serializer.is_valid(raise_exception=True)
+
+        user_serializer.save()
         profile_serializer.save()
         serializer.save()
+
         return user_serializer, profile_serializer, serializer
 
 
