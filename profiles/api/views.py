@@ -207,12 +207,7 @@ class ProfileSocialLinkViewSet(
     serializer_class = SocialLinkSerializer
 
     def get_queryset(self):
-        print(self.request.data)
         return self.request.user.profile.social_links.all()
-
-    def create(self, request, *args, **kwargs):
-        print(request.data)
-        return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(profile=self.request.user.profile)

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from django.core.files import File
@@ -24,7 +24,7 @@ class TestAssignmentSerializer:
             instructions="Submit the completed assignment.",
             passing_score=75,
             max_score=100,
-            due_date=datetime(2026, 9, 30, 12, 0, tzinfo=timezone.utc),
+            due_date=datetime(2026, 9, 30, 12, 0, tzinfo=UTC),
             allow_late_submission=True,
             max_attempts=3,
             accepted_file_types="pdf,docx",

@@ -12,6 +12,7 @@ class TestCreateCertificateTask:
         test_user,
         course,
         monkeypatch,
+        enrollment_completion_signal_disabled,
     ):
         create_certificate = Mock()
         monkeypatch.setattr(
@@ -40,6 +41,7 @@ class TestCreateCertificateTask:
         course,
         progress,
         monkeypatch,
+        enrollment_completion_signal_disabled,
     ):
         create_certificate = Mock()
         monkeypatch.setattr(
@@ -74,6 +76,7 @@ class TestCreateCertificateTask:
         course,
         status,
         monkeypatch,
+        enrollment_completion_signal_disabled,
     ):
         create_certificate = Mock()
         monkeypatch.setattr(
@@ -92,10 +95,46 @@ class TestCreateCertificateTask:
 
         create_certificate.assert_called_once_with(enrollment)
 
+    def test_does_not_create_certificate_when_certificate_already_exists(
+        self,
+        test_user,
+        course,
+        monkeypatch,
+        enrollment_completion_signal_disabled,
+    ):
+        create_certificate = Mock()
+        monkeypatch.setattr(
+            "enrollments.tasks.create_certificate",
+            create_certificate,
+        )
+
+        enrollment = Enrollment.objects.create(
+            user=test_user,
+            course=course,
+            status=Enrollment.Status.COMPLETED,
+            progress=100,
+        )
+
+        # Import the actual Certificate model used by the project
+        # and create the corresponding certificate here.
+        #
+        # Replace the import below if Certificate is exposed from
+        # enrollments.models.__init__.
+        from certificates.models import Certificate
+
+        Certificate.objects.create(
+            enrollment=enrollment,
+        )
+
+        create_certificate_task.run(enrollment.id)
+
+        create_certificate.assert_not_called()
+
     def test_returns_without_error_when_enrollment_does_not_exist(
         self,
         db,
         monkeypatch,
+        enrollment_completion_signal_disabled,
     ):
         create_certificate = Mock()
         monkeypatch.setattr(

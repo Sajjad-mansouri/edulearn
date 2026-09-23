@@ -71,9 +71,17 @@ class CourseSerializer(serializers.ModelSerializer):
 
         if obj.id in best_sellers:
             return "bestseller"
+
+        if obj.published_at is None:
+            return ""
+
         now = self.context["now"]
-        if now - obj.published_at <= timedelta(days=settings.NEW_COUSRE_RANGE):
+
+        if now - obj.published_at <= timedelta(
+            days=settings.NEW_COUSRE_RANGE,
+        ):
             return "new"
+
         return ""
 
 

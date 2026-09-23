@@ -101,18 +101,22 @@ class CoursesApiView(ListAPIView):
                 students=Count("enrollments", distinct=True),
             )
             .filter(q)
+            .order_by("-published_at", "-pk")
         )
 
     def map_duration(self, duration):
         q = Q()
+
         if duration == "short":
             q = Q(duration__lte=timedelta(hours=3))
         elif duration == "medium":
-            q = Q(duration__gte=timedelta(hours=3)) & Q(
-                duration__lte=timedelta(hours=10)
+            q = Q(
+                duration__gt=timedelta(hours=3),
+                duration__lte=timedelta(hours=10),
             )
         elif duration == "long":
-            q = Q(duration__gte=timedelta(hours=10))
+            q = Q(duration__gt=timedelta(hours=10))
+
         return q
 
     def get_query_q(self):
@@ -161,7 +165,9 @@ class CoursesApiView(ListAPIView):
         categories = query_params.getlist("category")
 
         subcategories = query_params.getlist("subcategory")
-        subcategories = [item for item in subcategories if not item.startswith("all")]
+        subcategories = [
+            item for item in subcategories if not item.lower().startswith("all")
+        ]
         category_slugs = categories + subcategories
         category_q = Q(category__slug__in=category_slugs) if category_slugs else Q()
 

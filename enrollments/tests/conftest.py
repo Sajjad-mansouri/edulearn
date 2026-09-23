@@ -3,6 +3,7 @@ import tempfile
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save
 from django.test import override_settings
 from rest_framework.test import APIClient
 
@@ -10,6 +11,7 @@ from accounts.models import Role
 from courses.models.category import Category
 from courses.models.course import Course
 from enrollments.models import Enrollment
+from enrollments.signals import enrollment_completed
 
 User = get_user_model()
 
@@ -87,3 +89,19 @@ def another_user_enrollment(another_user, course):
         course=course,
         status=Enrollment.Status.ACTIVE,
     )
+
+
+@pytest.fixture
+def enrollment_completion_signal_disabled():
+    post_save.disconnect(
+        enrollment_completed,
+        sender=Enrollment,
+    )
+
+    try:
+        yield
+    finally:
+        post_save.connect(
+            enrollment_completed,
+            sender=Enrollment,
+        )

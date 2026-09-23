@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.test import APIRequestFactory
@@ -209,19 +210,16 @@ class TestCoursesApiView:
         request_factory,
         query_string="",
     ):
-        """
-        Prepare the view exactly enough for direct method testing.
-
-        APIView.setup() initializes format_kwarg.
-        initialize_request() wraps the Django request as a DRF Request,
-        which provides query_params.
-        """
         request = request_factory.get(
             f"/courses/{query_string}",
         )
 
         view.setup(request)
         view.request = view.initialize_request(request)
+
+        # get_serializer_context() calls APIView.get_serializer_context(),
+        # which expects format_kwarg to exist.
+        view.format_kwarg = None
 
         return request
 
@@ -739,6 +737,26 @@ class TestCoursesApiView:
 
         assert rated_published_course.pk in course_ids
 
+    def test_get_queryset_excludes_unrated_courses_when_minimum_rating_is_zero(
+        self,
+        courses_view,
+        request_factory,
+        rated_published_course,
+        unrated_published_course,
+    ):
+        queryset = self.get_queryset(
+            courses_view,
+            request_factory,
+            "?min_rating=0",
+        )
+
+        course_ids = set(
+            queryset.values_list("pk", flat=True),
+        )
+
+        assert rated_published_course.pk in course_ids
+        assert unrated_published_course.pk not in course_ids
+
     # ------------------------------------------------------------------
     # Category filtering
     # ------------------------------------------------------------------
@@ -792,6 +810,7 @@ class TestCoursesApiView:
             category=child_category,
             status="published",
             duration=timedelta(hours=3),
+            published_at=timezone.now(),
         )
 
         enrollment = Enrollment.objects.create(
@@ -842,6 +861,28 @@ class TestCoursesApiView:
             another_rated_published_course.pk,
         }
 
+    def test_get_queryset_ignores_subcategory_values_starting_with_all_case_insensitive(
+        self,
+        courses_view,
+        request_factory,
+        rated_published_course,
+        another_rated_published_course,
+    ):
+        queryset = self.get_queryset(
+            courses_view,
+            request_factory,
+            "?subcategory=All",
+        )
+
+        course_ids = set(
+            queryset.values_list("pk", flat=True),
+        )
+
+        assert course_ids == {
+            rated_published_course.pk,
+            another_rated_published_course.pk,
+        }
+
     # ------------------------------------------------------------------
     # Duration filtering
     # ------------------------------------------------------------------
@@ -860,6 +901,7 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=2),
+            published_at=timezone.now(),
         )
 
         long_course = Course.objects.create(
@@ -868,6 +910,7 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=12),
+            published_at=timezone.now(),
         )
 
         for current_course in (
@@ -913,6 +956,7 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=5),
+            published_at=timezone.now(),
         )
 
         short_course = Course.objects.create(
@@ -921,6 +965,7 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=2),
+            published_at=timezone.now(),
         )
 
         long_course = Course.objects.create(
@@ -929,6 +974,7 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=12),
+            published_at=timezone.now(),
         )
 
         for current_course in (
@@ -976,6 +1022,7 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=12),
+            published_at=timezone.now(),
         )
 
         short_course = Course.objects.create(
@@ -984,6 +1031,7 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=2),
+            published_at=timezone.now(),
         )
 
         for current_course in (
@@ -1015,13 +1063,132 @@ class TestCoursesApiView:
         assert long_course.pk in course_ids
         assert short_course.pk not in course_ids
 
+    def test_get_queryset_short_duration_includes_exactly_three_hours(
+        self,
+        courses_view,
+        request_factory,
+        test_user,
+        category,
+    ):
+        course = Course.objects.create(
+            title="Three Hour Course",
+            owner=test_user,
+            category=category,
+            status="published",
+            duration=timedelta(hours=3),
+            published_at=timezone.now(),
+        )
+
+        queryset = self.get_queryset(
+            courses_view,
+            request_factory,
+            "?duration=short",
+        )
+
+        assert queryset.filter(pk=course.pk).exists()
+
+    def test_get_queryset_medium_duration_excludes_exactly_three_hours(
+        self,
+        courses_view,
+        request_factory,
+        test_user,
+        category,
+    ):
+        course = Course.objects.create(
+            title="Three Hour Course",
+            owner=test_user,
+            category=category,
+            status="published",
+            duration=timedelta(hours=3),
+            published_at=timezone.now(),
+        )
+
+        queryset = self.get_queryset(
+            courses_view,
+            request_factory,
+            "?duration=medium",
+        )
+
+        assert not queryset.filter(pk=course.pk).exists()
+
+    def test_get_queryset_medium_duration_includes_exactly_ten_hours(
+        self,
+        courses_view,
+        request_factory,
+        test_user,
+        category,
+    ):
+        course = Course.objects.create(
+            title="Ten Hour Course",
+            owner=test_user,
+            category=category,
+            status="published",
+            duration=timedelta(hours=10),
+            published_at=timezone.now(),
+        )
+
+        queryset = self.get_queryset(
+            courses_view,
+            request_factory,
+            "?duration=medium",
+        )
+
+        assert queryset.filter(pk=course.pk).exists()
+
+    def test_get_queryset_long_duration_excludes_exactly_ten_hours(
+        self,
+        courses_view,
+        request_factory,
+        test_user,
+        category,
+    ):
+        course = Course.objects.create(
+            title="Ten Hour Course",
+            owner=test_user,
+            category=category,
+            status="published",
+            duration=timedelta(hours=10),
+            published_at=timezone.now(),
+        )
+
+        queryset = self.get_queryset(
+            courses_view,
+            request_factory,
+            "?duration=long",
+        )
+
+        assert not queryset.filter(pk=course.pk).exists()
+
+    def test_get_queryset_long_duration_includes_more_than_ten_hours(
+        self,
+        courses_view,
+        request_factory,
+        test_user,
+        category,
+    ):
+        course = Course.objects.create(
+            title="Long Course",
+            owner=test_user,
+            category=category,
+            status="published",
+            duration=timedelta(hours=10, minutes=1),
+            published_at=timezone.now(),
+        )
+
+        queryset = self.get_queryset(
+            courses_view,
+            request_factory,
+            "?duration=long",
+        )
+
+        assert queryset.filter(pk=course.pk).exists()
+
     def test_get_queryset_accepts_multiple_durations(
         self,
         courses_view,
         request_factory,
         test_user,
         category,
-        another_user,
     ):
         short_course = Course.objects.create(
             title="Short Course",
@@ -1029,6 +1196,7 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=2),
+            published_at=timezone.now(),
         )
 
         medium_course = Course.objects.create(
@@ -1037,6 +1205,7 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=5),
+            published_at=timezone.now(),
         )
 
         long_course = Course.objects.create(
@@ -1045,24 +1214,8 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=12),
+            published_at=timezone.now(),
         )
-
-        for current_course in (
-            short_course,
-            medium_course,
-            long_course,
-        ):
-            enrollment = Enrollment.objects.create(
-                user=another_user,
-                course=current_course,
-                status=Enrollment.Status.COMPLETED,
-            )
-
-            CourseFeedback.objects.create(
-                enrollment=enrollment,
-                rating=5,
-                comment="Course feedback",
-            )
 
         queryset = self.get_queryset(
             courses_view,
@@ -1079,13 +1232,14 @@ class TestCoursesApiView:
             long_course.pk,
         }
 
+        assert medium_course.pk not in course_ids
+
     def test_get_queryset_ignores_unknown_duration(
         self,
         courses_view,
         request_factory,
         test_user,
         category,
-        another_user,
     ):
         first_course = Course.objects.create(
             title="First Course",
@@ -1093,6 +1247,7 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=2),
+            published_at=timezone.now(),
         )
 
         second_course = Course.objects.create(
@@ -1101,23 +1256,8 @@ class TestCoursesApiView:
             category=category,
             status="published",
             duration=timedelta(hours=12),
+            published_at=timezone.now(),
         )
-
-        for current_course in (
-            first_course,
-            second_course,
-        ):
-            enrollment = Enrollment.objects.create(
-                user=another_user,
-                course=current_course,
-                status=Enrollment.Status.COMPLETED,
-            )
-
-            CourseFeedback.objects.create(
-                enrollment=enrollment,
-                rating=5,
-                comment="Course feedback",
-            )
 
         queryset = self.get_queryset(
             courses_view,
@@ -1237,6 +1377,7 @@ class TestCoursesApiView:
         context = courses_view.get_serializer_context()
 
         assert context["now"] is not None
+        assert timezone.is_aware(context["now"])
 
     def test_get_serializer_context_contains_request(
         self,
@@ -1251,6 +1392,64 @@ class TestCoursesApiView:
         context = courses_view.get_serializer_context()
 
         assert context["request"] is courses_view.request
+
+    # ------------------------------------------------------------------
+    # Serializer badge behavior
+    # ------------------------------------------------------------------
+
+    def test_get_badge_returns_empty_string_when_published_at_is_none(
+        self,
+        rated_published_course,
+        request_factory,
+        courses_view,
+    ):
+        rated_published_course.published_at = None
+        rated_published_course.save(
+            update_fields=["published_at"],
+        )
+
+        self.setup_request(
+            courses_view,
+            request_factory,
+        )
+
+        with patch(
+            "courses.api.views.get_best_seller_ids",
+            return_value=[],
+        ):
+            serializer = CourseSerializer(
+                rated_published_course,
+                context=courses_view.get_serializer_context(),
+            )
+
+        assert serializer.data["badge"] == ""
+
+    def test_get_badge_returns_bestseller_before_new(
+        self,
+        rated_published_course,
+        request_factory,
+        courses_view,
+    ):
+        rated_published_course.published_at = timezone.now()
+        rated_published_course.save(
+            update_fields=["published_at"],
+        )
+
+        self.setup_request(
+            courses_view,
+            request_factory,
+        )
+
+        with patch(
+            "courses.api.views.get_best_seller_ids",
+            return_value=[rated_published_course.pk],
+        ):
+            serializer = CourseSerializer(
+                rated_published_course,
+                context=courses_view.get_serializer_context(),
+            )
+
+        assert serializer.data["badge"] == "bestseller"
 
     # ------------------------------------------------------------------
     # API endpoint
