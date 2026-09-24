@@ -31,7 +31,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to fetch lesson content');
             const data = await response.json();
-            console.log("lesson content", data)
+
             return data;
         } catch (error) {
             console.warn('Using dummy lesson content:', error.message);
@@ -47,7 +47,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to fetch video resume point');
             const data = await response.json();
-            console.log("get video resume point", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to fetch resume point:', error.message);
@@ -67,7 +67,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to save video resume point');
             const data = await response.json();
-            console.log("save video resume", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to save resume point:', error.message);
@@ -87,7 +87,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to submit lesson completion');
             const data = await response.json();
-            console.log("submit lesson completion", data)
+
             return data;
         } catch (error) {
             console.warn('Using dummy completion response:', error.message);
@@ -107,7 +107,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to submit quiz answers');
             const data = await response.json();
-            console.log("quiz submit response", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to submit quiz:', error.message);
@@ -126,7 +126,6 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to fetch quiz attempt status');
             const data = await response.json();
-            console.log("quiz attempt status", data)
             return data;
         } catch (error) {
             console.warn('Failed to fetch quiz attempts:', error.message);
@@ -148,7 +147,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to fetch assignment details');
             const data = await response.json();
-            console.log("assignment details", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to fetch assignment details:', error.message);
@@ -180,7 +179,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to submit assignment');
             const data = await response.json();
-            console.log("assignment submit response", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to submit assignment:', error.message);
@@ -199,7 +198,6 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to fetch enrollment progress');
             const data = await response.json();
-            console.log('enrollment progress', data)
             return data;
         } catch (error) {
             console.warn('Failed to fetch progress:', error.message);
@@ -222,7 +220,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to toggle bookmark');
             const data = await response.json();
-            console.log("bookmark", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to toggle bookmark:', error.message);
@@ -1631,7 +1629,7 @@ class LearningInterface {
         this.currentSegmentStart = timestamp;
         this.lastVideoTimeUpdate = timestamp;
 
-        console.log(`Initialized watched segments from resume point: 0 - ${timestamp} seconds`);
+
     }
 
     handleVideoTimeUpdate = () => {
@@ -1983,7 +1981,7 @@ class LearningInterface {
 
         try {
             const result = await ApiService.getVideoResumePoint(enrollmentId, lessonId);
-            console.log("loadVideoResumePoint", result)
+
             if (result && result.success && result.timestamp > 0) {
                 this.videoResumeTimestamp = result.timestamp;
                 this.videoResumeLoaded = true;

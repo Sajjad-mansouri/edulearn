@@ -80,7 +80,7 @@ class CourseService:
 
     def _get_category_object(self, data):
         category = data.get("category", "")
-        print("data", data)
+
         return category
 
     def _add_tags(self, course, data):
@@ -104,11 +104,6 @@ class CourseService:
 
     def _create_lessons(self, section, lessons):
         for lesson_order, lesson_data in enumerate(lessons, start=1):
-            print(
-                'lesson_data["duration"]',
-                lesson_data["duration"],
-                type(lesson_data["duration"]),
-            )
             lesson = Lesson.objects.create(
                 section=section,
                 title=lesson_data["title"],
@@ -180,7 +175,7 @@ class CourseService:
         source = "file"
         if video_content["external_url"] != "":
             source = "url"
-        print(video_content)
+
         video_content_obj = VideoContent.objects.create(
             content=lesson_content,
             source=source,

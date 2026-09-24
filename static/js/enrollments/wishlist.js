@@ -27,7 +27,7 @@ class WishlistPage {
     }
 
     async init() {
-        console.log('WishlistPage initializing...');
+
         this.bindEvents();
 
         try {
@@ -150,7 +150,7 @@ class WishlistPage {
     // DATA LOADING
     // ============================================
     async loadWishlist() {
-        console.log('Loading wishlist...');
+
         this.showSkeletons();
 
         try {
@@ -166,7 +166,7 @@ class WishlistPage {
 
             if (response && response.ok) {
                 const data = await response.json();
-                console.log('API Response:', data);
+
 
                 // Store pagination info from API
                 this.apiPagination = {
@@ -243,57 +243,7 @@ class WishlistPage {
     // ============================================
     getDummyWishlist() {
         const now = Date.now();
-        return [
-            {
-                id: 1, title: 'Advanced Machine Learning', instructor: 'Dr. Sarah Chen',
-                thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=340&fit=crop',
-                rating: 4.8, reviewCount: 2400, difficulty: 'intermediate', duration: '48h',
-                price: 49.99, originalPrice: 79.99, category: 'machine-learning',
-                dateSaved: new Date(now - 2 * 86400000), slug: 'advanced-ml'
-            },
-            {
-                id: 2, title: 'Full-Stack Web Development Bootcamp', instructor: 'Mike Johnson',
-                thumbnail: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=600&h=340&fit=crop',
-                rating: 4.6, reviewCount: 1800, difficulty: 'beginner', duration: '52h',
-                price: 0, originalPrice: null, category: 'web-development',
-                dateSaved: new Date(now - 5 * 86400000), slug: 'fullstack-web-bootcamp'
-            },
-            {
-                id: 3, title: 'NLP with Transformers', instructor: 'Dr. Emily Wong',
-                thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=340&fit=crop',
-                rating: 4.7, reviewCount: 890, difficulty: 'advanced', duration: '36h',
-                price: 44.99, originalPrice: 59.99, category: 'machine-learning',
-                dateSaved: new Date(now - 3 * 86400000), slug: 'nlp-transformers'
-            },
-            {
-                id: 4, title: 'Computer Vision Mastery', instructor: 'Prof. James Kim',
-                thumbnail: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600&h=340&fit=crop',
-                rating: 4.9, reviewCount: 3100, difficulty: 'advanced', duration: '40h',
-                price: 54.99, originalPrice: 89.99, category: 'machine-learning',
-                dateSaved: new Date(now - 7 * 86400000), slug: 'computer-vision-mastery'
-            },
-            {
-                id: 5, title: 'Reinforcement Learning Specialization', instructor: 'Dr. David Silver',
-                thumbnail: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&h=340&fit=crop',
-                rating: 4.8, reviewCount: 1500, difficulty: 'advanced', duration: '44h',
-                price: 0, originalPrice: null, category: 'machine-learning',
-                dateSaved: new Date(now - 1 * 86400000), slug: 'reinforcement-learning'
-            },
-            {
-                id: 6, title: 'AWS Cloud Architecture', instructor: 'Priya Patel',
-                thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=340&fit=crop',
-                rating: 4.5, reviewCount: 2100, difficulty: 'intermediate', duration: '38h',
-                price: 39.99, originalPrice: 69.99, category: 'cloud',
-                dateSaved: new Date(now - 10 * 86400000), slug: 'aws-cloud-architecture'
-            },
-            {
-                id: 7, title: 'iOS App Development with SwiftUI', instructor: 'Alex Rivera',
-                thumbnail: 'https://images.unsplash.com/photo-1621839673705-6617adf9e890?w=600&h=340&fit=crop',
-                rating: 4.7, reviewCount: 1200, difficulty: 'intermediate', duration: '45h',
-                price: 59.99, originalPrice: 94.99, category: 'mobile',
-                dateSaved: new Date(now - 14 * 86400000), slug: 'ios-swiftui'
-            }
-        ];
+        return [];
     }
 
     // ============================================
@@ -739,7 +689,7 @@ class WishlistPage {
     copyCourseLink(id) {
         const item = this.allItems.find(i => i.id === id);
         if (!item) return;
-        console.log(item)
+
         const url = `${window.location.origin}/course/${item.courseId}/${item.slug}/`;
         navigator.clipboard.writeText(url).then(() => this.showToast('Link copied to clipboard!'));
     }
@@ -869,11 +819,11 @@ class WishlistPage {
     }
 
     forceHideLoader() {
-        console.log('Force hiding loader...');
+
 
         const loadingOverlay = document.getElementById('loadingOverlay');
         if (loadingOverlay) {
-            console.log('Found loadingOverlay, hiding it');
+
             loadingOverlay.style.display = 'none';
             loadingOverlay.style.visibility = 'hidden';
             loadingOverlay.style.opacity = '0';
@@ -981,11 +931,11 @@ class WishlistPage {
 let wishlistPage;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded - Initializing WishlistPage');
+
 
     try {
         wishlistPage = new WishlistPage();
-        console.log('WishlistPage initialized successfully');
+
     } catch (error) {
         console.error('Failed to initialize WishlistPage:', error);
 
@@ -1000,7 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global fallback: hide loader after 3 seconds
 setTimeout(() => {
-    console.log('Fallback: Force hiding loader after timeout');
+
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
         loadingOverlay.style.display = 'none';

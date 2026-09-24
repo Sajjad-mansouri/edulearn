@@ -87,7 +87,7 @@ class InstructorRevenuePage {
             }
 
             const revenueData = await response.json();
-            console.log("revenue", revenueData);
+
 
             // Fetch first page of transactions for main display
             const transactionUrl = `${baseUrl}/api/v1/instructor/transactions/?page=1&page_size=8`;
@@ -103,12 +103,12 @@ class InstructorRevenuePage {
             }
 
             const transactionData = await transactionResponse.json();
-            console.log("transactionData", transactionData);
+
 
             // Map the API data to the expected format
             this.data = this.mapRevenueData(revenueData, transactionData);
 
-            console.log('Revenue data loaded:', this.data);
+
             this.renderAll();
 
         } catch (error) {
@@ -217,7 +217,7 @@ class InstructorRevenuePage {
             }
 
             const transactionData = await response.json();
-            console.log("Paged transactionData", transactionData);
+
 
             // Map transactions
             this.currentTransactions = this.mapTransactions(transactionData.results || []);
@@ -245,7 +245,7 @@ class InstructorRevenuePage {
     }
 
     renderAll() {
-        console.log('Rendering all components...');
+
         this.renderSummaryCards();
         this.renderCourseBreakdown();
         this.renderTransactions();
@@ -370,7 +370,7 @@ class InstructorRevenuePage {
     // TRANSACTIONS MODAL
     // ============================================
     async openTransactionsModal() {
-        console.log('Opening transactions modal');
+
         this.currentPage = 1;
         this.searchTerm = '';
 
@@ -521,9 +521,7 @@ class InstructorRevenuePage {
 
     showFilterFeedback() {
         const periodLabel = document.getElementById('periodFilter')?.options[document.getElementById('periodFilter')?.selectedIndex]?.text;
-        if (periodLabel) {
-            console.log(`Showing revenue data for: ${periodLabel}`);
-        }
+
     }
 
     showSkeletons() {
@@ -581,72 +579,7 @@ class InstructorRevenuePage {
 
     // Keep dummy data methods for fallback
     getDummyRevenue(period = '30') {
-        const baseData = {
-            '7': {
-                summary: {
-                    lifetime: { value: 38500, trend: null, direction: null },
-                    periodRevenue: { value: 980, trend: 12, direction: 'up' },
-                    ytd: { value: 22400, trend: 22, direction: 'up' }
-                },
-                courseBreakdown: [
-                    { course: 'Python for Data Science', amount: 320 },
-                    { course: 'Machine Learning A-Z', amount: 210 },
-                    { course: 'Deep Learning Specialization', amount: 180 },
-                    { course: 'Data Engineering Essentials', amount: 120 },
-                    { course: 'SQL for Data Analysis', amount: 90 },
-                    { course: 'Cloud Computing AWS', amount: 60 }
-                ],
-                transactions: this.generateTransactions(7)
-            },
-            '30': {
-                summary: {
-                    lifetime: { value: 38500, trend: null, direction: null },
-                    periodRevenue: { value: 4820, trend: 18, direction: 'up' },
-                    ytd: { value: 22400, trend: 22, direction: 'up' }
-                },
-                courseBreakdown: [
-                    { course: 'Python for Data Science', amount: 1500 },
-                    { course: 'Machine Learning A-Z', amount: 980 },
-                    { course: 'Deep Learning Specialization', amount: 820 },
-                    { course: 'Data Engineering Essentials', amount: 650 },
-                    { course: 'SQL for Data Analysis', amount: 480 },
-                    { course: 'Cloud Computing AWS', amount: 390 }
-                ],
-                transactions: this.generateTransactions(30)
-            },
-            '90': {
-                summary: {
-                    lifetime: { value: 38500, trend: null, direction: null },
-                    periodRevenue: { value: 14500, trend: 15, direction: 'up' },
-                    ytd: { value: 22400, trend: 22, direction: 'up' }
-                },
-                courseBreakdown: [
-                    { course: 'Python for Data Science', amount: 4800 },
-                    { course: 'Machine Learning A-Z', amount: 3100 },
-                    { course: 'Deep Learning Specialization', amount: 2600 },
-                    { course: 'Data Engineering Essentials', amount: 1800 },
-                    { course: 'SQL for Data Analysis', amount: 1200 },
-                    { course: 'Cloud Computing AWS', amount: 1000 }
-                ],
-                transactions: this.generateTransactions(90)
-            },
-            '365': {
-                summary: {
-                    lifetime: { value: 38500, trend: null, direction: null },
-                    periodRevenue: { value: 38500, trend: 25, direction: 'up' },
-                    ytd: { value: 22400, trend: 22, direction: 'up' }
-                },
-                courseBreakdown: [
-                    { course: 'Python for Data Science', amount: 12500 },
-                    { course: 'Machine Learning A-Z', amount: 8200 },
-                    { course: 'Deep Learning Specialization', amount: 6800 },
-                    { course: 'Data Engineering Essentials', amount: 4500 },
-                    { course: 'SQL for Data Analysis', amount: 3200 },
-                    { course: 'Cloud Computing AWS', amount: 2100 }
-                ],
-                transactions: this.generateTransactions(365)
-            }
-        };
+        const baseData = {};
 
         return baseData[period] || baseData['30'];
     }

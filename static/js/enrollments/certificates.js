@@ -17,7 +17,7 @@ class CertificatesPage {
     }
 
     async init() {
-        console.log('CertificatesPage initializing...');
+
         this.bindEvents();
 
         try {
@@ -92,7 +92,7 @@ class CertificatesPage {
     // DATA LOADING
     // ============================================
     async loadCertificates() {
-        console.log('Loading certificates...');
+
         this.showSkeletons();
 
         try {
@@ -108,7 +108,7 @@ class CertificatesPage {
 
             if (response && response.ok) {
                 const data = await response.json();
-                console.log('API Response:', data);
+
 
                 // Handle paginated response
                 const certificates = data.results || data || [];
@@ -153,80 +153,7 @@ class CertificatesPage {
     // ============================================
     getDummyCertificates() {
         const now = Date.now();
-        return [
-            {
-                id: 1,
-                certificateId: 'h1231-fwefwf',
-                courseTitle: 'course',
-                courseSlug: 'course',
-                instructor: 'Dr Ford',
-                completionDate: new Date('2026-08-28T19:56:15.700705+03:30'),
-                progress: 100,
-                completed: true,
-                design: 'certificate-design-1',
-                studentName: 'edward wan'
-            },
-            {
-                id: 2,
-                certificateId: 'CERT-2026-0002',
-                courseTitle: 'Full-Stack Web Development Bootcamp',
-                courseSlug: 'fullstack-web-bootcamp',
-                instructor: 'Mike Johnson',
-                completionDate: new Date(now - 5 * 86400000),
-                progress: 100,
-                completed: true,
-                design: 'certificate-design-2',
-                studentName: 'edward wan'
-            },
-            {
-                id: 3,
-                certificateId: 'CERT-2026-0003',
-                courseTitle: 'NLP with Transformers',
-                courseSlug: 'nlp-transformers',
-                instructor: 'Dr. Emily Wong',
-                completionDate: new Date(now - 1 * 86400000),
-                progress: 100,
-                completed: true,
-                design: 'certificate-design-3',
-                studentName: 'edward wan'
-            },
-            {
-                id: 4,
-                certificateId: 'CERT-2026-0004',
-                courseTitle: 'Computer Vision Mastery',
-                courseSlug: 'computer-vision-mastery',
-                instructor: 'Prof. James Kim',
-                completionDate: new Date(now - 7 * 86400000),
-                progress: 85,
-                completed: false,
-                design: 'certificate-design-4',
-                studentName: 'edward wan'
-            },
-            {
-                id: 5,
-                certificateId: 'CERT-2026-0005',
-                courseTitle: 'Reinforcement Learning Specialization',
-                courseSlug: 'reinforcement-learning',
-                instructor: 'Dr. David Silver',
-                completionDate: new Date(now - 3 * 86400000),
-                progress: 60,
-                completed: false,
-                design: 'certificate-design-1',
-                studentName: 'edward wan'
-            },
-            {
-                id: 6,
-                certificateId: 'CERT-2026-0006',
-                courseTitle: 'AWS Cloud Architecture',
-                courseSlug: 'aws-cloud-architecture',
-                instructor: 'Priya Patel',
-                completionDate: new Date(now - 10 * 86400000),
-                progress: 100,
-                completed: true,
-                design: 'certificate-design-2',
-                studentName: 'edward wan'
-            }
-        ];
+        return [];
     }
 
     // ============================================
@@ -417,7 +344,7 @@ class CertificatesPage {
         try {
             const downloadUrl = `${baseUrl}/api/v1/enrollment/certificate/${certificate.id}/download/`;
 
-            console.log('Loading PDF from:', downloadUrl);
+
 
             // Fetch PDF
             const response = await auth.authenticatedRequest(
@@ -454,7 +381,7 @@ class CertificatesPage {
                         downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
                     }
 
-                    console.log('PDF loaded successfully');
+
                 } else {
                     // Not a PDF, show error
                     previewElement.innerHTML = `
@@ -559,7 +486,7 @@ class CertificatesPage {
         try {
             const downloadUrl = `${baseUrl}/certificate/${cert.id}/download/`;
 
-            console.log('Downloading certificate from:', downloadUrl);
+
 
             const response = await auth.authenticatedRequest(
                 downloadUrl,
@@ -674,7 +601,7 @@ class CertificatesPage {
     }
 
     forceHideLoader() {
-        console.log('Force hiding loader...');
+
 
         const loadingOverlay = document.getElementById('loadingOverlay');
         if (loadingOverlay) {
@@ -767,11 +694,11 @@ class CertificatesPage {
 let certificatesPage;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded - Initializing CertificatesPage');
+
 
     try {
         certificatesPage = new CertificatesPage();
-        console.log('CertificatesPage initialized successfully');
+
     } catch (error) {
         console.error('Failed to initialize CertificatesPage:', error);
 
@@ -786,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global fallback: hide loader after 3 seconds
 setTimeout(() => {
-    console.log('Fallback: Force hiding loader after timeout');
+
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
         loadingOverlay.style.display = 'none';

@@ -48,100 +48,18 @@ class FiltersLoader {
             const data = await response.json()
             this.renderAllFilters(data);
 
-            // ==========================================
-            // DUMMY DATA - Comment out for production
-            // ==========================================
-            // await new Promise(resolve => setTimeout(resolve, 200));
-            // const dummyData = this.getDummyFilters();
-            // this.renderAllFilters(dummyData);
+
 
         } catch (error) {
             console.error('Error loading filters:', error);
-            const dummyData = this.getDummyFilters();
-            this.renderAllFilters(dummyData);
+
         }
     }
 
     getDummyFilters() {
         return {
             // Categories with their subcategories
-            categories: this.includeCategories ? [
-                {
-                    value: 'programming',
-                    label: 'Programming',
-                    icon: 'fa-code',
-                    count: 2450,
-                    subcategories: [
-                        { value: 'python', label: 'Python', count: 845 },
-                        { value: 'javascript', label: 'JavaScript', count: 720 },
-                        { value: 'web-development', label: 'Web Development', count: 650 },
-                        { value: 'mobile', label: 'Mobile Development', count: 280 },
-                        { value: 'database', label: 'Database', count: 165 }
-                    ]
-                },
-                {
-                    value: 'data-science',
-                    label: 'Data Science',
-                    icon: 'fa-chart-bar',
-                    count: 1850,
-                    subcategories: [
-                        { value: 'machine-learning', label: 'Machine Learning', count: 620 },
-                        { value: 'deep-learning', label: 'Deep Learning', count: 340 },
-                        { value: 'python', label: 'Python for Data', count: 520 },
-                        { value: 'data-visualization', label: 'Data Visualization', count: 280 },
-                        { value: 'statistics', label: 'Statistics', count: 195 },
-                        { value: 'nlp', label: 'NLP', count: 120 }
-                    ]
-                },
-                {
-                    value: 'business',
-                    label: 'Business',
-                    icon: 'fa-briefcase',
-                    count: 1200,
-                    subcategories: [
-                        { value: 'management', label: 'Management', count: 380 },
-                        { value: 'finance', label: 'Finance', count: 320 },
-                        { value: 'marketing', label: 'Marketing', count: 290 },
-                        { value: 'entrepreneurship', label: 'Entrepreneurship', count: 210 }
-                    ]
-                },
-                {
-                    value: 'design',
-                    label: 'Design',
-                    icon: 'fa-palette',
-                    count: 950,
-                    subcategories: [
-                        { value: 'ui-ux', label: 'UI/UX Design', count: 350 },
-                        { value: 'graphic-design', label: 'Graphic Design', count: 280 },
-                        { value: 'web-design', label: 'Web Design', count: 200 },
-                        { value: '3d', label: '3D & Animation', count: 120 }
-                    ]
-                },
-                {
-                    value: 'photography',
-                    label: 'Photography',
-                    icon: 'fa-camera',
-                    count: 680,
-                    subcategories: [
-                        { value: 'digital', label: 'Digital Photography', count: 250 },
-                        { value: 'portrait', label: 'Portrait Photography', count: 180 },
-                        { value: 'editing', label: 'Photo Editing', count: 150 },
-                        { value: 'video', label: 'Video Production', count: 100 }
-                    ]
-                },
-                {
-                    value: 'marketing',
-                    label: 'Marketing',
-                    icon: 'fa-bullhorn',
-                    count: 540,
-                    subcategories: [
-                        { value: 'digital', label: 'Digital Marketing', count: 200 },
-                        { value: 'social-media', label: 'Social Media', count: 160 },
-                        { value: 'content', label: 'Content Marketing', count: 100 },
-                        { value: 'seo', label: 'SEO', count: 80 }
-                    ]
-                }
-            ] : [],
+            categories: this.includeCategories ? : [],
             ratings: [
                 { value: '4.5', label: '4.5 & above', stars: 5 },
                 { value: '4.0', label: '4.0 & above', stars: 4 },

@@ -44,7 +44,7 @@
       });
 
       const url = `${auth.baseURL}/register/`;
-      console.log(userData)
+
       try {
         const response = await fetch(url, {
           method: 'POST',

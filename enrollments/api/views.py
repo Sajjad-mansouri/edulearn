@@ -55,7 +55,7 @@ from .serializers import (
 class CurrentUserEnrollmentStatus(GenericAPIView):
     def get(self, request, *args, **kwargs):
         course_id = kwargs.get("course_id")
-        print("course_id", course_id)
+
         if course_id:
             course = get_object_or_404(Course, id=course_id)
             enrollment = Enrollment.objects.filter(
@@ -82,7 +82,7 @@ class EnrollmentCourseApiView(EnrollmentResolverMixin, RetrieveAPIView):
 
     def get_queryset(self):
         # For a specific course, get all sections with lessons and attachment info
-        print("enrollment", self.enrollment)
+
         if self.enrollment:
             q = Q(id=self.enrollment.course_id)
         else:
@@ -241,12 +241,7 @@ class LessonContentApiView(EnrollmentResolverMixin, GenericAPIView):
                 lesson_content_progress__enrollment=self.enrollment,
                 lesson_content_progress__content=content,
             )
-            print(
-                "FOUND VideoProgress id =",
-                vp.id,
-                "watched_seconds =",
-                vp.watched_seconds,
-            )
+
             return vp
         except VideoProgress.DoesNotExist:
             with transaction.atomic():
@@ -281,7 +276,7 @@ class LessonCompletion(EnrollmentResolverMixin, GenericAPIView):
     def post(self, request, enrollment_id, lesson_id):
         instance = self.get_object()
         qs = self.get_queryset()
-        print("instance in lessoncomletion", instance)
+
         content = instance.content
         lesson_content_progress, _created = LessonContentProgress.objects.get_or_create(
             content=content, enrollment=self.enrollment

@@ -23,7 +23,7 @@ class RevenueService:
     def __init__(self, instructor, period: str = "30"):
         self.instructor = instructor
         self.period = str(period).lower().strip() if period else "30"
-        print("period", period)
+
         if self.period not in self.ALLOWED_PERIODS:
             self.period = "30"
 
@@ -200,7 +200,7 @@ class RevenueService:
         Course breakdown respects the selected period.
         For period="all" it returns lifetime breakdown per course.
         """
-        print("range from", self.range_from)
+
         payment_qs = Payment.objects.filter(self.base_payment_q)
         payment_qs = self._apply_date_filter(payment_qs, "paid_at", self.range_from)
 

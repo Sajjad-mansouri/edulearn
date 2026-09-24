@@ -149,7 +149,7 @@ class CourseCatalogPage {
 
         if (this.activeFilters.subcategory.length > 0) {
             this.activeFilters.subcategory.forEach(sub => {
-                console.log(sub)
+
                 params.append('subcategory', sub);
             });
         }
@@ -195,7 +195,7 @@ class CourseCatalogPage {
             );
             const data = await response.json();
             this.currentCourses = this.mapData(data.results);
-            console.log(this.currentCourses)
+
             this.totalResults = data.total || data.count || 0;
             this.totalPages = data.total_pages || Math.ceil(this.totalResults / this.perPage);
             // ==========================================
@@ -310,20 +310,7 @@ class CourseCatalogPage {
     }
 
     getAllDummyCourses() {
-        return [
-            { id: 1, title: 'Python for Data Science', instructor: 'Dr. Sarah Chen', category: 'data-science', subcategory: 'python', rating: 4.8, ratingCount: 2450, students: 12450, level: 'intermediate', duration: '42h', price: 49.99, originalPrice: 79.99, language: 'en', badge: 'bestseller', thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=600&h=340&fit=crop', slug: 'python-data-science' },
-            { id: 2, title: 'Machine Learning A-Z', instructor: 'Kirill Eremenko', category: 'data-science', subcategory: 'machine-learning', rating: 4.6, ratingCount: 1800, students: 8900, level: 'beginner', duration: '38h', price: 54.99, originalPrice: 89.99, language: 'en', badge: 'bestseller', thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=340&fit=crop', slug: 'ml-az' },
-            { id: 3, title: 'Deep Learning Specialization', instructor: 'Andrew Ng', category: 'data-science', subcategory: 'machine-learning', rating: 4.9, ratingCount: 3100, students: 15000, level: 'advanced', duration: '56h', price: 0, originalPrice: null, language: 'en', badge: 'new', thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=340&fit=crop', slug: 'deep-learning' },
-            { id: 4, title: 'Full-Stack Web Development Bootcamp', instructor: 'Mike Johnson', category: 'programming', subcategory: 'web-development', rating: 4.5, ratingCount: 2100, students: 18000, level: 'beginner', duration: '52h', price: 59.99, originalPrice: 99.99, language: 'en', badge: 'bestseller', thumbnail: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=600&h=340&fit=crop', slug: 'fullstack-bootcamp' },
-            { id: 5, title: 'Advanced JavaScript Concepts', instructor: 'Alex Rivera', category: 'programming', subcategory: 'web-development', rating: 4.7, ratingCount: 890, students: 5600, level: 'advanced', duration: '28h', price: 44.99, originalPrice: 69.99, language: 'en', badge: null, thumbnail: 'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=600&h=340&fit=crop', slug: 'advanced-js' },
-            { id: 6, title: 'UI/UX Design Masterclass', instructor: 'Priya Patel', category: 'design', subcategory: 'web-development', rating: 4.4, ratingCount: 1500, students: 7200, level: 'all-levels', duration: '32h', price: 39.99, originalPrice: 74.99, language: 'en', badge: null, thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=340&fit=crop', slug: 'uiux-masterclass' },
-            { id: 7, title: 'AWS Cloud Architecture', instructor: 'James Kim', category: 'programming', subcategory: 'cloud', rating: 4.3, ratingCount: 1200, students: 4800, level: 'intermediate', duration: '36h', price: 49.99, originalPrice: 79.99, language: 'en', badge: null, thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=340&fit=crop', slug: 'aws-cloud' },
-            { id: 8, title: 'Digital Marketing Strategy', instructor: 'Emma Wilson', category: 'marketing', subcategory: 'web-development', rating: 4.6, ratingCount: 980, students: 6200, level: 'beginner', duration: '24h', price: 34.99, originalPrice: 59.99, language: 'en', badge: null, thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=340&fit=crop', slug: 'digital-marketing' },
-            { id: 9, title: 'React Native Mobile Development', instructor: 'Carlos Mendez', category: 'programming', subcategory: 'web-development', rating: 4.8, ratingCount: 760, students: 3400, level: 'intermediate', duration: '40h', price: 64.99, originalPrice: 94.99, language: 'en', badge: 'new', thumbnail: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&h=340&fit=crop', slug: 'react-native' },
-            { id: 10, title: 'Photography Masterclass', instructor: 'Lisa Wang', category: 'photography', subcategory: 'python', rating: 4.9, ratingCount: 2200, students: 9500, level: 'all-levels', duration: '18h', price: 29.99, originalPrice: 49.99, language: 'en', badge: 'bestseller', thumbnail: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&h=340&fit=crop', slug: 'photography' },
-            { id: 11, title: 'Calculus for Engineers', instructor: 'David Park', category: 'mathematics', subcategory: 'python', rating: 4.5, ratingCount: 540, students: 2800, level: 'advanced', duration: '30h', price: 0, originalPrice: null, language: 'en', badge: null, thumbnail: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&h=340&fit=crop', slug: 'calculus' },
-            { id: 12, title: 'Spanish for Beginners', instructor: 'Maria Garcia', category: 'languages', subcategory: 'python', rating: 4.7, ratingCount: 1600, students: 11000, level: 'beginner', duration: '20h', price: 24.99, originalPrice: 44.99, language: 'es', badge: null, thumbnail: 'https://images.unsplash.com/photo-1508615070457-7e9eead1d6c7?w=600&h=340&fit=crop', slug: 'spanish-beginners' }
-        ];
+        return [];
     }
 
     clearAllFilters() {
@@ -445,7 +432,7 @@ class CourseCatalogPage {
         if (course.price === "free") {
             priceHTML = '<span class="course-card-price-tag free">Free</span>';
         } else if (course.price) {
-            console.log(course.priceType)
+
             priceHTML = `<span class="course-card-price-tag">$${course.price.toFixed(2)}</span>`;
         }
 

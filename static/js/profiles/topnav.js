@@ -312,7 +312,7 @@ class TopNavController {
     }
 
     async handleLogout() {
-        console.log("handle logout");
+
 
         // Prevent double-clicks
         const logoutBtn = document.getElementById('logout');

@@ -1,7 +1,7 @@
 // ============================================
 // LEARNING INTERFACE PAGE CONTROLLER
 // ============================================
-console.log("d")
+
 const baseUrl = window.location.origin;
 const auth = new Auth({
     "baseURL": window.location.origin + '/api/v1/account/auth',
@@ -32,7 +32,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to fetch lesson content');
             const data = await response.json();
-            console.log("lesson content", data)
+
             return data;
         } catch (error) {
             console.warn('Using dummy lesson content:', error.message);
@@ -48,7 +48,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to fetch video resume point');
             const data = await response.json();
-            console.log("get video resume point", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to fetch resume point:', error.message);
@@ -68,7 +68,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to save video resume point');
             const data = await response.json();
-            console.log("save video resume", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to save resume point:', error.message);
@@ -88,7 +88,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to submit lesson completion');
             const data = await response.json();
-            console.log("submit lesson completion", data)
+
             return data;
         } catch (error) {
             console.warn('Using dummy completion response:', error.message);
@@ -108,7 +108,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to submit quiz answers');
             const data = await response.json();
-            console.log("quiz submit response", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to submit quiz:', error.message);
@@ -127,7 +127,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to fetch quiz attempt status');
             const data = await response.json();
-            console.log("quiz attempt status", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to fetch quiz attempts:', error.message);
@@ -149,7 +149,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to fetch assignment details');
             const data = await response.json();
-            console.log("assignment details", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to fetch assignment details:', error.message);
@@ -181,7 +181,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to submit assignment');
             const data = await response.json();
-            console.log("assignment submit response", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to submit assignment:', error.message);
@@ -200,7 +200,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to fetch enrollment progress');
             const data = await response.json();
-            console.log('enrollment progress', data)
+
             return data;
         } catch (error) {
             console.warn('Failed to fetch progress:', error.message);
@@ -223,7 +223,7 @@ class ApiService {
             );
             if (!response.ok) throw new Error('Failed to toggle bookmark');
             const data = await response.json();
-            console.log("bookmark", data)
+
             return data;
         } catch (error) {
             console.warn('Failed to toggle bookmark:', error.message);
@@ -239,344 +239,7 @@ class ApiService {
     // ============================================
 
     static getDummyCurriculum(enrollmentId) {
-        return {
-            enrollmentId: enrollmentId,
-            courseId: 'python-data-science',
-            courseTitle: 'Python for Data Science',
-            totalLessons: 12,
-            sections: [
-                {
-                    id: 1,
-                    title: 'Introduction to Python',
-                    lessons: [
-                        {
-                            id: 1,
-                            title: 'Getting Started with Python',
-                            type: 'video',
-                            duration: '15 min',
-                            duration_seconds: 900,
-                            order: 1,
-                            preview: false,
-                            has_resources: true,
-                            completion_criteria: {
-                                criteria_type: 'watch_video',
-                                video_watch_percentage: 90
-                            },
-                            videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-                            description: 'Learn the basics of Python programming language including installation, syntax, and running your first program. This comprehensive introduction covers everything you need to get started with Python development.',
-                            resources: [
-                                { name: 'Python Setup Guide.pdf', size: '1.2 MB', type: 'pdf', url: '#' },
-                                { name: 'Code Examples.zip', size: '500 KB', type: 'zip', url: '#' }
-                            ],
-                            transcript: [
-                                { time: '00:00', text: 'Welcome to Python for Data Science. In this lesson, we will cover the basics of Python programming.' },
-                                { time: '00:30', text: 'First, let us install Python on your system. You can download it from python.org.' },
-                                { time: '01:00', text: 'Once installed, open your terminal and type python to start the interpreter.' },
-                                { time: '01:30', text: 'Let us write our first program: print("Hello, World!")' },
-                                { time: '02:00', text: 'Python is known for its simple and readable syntax.' }
-                            ]
-                        },
-                        {
-                            id: 2,
-                            title: 'Python Variables and Data Types',
-                            type: 'article',
-                            duration: '10 min',
-                            duration_seconds: 600,
-                            order: 2,
-                            preview: false,
-                            has_resources: false,
-                            completion_criteria: {
-                                criteria_type: 'read_article',
-                                article_scroll_percentage: 90
-                            },
-                            description: 'Master Python variables, data types, and type conversion with practical examples.',
-                            articleContent: '<h2>Python Variables</h2><p>Variables are used to store data values in Python.</p><p>Python has several built-in data types including integers, floats, strings, and booleans.</p><p>Understanding variables is fundamental to programming in Python.</p><p>Let\'s explore more about variables and data types in this comprehensive guide.</p><p>You\'ll learn how to declare variables, assign values, and perform operations.</p><p>By the end of this article, you\'ll have a solid understanding of Python\'s type system.</p><p>Variables can be reassigned to different values throughout your program.</p><p>Python uses dynamic typing, which means you don\'t need to declare variable types explicitly.</p><p>This makes Python code more concise and easier to read.</p>'
-                        },
-                        {
-                            id: 3,
-                            title: 'Control Flow Quiz',
-                            type: 'quiz',
-                            duration: '20 min',
-                            duration_seconds: 1200,
-                            order: 3,
-                            preview: false,
-                            has_resources: false,
-                            completion_criteria: {
-                                criteria_type: 'pass_quiz',
-                                quiz_passing_score: 60
-                            },
-                            description: 'Test your knowledge of Python control flow with this comprehensive quiz.',
-                            quizData: {
-                                passScore: 60,
-                                max_attempts: 3,
-                                questions: [
-                                    {
-                                        id: 22,
-                                        text: 'What is the output of 2 + 2?',
-                                        question_type: 'single_choice',
-                                        choices: [
-                                            {id: 1, text: '3'},
-                                            {id: 2, text: '4'},
-                                            {id: 3, text: '5'},
-                                            {id: 4, text: '6'}
-                                        ],
-                                        points: 1,
-                                        explanation: 'Basic arithmetic operation'
-                                    },
-                                    {
-                                        id: 23,
-                                        text: 'What does ORM stand for in Django?',
-                                        question_type: 'short_answer',
-                                        points: 2,
-                                        explanation: 'Object-Relational Mapping'
-                                    },
-                                    {
-                                        id: 24,
-                                        text: 'Python is an interpreted language.',
-                                        question_type: 'true_false',
-                                        points: 1,
-                                        explanation: 'Python code is executed line by line'
-                                    },
-                                    {
-                                        id: 25,
-                                        text: 'Which of the following are valid string formatting methods?',
-                                        question_type: 'multiple_choice',
-                                        choices: [
-                                            {id: 1, text: 'str()'},
-                                            {id: 2, text: 'format()'},
-                                            {id: 3, text: 'double quotation marks'},
-                                            {id: 4, text: 'f-strings'}
-                                        ],
-                                        points: 3,
-                                        explanation: 'Multiple ways to format strings in Python'
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    id: 2,
-                    title: 'Data Structures',
-                    lessons: [
-                        {
-                            id: 4,
-                            title: 'Lists and Tuples',
-                            type: 'video',
-                            duration: '18 min',
-                            duration_seconds: 1080,
-                            order: 1,
-                            preview: false,
-                            has_resources: true,
-                            completion_criteria: {
-                                criteria_type: 'watch_video',
-                                video_watch_percentage: 90
-                            },
-                            videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-                            description: 'Deep dive into Python lists and tuples - creation, manipulation, and best practices.',
-                            resources: [
-                                { name: 'Lists Cheatsheet.pdf', size: '800 KB', type: 'pdf', url: '#' }
-                            ],
-                            transcript: [
-                                { time: '00:00', text: 'In this lesson, we will explore lists and tuples in Python.' },
-                                { time: '00:45', text: 'Lists are mutable sequences, while tuples are immutable.' }
-                            ]
-                        },
-                        {
-                            id: 5,
-                            title: 'Dictionaries Deep Dive',
-                            type: 'article',
-                            duration: '12 min',
-                            duration_seconds: 720,
-                            order: 2,
-                            preview: false,
-                            has_resources: false,
-                            completion_criteria: {
-                                criteria_type: 'manual'
-                            },
-                            description: 'Learn dictionary operations, methods, and real-world use cases.',
-                            articleContent: '<h2>Python Dictionaries</h2><p>Dictionaries are key-value pairs in Python.</p><p>They are mutable and unordered in older Python versions.</p><p>Learn how to create, access, and manipulate dictionaries.</p><p>Dictionary comprehension is a powerful feature in Python.</p><p>Master dictionary methods for efficient data handling.</p><p>Dictionaries are optimized for retrieving values when you know the key.</p><p>They are one of the most commonly used data structures in Python.</p><p>Understanding dictionaries is essential for working with JSON data.</p><p>Python dictionaries preserve insertion order in Python 3.7+.</p>'
-                        },
-                        {
-                            id: 6,
-                            title: 'Data Structures Quiz',
-                            type: 'quiz',
-                            duration: '15 min',
-                            duration_seconds: 900,
-                            order: 3,
-                            preview: false,
-                            has_resources: false,
-                            completion_criteria: {
-                                criteria_type: 'pass_quiz',
-                                quiz_passing_score: 70
-                            },
-                            description: 'Evaluate your understanding of Python data structures.',
-                            quizData: {
-                                passScore: 70,
-                                max_attempts: 2,
-                                questions: [
-                                    {
-                                        id: 26,
-                                        text: 'Which data structure is immutable?',
-                                        question_type: 'single_choice',
-                                        choices: [
-                                            {id: 1, text: 'List'},
-                                            {id: 2, text: 'Tuple'},
-                                            {id: 3, text: 'Dictionary'},
-                                            {id: 4, text: 'Set'}
-                                        ],
-                                        points: 1,
-                                        explanation: 'Tuples cannot be modified after creation'
-                                    },
-                                    {
-                                        id: 27,
-                                        text: 'How do you create an empty dictionary?',
-                                        question_type: 'short_answer',
-                                        points: 2,
-                                        explanation: 'Using {} or dict()'
-                                    },
-                                    {
-                                        id: 28,
-                                        text: 'Lists preserve insertion order.',
-                                        question_type: 'true_false',
-                                        points: 1,
-                                        explanation: 'Lists maintain the order of elements'
-                                    },
-                                    {
-                                        id: 29,
-                                        text: 'Which operations are valid on sets?',
-                                        question_type: 'multiple_choice',
-                                        choices: [
-                                            {id: 1, text: 'union'},
-                                            {id: 2, text: 'intersection'},
-                                            {id: 3, text: 'difference'},
-                                            {id: 4, text: 'indexing'}
-                                        ],
-                                        points: 3,
-                                        explanation: 'Sets support mathematical operations'
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    id: 3,
-                    title: 'Advanced Topics',
-                    lessons: [
-                        {
-                            id: 7,
-                            title: 'Object-Oriented Programming',
-                            type: 'video',
-                            duration: '25 min',
-                            duration_seconds: 1500,
-                            order: 1,
-                            preview: false,
-                            has_resources: true,
-                            completion_criteria: {
-                                criteria_type: 'watch_video',
-                                video_watch_percentage: 85
-                            },
-                            videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-                            description: 'Master object-oriented programming concepts in Python including classes, inheritance, and polymorphism.',
-                            resources: [
-                                { name: 'OOP Examples.zip', size: '2.1 MB', type: 'zip', url: '#' },
-                                { name: 'Class Diagrams.pdf', size: '1.5 MB', type: 'pdf', url: '#' },
-                                { name: 'Reference Guide.docx', size: '900 KB', type: 'zip', url: '#' }
-                            ]
-                        },
-                        {
-                            id: 8,
-                            title: 'Exception Handling',
-                            type: 'article',
-                            duration: '15 min',
-                            duration_seconds: 900,
-                            order: 2,
-                            preview: false,
-                            has_resources: false,
-                            completion_criteria: {
-                                criteria_type: 'read_article',
-                                article_scroll_percentage: 90
-                            },
-                            description: 'Learn to handle errors gracefully with try-except blocks and custom exceptions.',
-                            articleContent: '<h2>Exception Handling</h2><p>Learn to handle errors gracefully in Python.</p><p>Try, except, finally blocks are essential for robust code.</p><p>Custom exceptions can be created for specific needs.</p><p>Proper error handling makes applications more reliable.</p><p>Understanding exception hierarchy is important for catching specific errors.</p><p>The finally block always executes regardless of whether an exception occurs.</p><p>You can raise exceptions manually using the raise keyword.</p><p>Exception handling improves user experience by preventing crashes.</p>'
-                        },
-                        {
-                            id: 9,
-                            title: 'File Operations',
-                            type: 'file',
-                            duration: '10 min',
-                            duration_seconds: 600,
-                            order: 3,
-                            preview: false,
-                            has_resources: true,
-                            completion_criteria: {
-                                criteria_type: 'manual'
-                            },
-                            description: 'Download and review Python file operation resources and cheatsheets.',
-                            file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-                            file_name: 'Python Cheatsheet.pdf',
-                            resources: [
-                                { name: 'Python Cheatsheet.pdf', size: '2.4 MB', type: 'pdf', url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
-                                { name: 'Code Examples.zip', size: '1.1 MB', type: 'zip', url: '#' },
-                                { name: 'Reference Guide.docx', size: '850 KB', type: 'zip', url: '#' }
-                            ]
-                        },
-                        {
-                            id: 10,
-                            title: 'Final Project',
-                            type: 'assignment',
-                            duration: '60 min',
-                            duration_seconds: 3600,
-                            order: 4,
-                            preview: false,
-                            has_resources: false,
-                            completion_criteria: {
-                                criteria_type: 'submit_assignment'
-                            },
-                            description: 'Build a complete data analysis project and submit for instructor review.',
-                            assignmentData: {
-                                instructions: 'Build a data analysis project using Python. Analyze a dataset of your choice and present your findings with visualizations.',
-                                maxScore: 100,
-                                dueDate: '2024-12-31T23:59:59Z',
-                                allowLateSubmission: false,
-                                maxAttempts: 3,
-                                acceptedFileTypes: 'pdf,docx,zip,py',
-                                maxFileSizeMB: 50
-                            }
-                        },
-                        {
-                            id: 11,
-                            title: 'Live Q&A Session',
-                            type: 'live_session',
-                            duration: '45 min',
-                            duration_seconds: 2700,
-                            order: 5,
-                            preview: false,
-                            has_resources: false,
-                            completion_criteria: {
-                                criteria_type: 'manual'
-                            },
-                            description: 'Join the live Q&A session to get your questions answered by instructors.'
-                        },
-                        {
-                            id: 12,
-                            title: 'Coding Challenge',
-                            type: 'coding_exercise',
-                            duration: '30 min',
-                            duration_seconds: 1800,
-                            order: 6,
-                            preview: false,
-                            has_resources: false,
-                            completion_criteria: {
-                                criteria_type: 'manual'
-                            },
-                            description: 'Complete the hands-on coding challenge to practice your Python skills.'
-                        }
-                    ]
-                }
-            ]
-        };
+        return {};
     }
 
     static getDummyLessonContent(enrollmentId, lessonId) {
@@ -1638,7 +1301,7 @@ class LearningInterface {
         this.currentSegmentStart = timestamp;
         this.lastVideoTimeUpdate = timestamp;
 
-        console.log(`Initialized watched segments from resume point: 0 - ${timestamp} seconds`);
+
     }
 
     handleVideoTimeUpdate = () => {
@@ -1838,12 +1501,7 @@ class LearningInterface {
                     return;
                 }
 
-                // Chrome reverted (usually to 0). Retry.
-                console.log('[resume] seek reverted, retrying',
-                    { attempt: this._resumeSeekAttempts,
-                      before, after: now, target: resumeTime,
-                      readyState: video.readyState,
-                      seekable: this.describeTimeRanges(video.seekable) });
+
 
                 this._resumeSeekTimer = setTimeout(attempt, 250);
             }, 200);
@@ -2052,7 +1710,7 @@ class LearningInterface {
 
         try {
             const result = await ApiService.getVideoResumePoint(enrollmentId, lessonId);
-            console.log("loadVideoResumePoint", result)
+
             if (result && result.success && result.timestamp > 0) {
                 this.videoResumeTimestamp = result.timestamp;
                 this.videoResumeLoaded = true;

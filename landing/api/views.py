@@ -62,15 +62,7 @@ class LandingPageInfo(APIView):
         highlight_serializer = HighlightSerializer(highlight_qs, many=True)
         contact_serializer = ContactSerializer(contact)
         statistics_serializer = StatisticsSerializer(statistics)
-        print(
-            "data that sent:",
-            {
-                "features": feature_serializer.data,
-                "highlights": highlight_serializer.data,
-                "contact": contact_serializer.data,
-                "statistics": statistics_serializer.data,
-            },
-        )
+
         return Response(
             {
                 "features": feature_serializer.data,

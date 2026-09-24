@@ -182,7 +182,7 @@ class InstructorRegistration {
 
             if (response.ok) {
                 this.profileData = await response.json();
-                console.log('Profile data fetched:', this.profileData);
+
             }
 
         } catch (error) {
@@ -1193,7 +1193,7 @@ async submitApplication() {
         // Prepare form data
         const data = this.collectFormData();
 
-        console.log('Submitting data:', JSON.stringify(data, null, 2));
+
 
         const response = await this.auth.authenticatedRequest(
             this.baseUrl + '/api/v1/account/auth/register/instructor/',
@@ -1206,7 +1206,7 @@ async submitApplication() {
         if (response && response.ok) {
             this.showSuccess();
             const responseData = await response.json();
-            console.log('Response:', responseData);
+
 
             // Redirect to homepage after 3 seconds
 
@@ -1216,13 +1216,10 @@ async submitApplication() {
 
             try {
                 const errorData = await response.json();
-                console.log('Raw error data:', errorData);
-                console.log('Error data type:', typeof errorData);
-                console.log('Detail type:', typeof errorData.detail);
+
 
                 // Check if error has detail field
                 if (errorData.detail) {
-                    console.log('Detail value:', errorData.detail);
 
                     // Handle string detail
                     if (typeof errorData.detail === 'string') {
@@ -1230,34 +1227,33 @@ async submitApplication() {
                     }
                     // Handle array of ErrorDetail objects
                     else if (Array.isArray(errorData.detail)) {
-                        console.log('Detail is array, length:', errorData.detail.length);
+
 
                         if (errorData.detail.length > 0) {
                             const firstError = errorData.detail[0];
-                            console.log('First error:', firstError);
-                            console.log('First error type:', typeof firstError);
+
 
                             // If firstError is a string like "[ErrorDetail(string='...', code='invalid')]"
                             if (typeof firstError === 'string') {
-                                console.log('First error is string:', firstError);
+
 
                                 // Try multiple regex patterns to extract message
                                 let match = firstError.match(/string='([^']+)'/);
-                                console.log('Match 1:', match);
+
 
                                 if (match && match[1]) {
                                     errorMessage = match[1];
                                 } else {
                                     // Try another pattern
                                     match = firstError.match(/ErrorDetail\(string='([^']+)'/);
-                                    console.log('Match 2:', match);
+
 
                                     if (match && match[1]) {
                                         errorMessage = match[1];
                                     } else {
                                         // Try to extract anything between quotes
                                         match = firstError.match(/'([^']+)'/);
-                                        console.log('Match 3:', match);
+
 
                                         if (match && match[1]) {
                                             errorMessage = match[1];

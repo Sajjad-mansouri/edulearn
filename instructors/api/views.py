@@ -58,7 +58,7 @@ class CourseBuilder(APIView):
 
         serializer = CourseSerializer(data=course_data)
         serializer.is_valid(raise_exception=True)
-        print(serializer.errors)
+
         course = CourseService(instructor=request.user).create(
             serializer.validated_data
         )

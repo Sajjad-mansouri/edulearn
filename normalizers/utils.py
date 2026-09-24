@@ -79,8 +79,7 @@ def get_value(query_dict: QueryDict, key: str, default: Any = "") -> Any:
     # Handle empty values and JS null strings
     if not value or value == "null":
         return default
-    if key == "duration":
-        print("value of", key, "is", value)
+
     return value
 
 

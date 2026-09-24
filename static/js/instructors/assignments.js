@@ -249,7 +249,7 @@ class InstructorAssignmentsPage {
 
             const data = await response.json();
             const allSubmissions = this.mapData(data.results ?? []);
-            console.log(allSubmissions)
+
             if (allSubmissions && allSubmissions.length > 0) {
                 this.allSubmissions = allSubmissions;
             } else {
@@ -292,7 +292,7 @@ class InstructorAssignmentsPage {
 
         // Keep the default "All Courses" option
         select.innerHTML = '<option value="all">All Courses</option>';
-        console.log(this.instructorCourses)
+
         Object.entries(this.instructorCourses).forEach(([slug, title]) => {
           const option = document.createElement("option");
           option.value = slug;
@@ -301,76 +301,7 @@ class InstructorAssignmentsPage {
 });
     }
 
-    getDummySubmissions() {
-        const statuses = ['pending', 'pending', 'pending', 'late', 'late', 'graded', 'graded', 'graded'];
-        const students = ['Jane Smith', 'Mike Lee', 'Anna Kim', 'Tom Brown', 'Lisa Wang', 'David Park', 'Emma Wilson', 'Carlos Mendez'];
-        const assignments = [
-            { name: 'Assignment 4: Data Visualization', desc: 'Create interactive charts using Plotly' },
-            { name: 'Quiz 3: Machine Learning Concepts', desc: 'Multiple choice and short answer' },
-            { name: 'Assignment 3: Pandas Exercise', desc: 'Data cleaning and transformation' },
-            { name: 'Final Project Proposal', desc: 'Project scope and methodology' },
-        ];
-        const courses = ['Python for Data Science', 'Machine Learning A-Z', 'Deep Learning Specialization', 'Data Engineering Essentials'];
-        return Array.from({ length: 24 }, (_, i) => {
-            const status = statuses[i % statuses.length];
-            const assignment = assignments[i % assignments.length];
-            const course = courses[i % courses.length];
-            const submitDate = status === 'late' ? new Date(Date.now() - (1 + Math.floor(Math.random() * 5)) * 86400000) : new Date(Date.now() - Math.floor(Math.random() * 72) * 3600000);
-            const graded = status === 'graded';
-            const score = graded ? Math.floor(Math.random() * 31) + 70 : null;
-            const submissionId = i + 1;
-            return {
-                id: submissionId,
-                studentName: students[i % students.length],
-                studentEmail: students[i % students.length].toLowerCase().replace(' ', '.') + '@email.com',
-                studentAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(students[i % students.length])}&background=${['4F46E5','8B5CF6','10B981','F59E0B'][i%4]}&color=fff&size=72`,
-                assignmentName: assignment.name,
-                assignmentDesc: assignment.desc,
-                courseName: course,
-                courseSlug: course.toLowerCase().replace(/ /g, '-'),
-                status,
-                submitDate,
-                gradedDate: graded ? new Date(submitDate.getTime() + Math.floor(Math.random() * 48) * 3600000) : null,
-                score,
-                letterGrade: graded ? (score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : 'D') : null,
-                feedback: graded ? ['Great work!', 'Well done.', 'Good effort, keep improving.', 'Excellent analysis.'][i % 4] : '',
-                submissionText: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nKey findings:\n- Data analysis completed\n- Visualizations included\n- Code is well-documented',
-                files: this.generateDummyFiles(submissionId)
-            };
-        });
-    }
 
-    generateDummyFiles(submissionId) {
-        const fileTypes = [
-            { name: 'submission.py', type: 'python', size: '12.5 KB' },
-            { name: 'analysis.ipynb', type: 'notebook', size: '245.3 KB' },
-            { name: 'report.pdf', type: 'pdf', size: '1.2 MB' },
-            { name: 'data.csv', type: 'csv', size: '45.8 KB' },
-            { name: 'visualization.png', type: 'image', size: '320.1 KB' },
-            { name: 'README.md', type: 'markdown', size: '2.1 KB' },
-            { name: 'requirements.txt', type: 'text', size: '0.5 KB' },
-            { name: 'main.js', type: 'javascript', size: '8.3 KB' }
-        ];
-
-        const numFiles = Math.floor(Math.random() * 4) + 1;
-        const selectedFiles = [];
-        const usedIndices = new Set();
-
-        while (selectedFiles.length < numFiles) {
-            const index = Math.floor(Math.random() * fileTypes.length);
-            if (!usedIndices.has(index)) {
-                usedIndices.add(index);
-                selectedFiles.push({
-                    ...fileTypes[index],
-                    id: `${submissionId}-file-${index}`,
-                    path: `#file-${submissionId}-${index}`,
-                    uploadedAt: new Date(Date.now() - Math.floor(Math.random() * 72) * 3600000).toISOString()
-                });
-            }
-        }
-
-        return selectedFiles;
-    }
 
     applyFilters() {
         let subs = [...this.allSubmissions];
@@ -409,7 +340,7 @@ class InstructorAssignmentsPage {
 
     renderStatistics() {
         const t = this.allSubmissions.length;
-        console.log("allSubmissions", this.allSubmissions)
+
         document.getElementById('statTotal').textContent = t;
         document.getElementById('statPending').textContent = this.allSubmissions.filter(s => s.status === 'pending').length;
         document.getElementById('statGraded').textContent = this.allSubmissions.filter(s => s.status === 'graded').length;
@@ -648,9 +579,7 @@ class InstructorAssignmentsPage {
     }
 
     viewFile(fileId, fileName) {
-        console.log("view file", fileId, fileName)
-        console.log(this.allSubmissions)
-        console.log("this.currentViewSubmissionId", this.currentViewSubmissionId)
+
         const s = this.allSubmissions.find(sub => sub.id === this.currentViewSubmissionId);
         if (!s) return;
 
@@ -664,7 +593,7 @@ class InstructorAssignmentsPage {
         const fullPath = filePath?.startsWith('http') ? filePath : `${baseUrl}${filePath}`;
 
         const ext = (file.name || fileName).split('.').pop().toLowerCase();
-        console.log(fileName, ext)
+
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext);
         const isPdf = ext === 'pdf';
         const isCode = ['py', 'js', 'html', 'css', 'java', 'cpp', 'c', 'ts', 'jsx', 'tsx', 'json', 'xml', 'sql', 'rb', 'php', 'go', 'rs', 'swift', 'kt', 'ipynb'].includes(ext);
@@ -879,11 +808,10 @@ class InstructorAssignmentsPage {
 
             const data = await response.json();
             if (!response.ok) {
-                console.log(data)
+
                 throw new Error("Failed to grade.");
             }
 
-            console.log(data)
             s.status = 'graded';
             s.score = score;
             s.letterGrade = letter;

@@ -151,7 +151,6 @@ class LogoutApiView(GenericAPIView):
         """Logout may be done via POST."""
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=False)
-        print(serializer.errors, request.data)
         logout_user(serializer.validated_data["refresh"])
         return Response(
             {"detail": "Successfully logged out."},

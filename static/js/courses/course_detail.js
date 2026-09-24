@@ -222,7 +222,7 @@ class CourseApiService {
 
             if (!response.ok) throw new Error('Failed to fetch enrollment status');
             const data = await response.json()
-            console.log("check enrollment", data)
+
             return data
 
         } catch (error) {
@@ -239,10 +239,10 @@ class CourseApiService {
                 method: "POST",
             }
         );
-        console.log("response", response)
+
         if (!response.ok) throw new Error('Failed to enroll in course');
         const data = await response.json();
-        console.log("data", data)
+
         return data;
     }
 
@@ -256,7 +256,7 @@ class CourseApiService {
 
         if (!response.ok) throw new Error('Failed to create checkout session');
         const data = await response.json();
-        console.log(data)
+
         return data;
     }
 }
@@ -562,14 +562,14 @@ class CourseDetailPage {
     async checkAuth() {
         try {
             this.userAuth = await CourseApiService.checkAuth();
-            console.log("Course detail user auth data:", this.userAuth); // Debug log
+
 
             if (this.userAuth.is_authenticated) {
                 const [enrollmentData, wishlistData] = await Promise.all([
                     CourseApiService.checkEnrollment(this.courseId),
                     CourseApiService.checkWishlistStatus(this.courseId)
                 ]);
-                console.log("enrollmentData", enrollmentData)
+
                 this.isEnrolled = enrollmentData.is_enrolled;
                 this.isWishlisted = wishlistData.is_wishlisted;
                 this.enrollment_id = enrollmentData.enrollment_id
@@ -607,7 +607,7 @@ class CourseDetailPage {
             ]);
 
             this.courseData = courseData;
-            console.log(courseData)
+
             this.instructorData = instructorData;
             this.curriculumData = curriculumData;
             this.reviewsData = reviewsData;
@@ -690,12 +690,17 @@ class CourseDetailPage {
             if (priceEl) priceEl.textContent = `$${data.price}`;
             if (originalPriceEl) originalPriceEl.textContent = `$${data.original_price}`;
             if (discountBadge) discountBadge.textContent = `${data.price_discount}% OFF`;
+            if(data.original_price == "free"){
+               if (priceEl) priceEl.textContent = "Free"
+                if (originalPriceEl) originalPriceEl.textContent = ``;
+                if (discountBadge) discountBadge.remove() ``;
+            }
         }
 
         const enrollBtn = document.getElementById('enrollBtn');
         const wishlistBtn = document.getElementById('wishlistBtn');
         const moneyBack = document.querySelector('.money-back');
-        console.log("enrollBtn", this.isEnrolled, enrollBtn)
+
         if (enrollBtn) {
             if (this.isEnrolled) {
                 enrollBtn.outerHTML = `
@@ -842,7 +847,7 @@ class CourseDetailPage {
             quiz: 'fa-circle-question quiz',
             assignment: 'fa-tasks assignment'
         };
-        console.log("lesson", lesson)
+
 
         const iconClass = typeIcons[lesson.type] || 'fa-file';
         const previewBadge = lesson.is_previewable ?
@@ -1480,15 +1485,15 @@ class CourseDetailPage {
         try {
             // Check if the course is free
             const coursePrice = parseFloat(this.courseData?.price) || 0;
-            console.log(coursePrice, coursePrice===0,)
+
             if (coursePrice === 0) {
                 // Free course - enroll directly
-                console.log("course price is 0")
+
                 const enrollData = await CourseApiService.enrollInCourse(this.courseId);
 
                 if (enrollData) {
                     this.isEnrolled = true;
-                    console.log(enrollData)
+
                     this.enrollment_id = enrollData.enrollment_id
                     this.showToast('Successfully enrolled in course! 🎉');
                     this.updateEnrollmentCard();

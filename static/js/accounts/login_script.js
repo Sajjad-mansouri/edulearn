@@ -103,7 +103,6 @@ form.addEventListener('submit', async (e) => {
 
     try {
         const result = await auth.login(username, password);
-        console.log(result)
 
         if (result.success) {
             // Get the redirect URL and navigate to it

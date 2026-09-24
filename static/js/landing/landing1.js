@@ -1,109 +1,7 @@
 
 
 // Curated dummy data - Only showing key features, not all endpoints
-const dummyData = {
-    features: [
-        {
-            title: 'general',
-            items: [
-                { title: 'Course Catalog', description: 'Browse courses with advanced filtering and categories', icon: 'fa-book-open', image: null, color: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)' },
-                { title: 'Smart Search', description: 'Powerful search with metadata-driven discovery', icon: 'fa-search', image: null, color: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)' },
-                { title: 'Reviews & Ratings', description: 'Community-driven feedback system', icon: 'fa-star', image: null, color: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)' },
-                { title: 'Certification', description: 'Earn certificates upon completion', icon: 'fa-certificate', image: null, color: 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)' }
-            ]
-        },
-        {
-            title: 'student',
-            items: [
-                { title: 'Interactive Learning', description: 'Video lessons, quizzes, and assignments', icon: 'fa-play-circle', image: null, color: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)' },
-                { title: 'Progress Tracking', description: 'Monitor your learning journey', icon: 'fa-chart-line', image: null, color: 'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)' },
-                { title: 'Wishlist', description: 'Save courses for later', icon: 'fa-heart', image: null, color: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)' },
-                { title: 'Assignments', description: 'Submit work and get feedback', icon: 'fa-tasks', image: null, color: 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%)' }
-            ]
-        },
-        {
-            title: 'instructor',
-            items: [
-                { title: 'Course Builder', description: 'Create and manage courses', icon: 'fa-chalkboard', image: null, color: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)' },
-                { title: 'Analytics', description: 'Track performance and revenue', icon: 'fa-chart-bar', image: null, color: 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)' },
-                { title: 'Student Management', description: 'Track progress and enrollments', icon: 'fa-user-graduate', image: null, color: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)' },
-                { title: 'Revenue Tracking', description: 'Monitor earnings and transactions', icon: 'fa-money-bill-wave', image: null, color: 'linear-gradient(135deg, #06b6d4 0%, #67e8f9 100%)' }
-            ]
-        }
-    ],
-    highlights: [
-        {
-            title: 'JWT Authentication',
-            description: 'Secure token-based authentication with refresh tokens and role-based access control',
-            icon: 'fa-shield-alt',
-            color: '#4f46e5',
-            endpoints: [
-                { end_point: '/api/v1/account/auth/token/' },
-                { end_point: '/api/v1/account/auth/refresh/' }
-            ]
-        },
-        {
-            title: 'Course Management',
-            description: 'Full CRUD operations for courses, lessons, and curriculum',
-            icon: 'fa-book',
-            color: '#059669',
-            endpoints: [
-                { end_point: '/api/v1/courses/' },
-                { end_point: '/api/v1/instructor/courses/' }
-            ]
-        },
-        {
-            title: 'Payment Processing',
-            description: 'Stripe integration for secure payment processing and webhooks',
-            icon: 'fa-credit-card',
-            color: '#dc2626',
-            endpoints: [
-                { end_point: '/api/v1/payment/checkout/' }
-            ]
-        },
-        {
-            title: 'Real-time Analytics',
-            description: 'Comprehensive analytics for student performance and revenue',
-            icon: 'fa-chart-line',
-            color: '#f59e0b',
-            endpoints: [
-                { end_point: '/api/v1/instructor/analytics/' }
-            ]
-        },
-        {
-            title: 'File Management',
-            description: 'Assignment submissions with bulk download capabilities',
-            icon: 'fa-file-upload',
-            color: '#8b5cf6',
-            endpoints: [
-                { end_point: '/api/v1/instructor/assignments/' }
-            ]
-        },
-        {
-            title: 'Certificate Generation',
-            description: 'Automated certificate generation and download',
-            icon: 'fa-certificate',
-            color: '#06b6d4',
-            endpoints: [
-                { end_point: '/api/v1/enrollment/certificates/' }
-            ]
-        }
-    ],
-    contact: {
-        name: 'Your Name',
-        title: 'Django Developer',
-        description: 'Passionate Django developer specializing in scalable REST APIs and full-stack applications',
-        email: 'your.email@example.com',
-        social_links: [
-            { platform: 'GitHub', url: 'https://github.com/yourusername', icon: 'fab fa-github', username: 'github.com/yourusername' },
-            { platform: 'LinkedIn', url: 'https://linkedin.com/in/yourusername', icon: 'fab fa-linkedin', username: 'linkedin.com/in/yourusername' },
-            { platform: 'Twitter', url: 'https://twitter.com/yourusername', icon: 'fab fa-twitter', username: '@yourusername' }
-        ]
-    },
-    api_endpoints: {
-        count: 100
-    }
-};
+const dummyData = {};
 
 // State management
 let featureData = [...dummyData.features];
@@ -171,7 +69,7 @@ async function fetchData() {
         if (response.ok) {
             const data = await response.json();
 
-            console.log('Backend data:', data);
+
 
             // Transform API data to internal format
             if (data.features && Array.isArray(data.features)) {
@@ -189,12 +87,12 @@ async function fetchData() {
             // Get API endpoints count
             if (data.api_endpoints && data.api_endpoints.count !== undefined) {
                 apiEndpointsCount = data.api_endpoints.count;
-                console.log('API endpoints count:', apiEndpointsCount);
+
             }
 
-            console.log('Using backend data');
+
         } else {
-            console.warn('Failed to fetch site info, using dummy data');
+
             // Use dummy data
             featureData = [...dummyData.features];
             contactData = { ...dummyData.contact };
@@ -634,7 +532,7 @@ async function submitContactForm(formData) {
         }
     }
 
-    console.log('Contact form submitted:', formData);
+
     return true;
 }
 
@@ -663,12 +561,12 @@ function initHamburgerMenu() {
         hamburgerBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Hamburger clicked');
+
 
             hamburgerBtn.classList.toggle('active');
             navbarMenu.classList.toggle('active');
 
-            console.log('Menu active:', navbarMenu.classList.contains('active'));
+
         });
 
         // Close menu when a link is clicked

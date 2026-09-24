@@ -37,9 +37,9 @@ class NavbarManager {
 
             if (!response.ok) throw new Error('Failed to fetch current user');
             const data = await response.json();
-            console.log(data)
+
             this.userAuth = data;
-            console.log("Navbar user auth data:", this.userAuth); // Debug log
+
 
         } catch (error) {
             console.error('Error loading current user:', error);

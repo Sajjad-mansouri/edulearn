@@ -1,7 +1,7 @@
 // =============================================================================
 // TEMPORARY DUMMY DATA
 // -----------------------------------------------------------------------------
-// Used only when /api/v1/site-infos/ is unavailable or returns incomplete data.
+// Used only when /api/v1/site-info/ is unavailable or returns incomplete data.
 // All values below are accurate to the current project scope.
 // =============================================================================
 
@@ -13,7 +13,7 @@ const dummyData = {
                 {
                     title: 'Course Discovery',
                     description:
-                        'Browse and filter courses by category, subcategory, level, price, and course metadata.',
+                        'Browse and filter published courses by category, subcategory, level, price, language, duration, rating, and other course metadata.',
                     icon: 'fa-book-open',
                     image: null,
                     color:
@@ -22,29 +22,29 @@ const dummyData = {
                 {
                     title: 'Authentication & Authorization',
                     description:
-                        'JWT authentication with role-based permissions, protected resources, and ownership checks.',
+                        'JWT-based authentication with role-aware permissions, protected resources, ownership validation, and secure access control.',
                     icon: 'fa-shield-alt',
                     image: null,
                     color:
                         'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)'
                 },
                 {
+                    title: 'Enrollment & Course Access',
+                    description:
+                        'Manage course enrollment states, student access, learning activity, completion status, and enrollment-linked functionality.',
+                    icon: 'fa-user-check',
+                    image: null,
+                    color:
+                        'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)'
+                },
+                {
                     title: 'Reviews & Ratings',
                     description:
-                        'Enrollment-linked course reviews with visibility controls, ratings, and helpful interactions.',
+                        'Enrollment-linked course feedback with 1–5 star ratings, public visibility controls, comments, and helpful interactions.',
                     icon: 'fa-star',
                     image: null,
                     color:
                         'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)'
-                },
-                {
-                    title: 'Certificates',
-                    description:
-                        'PDF certificate generation with asynchronous processing through Celery.',
-                    icon: 'fa-certificate',
-                    image: null,
-                    color:
-                        'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)'
                 }
             ]
         },
@@ -55,7 +55,7 @@ const dummyData = {
                 {
                     title: 'Learning Experience',
                     description:
-                        'Access lessons, track video progress, resume learning, bookmark lessons, and complete course activities.',
+                        'Access structured course content including video, articles, files, quizzes, assignments, live sessions, and coding exercises.',
                     icon: 'fa-play-circle',
                     image: null,
                     color:
@@ -64,7 +64,7 @@ const dummyData = {
                 {
                     title: 'Progress Tracking',
                     description:
-                        'Track watched duration, completion percentage, resume position, and overall enrollment progress.',
+                        'Track lesson completion, watched video duration, completion percentage, and resume position across enrolled courses.',
                     icon: 'fa-chart-line',
                     image: null,
                     color:
@@ -73,7 +73,7 @@ const dummyData = {
                 {
                     title: 'Wishlist',
                     description:
-                        'Save courses for later with duplicate-prevention constraints and wishlist status management.',
+                        'Save courses for later with database-level uniqueness constraints preventing duplicate wishlist entries.',
                     icon: 'fa-heart',
                     image: null,
                     color:
@@ -82,7 +82,7 @@ const dummyData = {
                 {
                     title: 'Quizzes & Assignments',
                     description:
-                        'Submit assignments, take quizzes, track quiz attempts, and participate in course assessments.',
+                        'Take quizzes, manage quiz attempts and answers, submit assignments, and track assessment-related activity.',
                     icon: 'fa-tasks',
                     image: null,
                     color:
@@ -97,25 +97,25 @@ const dummyData = {
                 {
                     title: 'Course Management',
                     description:
-                        'Manage the course lifecycle from creation and editing through submission and publication.',
+                        'Create and manage courses, curriculum, sections, lessons, learning content, metadata, and course lifecycle states.',
                     icon: 'fa-chalkboard',
                     image: null,
                     color:
                         'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)'
                 },
                 {
-                    title: 'Analytics & Revenue',
+                    title: 'Course Lifecycle',
                     description:
-                        'Analyze course performance, student progress, ratings, revenue, and transaction history.',
-                    icon: 'fa-chart-bar',
+                        'Manage course states from drafting and editing through submission, review-related states, approval, and publication.',
+                    icon: 'fa-project-diagram',
                     image: null,
                     color:
-                        'linear-gradient(135deg, #f97316 0%, #fb923c 100%)'
+                        'linear-gradient(135deg, #059669 0%, #10b981 100%)'
                 },
                 {
                     title: 'Student Management',
                     description:
-                        'View enrolled students, learning progress, activity, status, and course-related performance.',
+                        'View course-enrolled students, learning progress, activity, status, ratings, and course-related performance.',
                     icon: 'fa-user-graduate',
                     image: null,
                     color:
@@ -124,7 +124,7 @@ const dummyData = {
                 {
                     title: 'Assignment Grading',
                     description:
-                        'Review, download, bulk-download, and grade student assignment submissions with authorization checks.',
+                        'Review student submissions, access submitted files, grade assignments, and enforce instructor ownership and authorization rules.',
                     icon: 'fa-file-upload',
                     image: null,
                     color:
@@ -138,7 +138,7 @@ const dummyData = {
         {
             title: 'JWT Authentication & Authorization',
             description:
-                'JWT-based authentication combined with role-based permissions, protected resources, and ownership validation.',
+                'JWT-based authentication with protected API resources, role-based permissions, and ownership validation across student and instructor workflows.',
             icon: 'fa-shield-alt',
             color: '#4f46e5',
             endpoints: [
@@ -150,9 +150,9 @@ const dummyData = {
         },
 
         {
-            title: 'Course Lifecycle Management',
+            title: 'Course & Curriculum Management',
             description:
-                'Manage courses through creation, editing, submission, review-related states, and publication with state-dependent business rules.',
+                'Structured course management with sections, lessons, multiple content types, course metadata, prerequisites, learning outcomes, and lifecycle state transitions.',
             icon: 'fa-book',
             color: '#059669',
             endpoints: [
@@ -164,9 +164,22 @@ const dummyData = {
         },
 
         {
+            title: 'Learning Progress Tracking',
+            description:
+                'Track lesson and video progress using watched duration, completion percentage, resume position, and enrollment-level learning progress.',
+            icon: 'fa-chart-line',
+            color: '#0891b2',
+            endpoints: [
+                'Lesson progress APIs',
+                'Video progress APIs',
+                'Enrollment progress APIs'
+            ]
+        },
+
+        {
             title: 'Stripe Payment Integration',
             description:
-                'Stripe Checkout integration with payment state management, webhook processing, and transaction-safe database updates.',
+                'Stripe Checkout integration with payment lifecycle management, webhook processing, enrollment synchronization, and transaction-safe database updates.',
             icon: 'fa-credit-card',
             color: '#dc2626',
             endpoints: [
@@ -178,7 +191,7 @@ const dummyData = {
         {
             title: 'Instructor Analytics',
             description:
-                'Instructor-scoped analytics covering course performance, student progress, ratings, revenue, and transaction history.',
+                'Instructor-scoped analytics for course performance, enrolled students, learning progress, ratings, revenue, and transaction history.',
             icon: 'fa-chart-line',
             color: '#f59e0b',
             endpoints: [
@@ -192,7 +205,7 @@ const dummyData = {
         {
             title: 'Celery Background Processing',
             description:
-                'Asynchronous processing for background operations with automatic retries, exception handling, and database transactions.',
+                'Asynchronous background processing with retryable tasks, exception handling, database transactions, and controlled retry behavior.',
             icon: 'fa-cogs',
             color: '#8b5cf6',
             endpoints: [
@@ -204,12 +217,25 @@ const dummyData = {
         {
             title: 'Certificate Generation',
             description:
-                'Generate and persist PDF certificates for completed courses, with background processing through Celery.',
+                'Generate, persist, deliver, and download PDF certificates for students who complete eligible courses, with background processing through Celery.',
             icon: 'fa-certificate',
             color: '#06b6d4',
             endpoints: [
                 'GET /certificates/',
                 'GET /certificate/<id>/download/'
+            ]
+        },
+
+        {
+            title: 'Comprehensive Automated Testing',
+            description:
+                'A large pytest-based test suite covering models, serializers, API views, permissions, authentication, business rules, services, validation, and failure scenarios.',
+            icon: 'fa-vial',
+            color: '#7c3aed',
+            endpoints: [
+                '6,271+ automated tests',
+                'pytest + pytest-django',
+                'Authentication & permission coverage'
             ]
         }
     ],
@@ -218,7 +244,7 @@ const dummyData = {
         name: 'Your Name',
         title: 'Django Backend Developer',
         description:
-            'Backend-focused Django developer building maintainable, well-tested applications with clear domain modeling, robust business rules, secure APIs, and reliable integrations.',
+            'Backend-focused Django developer building maintainable, well-tested applications with clear domain modeling, robust business rules, secure APIs, asynchronous processing, and reliable third-party integrations.',
         email: 'your.email@example.com',
         social_links: [
             {
@@ -507,9 +533,7 @@ async function fetchData() {
         }
 
         const data = await response.json();
-        console.log(data)
 
-        console.log('Backend site-info data:', data);
 
         if (!hasCompleteSiteInfo(data)) {
             console.warn(
@@ -553,14 +577,7 @@ async function fetchData() {
         majorFeaturesCount =
             statistics.majorFeatures;
 
-        console.log(
-            'Normalized contact data:',
-            contactData
-        );
 
-        console.log(
-            'Using live backend data'
-        );
     } catch (error) {
         console.error(
             'Error fetching site-info:',

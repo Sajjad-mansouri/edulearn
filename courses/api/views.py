@@ -61,7 +61,7 @@ class CategoriesApiViews(APIView):
             }
             for category in categories
         ]
-        print(data)
+
         return Response(data)
 
 
@@ -87,24 +87,7 @@ class CoursesApiView(ListAPIView):
 
     def get_queryset(self):
         q = self.get_query_q()
-        print(
-            (
-                Course.objects.filter(status="published")
-                .select_related(
-                    "owner",
-                    "category",
-                    "category__parent",
-                )
-                .annotate(
-                    rating=Avg("enrollments__feedback__rating"),
-                    rating_count=Count("enrollments__feedback", distinct=True),
-                    students=Count("enrollments", distinct=True),
-                    total_duration=Sum("sections__lessons__duration"),
-                )
-                .filter(q)
-                .order_by("-published_at", "-pk")
-            ).values_list("total_duration")
-        )
+
         return (
             Course.objects.filter(status="published")
             .select_related(

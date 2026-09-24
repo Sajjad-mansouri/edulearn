@@ -106,7 +106,7 @@ class InstructorAnalyticsPage {
 
             const data = await response.json();
 
-            console.log("analytics data",data)
+
             this.data = data
 
 
@@ -199,7 +199,7 @@ class InstructorAnalyticsPage {
         ];
 
         document.getElementById('kpiGrid').innerHTML = kpis.map(k => {
-            console.log("key",kpiData, k.key)
+
             const d = kpiData[k.key];
             return `<div class="kpi-card">
                 <span class="kpi-icon">${k.icon}</span>
@@ -473,7 +473,7 @@ formatWatchTime(hours) {
         const courseLabel = document.getElementById('courseFilter')?.options[document.getElementById('courseFilter')?.selectedIndex]?.text;
 
         if (periodLabel && courseLabel) {
-            console.log(`Showing data for: ${periodLabel} - ${courseLabel}`);
+
             // Optional: Show a toast notification
             // this.showToast(`Showing ${periodLabel} data for ${courseLabel}`);
         }

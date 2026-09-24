@@ -19,7 +19,7 @@ class MyLearningPage {
     }
 
     async init() {
-        console.log('MyLearningPage initializing...');
+
         this.bindEvents();
 
         await this.loadCourses();
@@ -138,7 +138,7 @@ class MyLearningPage {
     }
 
     async loadCourses() {
-        console.log('Loading courses1...');
+
         this.showSkeletons();
         this.isLoading = true;
 
@@ -157,11 +157,11 @@ class MyLearningPage {
 
                 if (response && response.ok) {
                     const data = await response.json();
-                    console.log('API Response:', data);
+
 
                     if (data && data.results && Array.isArray(data.results)) {
                         this.allCourses = this.transformApiCourses(data.results);
-                        console.log(this.allCourses)
+
                     } else if (Array.isArray(data)) {
                         this.allCourses = this.transformApiCourses(data);
                     } else {
@@ -260,100 +260,7 @@ class MyLearningPage {
     }
 
     getDummyCourses() {
-        return [
-            {
-                id: 1,
-                title: 'Python for Data Science',
-                instructor: 'Dr. Sarah Chen',
-                thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=600&h=360&fit=crop',
-                status: 'in-progress',
-                progress: 68,
-                difficulty: 'intermediate',
-                category: 'data-science',
-                duration: '42h',
-                lastAccessed: new Date(Date.now() - 2 * 3600000),
-                enrolledDate: new Date(2026, 2, 15),
-                rating: 4.7,
-                slug: 'python-data-science'
-            },
-            {
-                id: 2,
-                title: 'Machine Learning A-Z',
-                instructor: 'Kirill Eremenko',
-                thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=360&fit=crop',
-                status: 'in-progress',
-                progress: 52,
-                difficulty: 'beginner',
-                category: 'machine-learning',
-                duration: '38h',
-                lastAccessed: new Date(Date.now() - 3 * 86400000),
-                enrolledDate: new Date(2026, 3, 1),
-                rating: 4.6,
-                slug: 'machine-learning-az'
-            },
-            {
-                id: 3,
-                title: 'Deep Learning Specialization',
-                instructor: 'Andrew Ng',
-                thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=360&fit=crop',
-                status: 'in-progress',
-                progress: 22,
-                difficulty: 'advanced',
-                category: 'machine-learning',
-                duration: '56h',
-                lastAccessed: new Date(Date.now() - 7 * 86400000),
-                enrolledDate: new Date(2026, 4, 10),
-                rating: 4.9,
-                slug: 'deep-learning-specialization'
-            },
-            {
-                id: 4,
-                title: 'Data Engineering Essentials',
-                instructor: 'Alex Rivera',
-                thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=360&fit=crop',
-                status: 'in-progress',
-                progress: 85,
-                difficulty: 'intermediate',
-                category: 'data-science',
-                duration: '30h',
-                lastAccessed: new Date(Date.now() - 1 * 86400000),
-                enrolledDate: new Date(2026, 1, 20),
-                rating: 4.5,
-                slug: 'data-engineering-essentials'
-            },
-            {
-                id: 5,
-                title: 'Full-Stack Web Development',
-                instructor: 'Mike Johnson',
-                thumbnail: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=600&h=360&fit=crop',
-                status: 'in-progress',
-                progress: 41,
-                difficulty: 'beginner',
-                category: 'web-development',
-                duration: '48h',
-                lastAccessed: new Date(Date.now() - 5 * 86400000),
-                enrolledDate: new Date(2026, 0, 5),
-                rating: 4.4,
-                slug: 'fullstack-web-dev'
-            },
-            {
-                id: 6,
-                title: 'SQL for Data Analysis',
-                instructor: 'Mike Johnson',
-                thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=600&h=360&fit=crop',
-                status: 'completed',
-                progress: 100,
-                difficulty: 'beginner',
-                category: 'data-science',
-                duration: '18h',
-                lastAccessed: new Date(2026, 4, 28),
-                enrolledDate: new Date(2025, 10, 1),
-                completedDate: new Date(2026, 5, 1),
-                rating: 4.8,
-                slug: 'sql-data-analysis',
-                certificateId: 2
-            }
-        ];
+        return [];
     }
 
     applyFilters() {
@@ -855,7 +762,7 @@ class MyLearningPage {
     }
 
     showSkeletons() {
-        console.log("show skleton")
+
         const grid = document.getElementById('courseGrid');
         if (grid) {
             let skeletonHtml = '';
@@ -882,11 +789,11 @@ class MyLearningPage {
     }
 
     forceHideLoader() {
-        console.log('Force hiding loader...');
+
 
         const loadingOverlay = document.getElementById('loadingOverlay');
         if (loadingOverlay) {
-            console.log('Found loadingOverlay, hiding it');
+
             loadingOverlay.style.display = 'none';
             loadingOverlay.style.visibility = 'hidden';
             loadingOverlay.style.opacity = '0';
@@ -991,11 +898,11 @@ class MyLearningPage {
 let myLearningPage;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded - Initializing MyLearningPage');
+
 
     try {
         myLearningPage = new MyLearningPage();
-        console.log('MyLearningPage initialized successfully');
+
     } catch (error) {
         console.error('Failed to initialize MyLearningPage:', error);
 
@@ -1010,7 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global fallback: hide loader after 3 seconds
 setTimeout(() => {
-    console.log('Fallback: Force hiding loader after timeout');
+
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
         loadingOverlay.style.display = 'none';

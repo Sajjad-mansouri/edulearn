@@ -57,7 +57,7 @@ class CourseUpdateService:
         category = self._get_category_object(data)
 
         # Update only provided fields
-        print("data in _update course:", data)
+
         field_mapping = {
             "title": data.get("title", self.course.title),
             "subtitle": data.get("subtitle", self.course.subtitle),
@@ -302,7 +302,6 @@ class CourseUpdateService:
 
     def _update_lesson(self, lesson_data, order):
         """Update existing lesson."""
-        print("update lesson")
 
         try:
             lesson = Lesson.objects.get(
@@ -311,7 +310,6 @@ class CourseUpdateService:
             lesson.title = lesson_data.get("title", lesson.title)
             lesson.description = lesson_data.get("description", lesson.description)
             lesson.order = order
-            print(lesson_data.get("duration"), lesson_data)
 
             lesson.duration = lesson_data.get("duration", lesson.duration)
             lesson.is_published = lesson_data.get("is_published", lesson.is_published)
@@ -712,7 +710,7 @@ class CourseUpdateService:
 
     def _get_category_object(self, data):
         """Get category object from data."""
-        print(data)
+
         category = data.get("category")
         return category
 

@@ -73,6 +73,7 @@ class InstructorStudentsPage {
             };
             payloads.push(payload);
         });
+
         return payloads;
     }
     async loadStudents() {
@@ -92,12 +93,14 @@ class InstructorStudentsPage {
 
             const data = await response.json();
             this.allStudents = this.mapData(data.students ?? []);
+
             this.avgRating = data.statistics.average_course_rating
             this.instructorCourses = data.statistics.courses
 
 
 
         } catch (error) {
+
             this.allStudents = []
             console.error("Error loading students:", error);
         }
@@ -119,39 +122,7 @@ class InstructorStudentsPage {
 });
     }
 
-    getDummyStudents() {
 
-        const courses = ['Python for Data Science', 'Machine Learning A-Z', 'Deep Learning Specialization', 'Data Engineering Essentials', 'SQL for Data Analysis'];
-        const statuses = ['active', 'active', 'active', 'idle', 'idle', 'stalled', 'completed', 'completed'];
-        const names = [
-            'Jane Smith', 'Mike Lee', 'Anna Kim', 'Tom Brown', 'Lisa Wang',
-            'David Park', 'Emma Wilson', 'Carlos Mendez', 'Priya Sharma', 'James Taylor',
-            'Sophie Martin', 'Alex Johnson', 'Maria Garcia', 'Ryan O\'Neal', 'Yuki Tanaka',
-            'Oliver Chen', 'Fatima Ali', 'Nina Petrova', 'Sam Wilson', 'Zara Khan'
-        ];
-
-        return names.map((name, i) => {
-            const enrolled = [courses[i % courses.length]];
-            if (i % 3 === 0) enrolled.push(courses[(i + 1) % courses.length]);
-            const progress = Math.floor(Math.random() * 100) + 1;
-            const status = progress === 100 ? 'completed' : statuses[i % statuses.length];
-            const daysAgo = status === 'active' ? Math.floor(Math.random() * 7) : status === 'idle' ? Math.floor(Math.random() * 23) + 7 : status === 'stalled' ? Math.floor(Math.random() * 60) + 30 : Math.floor(Math.random() * 14);
-
-            return {
-                id: i + 1,
-                name,
-                email: name.toLowerCase().replace(/ /g, '.') + '@email.com',
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${['4F46E5','8B5CF6','10B981','F59E0B','EC4899','3B82F6'][i%6]}&color=fff&size=76`,
-                enrolledCourses: enrolled.map(c => ({
-                    name: c,
-                    progress: Math.floor(Math.random() * 100) + 1
-                })),
-                overallProgress: progress,
-                status,
-                lastActive: new Date(Date.now() - daysAgo * 86400000)
-            };
-        });
-    }
 
     // ============================================
     // FILTERING

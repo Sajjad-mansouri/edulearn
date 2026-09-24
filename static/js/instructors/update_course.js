@@ -1057,7 +1057,7 @@ class UpdateCoursePage {
             }
 
             const data = await response.json();
-            console.log(data)
+
             this.transformApiDataToFormData(data);
         } catch (error) {
             console.error("Error loading course data:", error);
@@ -1151,7 +1151,7 @@ class UpdateCoursePage {
             };
 
             transformedSection.lessons = (section.lessons || []).map((lesson, lessonIndex) => {
-                console.log("lesson.duration",lesson.duration)
+
                 const transformedLesson = {
                     id: lesson.id || null,
                     title: lesson.title || '',

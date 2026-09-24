@@ -224,7 +224,7 @@ class InstructorCoursePreview {
             );
             if (!response.ok) throw new Error('Failed to fetch course curriculum');
             const data = await response.json();
-            console.log("course curriculum data", data);
+
             return this.processCourseStructure(data);
         } catch (error) {
             console.warn('Using dummy curriculum data:', error.message);
@@ -312,7 +312,6 @@ class InstructorCoursePreview {
             );
             if (!response.ok) throw new Error('Failed to fetch lesson content');
             const data = await response.json();
-            console.log("lesson content", data);
             return data;
         } catch (error) {
             console.warn('Using dummy lesson content:', error.message);
@@ -1314,125 +1313,7 @@ class InstructorCoursePreview {
     // ============================================
 
     getDummyCurriculum(courseId) {
-        return {
-            courseId: courseId,
-            courseTitle: 'Python for Data Science',
-            totalLessons: 6,
-            sections: [
-                {
-                    id: 1,
-                    title: 'Introduction to Python',
-                    lessons: [
-                        {
-                            id: 1,
-                            title: 'Getting Started with Python',
-                            type: 'video',
-                            duration: '15 min',
-                            duration_seconds: 900,
-                            order: 1,
-                            is_published: true,
-                            has_resources: true,
-                            video_url: 'https://www.w3schools.com/html/mov_bbb.mp4',
-                            description: 'Learn the basics of Python programming language and set up your development environment.',
-                            resources: [
-                                { name: 'Python Setup Guide.pdf', size: '2.4 MB', type: 'pdf', url: '#' },
-                                { name: 'Installation Script.py', size: '15 KB', type: 'code', url: '#' }
-                            ],
-                            transcript: [
-                                { time: '00:00', text: 'Welcome to Python programming!' },
-                                { time: '00:30', text: 'In this lesson, we will cover the basics.' }
-                            ]
-                        },
-                        {
-                            id: 2,
-                            title: 'Python Variables and Data Types',
-                            type: 'article',
-                            duration: '10 min',
-                            duration_seconds: 600,
-                            order: 2,
-                            is_published: true,
-                            article_content: '<h2>Python Variables</h2><p>Variables are used to store data values in Python.</p><p>Python has several built-in data types including integers, floats, strings, and booleans.</p>'
-                        },
-                        {
-                            id: 3,
-                            title: 'Control Flow Quiz',
-                            type: 'quiz',
-                            duration: '20 min',
-                            duration_seconds: 1200,
-                            order: 3,
-                            is_published: false,
-                            quizData: {
-                                passScore: 60,
-                                questions: [
-                                    {
-                                        id: 1,
-                                        text: 'What is the output of 2 + 2?',
-                                        question_type: 'single_choice',
-                                        choices: [
-                                            {id: 1, text: '3'},
-                                            {id: 2, text: '4'},
-                                            {id: 3, text: '5'},
-                                            {id: 4, text: '6'}
-                                        ],
-                                        explanation: 'Basic arithmetic operation'
-                                    },
-                                    {
-                                        id: 2,
-                                        text: 'Python is an interpreted language.',
-                                        question_type: 'true_false',
-                                        explanation: 'Python code is executed line by line'
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    id: 2,
-                    title: 'Data Structures',
-                    lessons: [
-                        {
-                            id: 4,
-                            title: 'Lists and Tuples',
-                            type: 'video',
-                            duration: '18 min',
-                            duration_seconds: 1080,
-                            order: 1,
-                            is_published: true,
-                            video_url: 'https://www.w3schools.com/html/mov_bbb.mp4',
-                            description: 'Learn about Python lists and tuples data structures.'
-                        },
-                        {
-                            id: 5,
-                            title: 'Python Cheat Sheet',
-                            type: 'file',
-                            duration: 'N/A',
-                            duration_seconds: 0,
-                            order: 2,
-                            is_published: true,
-                            file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-                            file_name: 'Python Cheatsheet.pdf'
-                        },
-                        {
-                            id: 6,
-                            title: 'Final Project',
-                            type: 'assignment',
-                            duration: '60 min',
-                            duration_seconds: 3600,
-                            order: 3,
-                            is_published: false,
-                            assignmentData: {
-                                instructions: 'Build a data analysis project using Python. Analyze a dataset of your choice and present your findings with visualizations.',
-                                maxScore: 100,
-                                dueDate: '2024-12-31T23:59:59Z',
-                                acceptedFileTypes: 'pdf,docx,zip,py',
-                                maxFileSizeMB: 50
-                            }
-                        }
-                    ]
-                }
-            ]
-        };
+        return {};
     }
 
     getDummyLessonContent(lessonId) {
