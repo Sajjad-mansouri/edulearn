@@ -442,9 +442,10 @@ class CourseCatalogPage {
         }
 
         let priceHTML = '';
-        if (course.price === 0) {
+        if (course.price === "free") {
             priceHTML = '<span class="course-card-price-tag free">Free</span>';
         } else if (course.price) {
+            console.log(course.priceType)
             priceHTML = `<span class="course-card-price-tag">$${course.price.toFixed(2)}</span>`;
         }
 
@@ -452,7 +453,16 @@ class CourseCatalogPage {
         if (course.thumbnail) {
             imageHTML = `<img src="${course.thumbnail}" alt="${this.escapeHtml(course.title)}" loading="lazy">`;
         }
+        let courseRating = "";
 
+        if (typeof course.rating === "number" && !Number.isNaN(course.rating)) {
+            courseRating = `
+                <span class="course-card-rating">
+                    <i class="fas fa-star"></i> ${course.rating.toFixed(1)}
+                    <span>(${this.formatNumber(course.ratingCount)})</span>
+                </span>
+            `;
+        }
         return `
             <div class="course-card-catalog" data-slug="${course.slug}" data-id="${course.id}">
                 <div class="course-card-thumb">
@@ -464,10 +474,7 @@ class CourseCatalogPage {
                     <h3 class="course-card-title">${this.escapeHtml(course.title)}</h3>
                     <p class="course-card-instructor">${this.escapeHtml(course.instructor)}</p>
                     <div class="course-card-meta">
-                        <span class="course-card-rating">
-                            <i class="fas fa-star"></i> ${course.rating}
-                            <span>(${this.formatNumber(course.ratingCount)})</span>
-                        </span>
+                        ${courseRating}
                         <span class="course-card-level ${levelClass}">${levelLabel}</span>
                     </div>
                     <div class="course-card-footer">

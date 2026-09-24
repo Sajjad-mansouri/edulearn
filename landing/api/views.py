@@ -5,14 +5,14 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from landing.models import APIEndpoint, Contact, SiteFeature, SiteHighlight
+from landing.models import Contact, SiteFeature, SiteHighlight, Statistics
 
 from .serializers import (
-    APIEnpointSerializer,
     ContactSerializer,
     EmailInboxSerializer,
     FeatureSerializer,
     HighlightSerializer,
+    StatisticsSerializer,
 )
 from .tasks import send_email_task
 
@@ -56,24 +56,26 @@ class LandingPageInfo(APIView):
         feature_qs = SiteFeature.objects.all()
         highlight_qs = SiteHighlight.objects.all()
         contact = Contact.objects.first()
-        api_endpoint = APIEndpoint.objects.first()
+        statistics = Statistics.objects.first()
 
         feature_serializer = FeatureSerializer(feature_qs, many=True)
         highlight_serializer = HighlightSerializer(highlight_qs, many=True)
         contact_serializer = ContactSerializer(contact)
-        api_endpoint_serializer = APIEnpointSerializer(api_endpoint)
+        statistics_serializer = StatisticsSerializer(statistics)
         print(
+            "data that sent:",
             {
                 "features": feature_serializer.data,
                 "highlights": highlight_serializer.data,
                 "contact": contact_serializer.data,
-            }
+                "statistics": statistics_serializer.data,
+            },
         )
         return Response(
             {
                 "features": feature_serializer.data,
                 "highlights": highlight_serializer.data,
                 "contact": contact_serializer.data,
-                "api_endpoints": api_endpoint_serializer.data,
+                "statistics": statistics_serializer.data,
             }
         )

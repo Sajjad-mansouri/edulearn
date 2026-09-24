@@ -11,6 +11,9 @@ class EmailInbox(models.Model):
 class SiteFeature(models.Model):
     title = models.CharField()
 
+    def __str__(self):
+        return self.title
+
 
 class AbstractBaseItem(models.Model):
     title = models.CharField(max_length=250)
@@ -23,11 +26,15 @@ class FeatureItem(AbstractBaseItem):
     feature = models.ForeignKey(
         SiteFeature, on_delete=models.CASCADE, related_name="items"
     )
-    image = models.ImageField(upload_to="landing/feature/")
+    image = models.ImageField(upload_to="landing/feature/", blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.feature}: {self.title}"
 
 
 class SiteHighlight(AbstractBaseItem):
-    pass
+    def __str__(self):
+        return self.title
 
 
 class HighlightEdpoint(models.Model):
@@ -35,6 +42,9 @@ class HighlightEdpoint(models.Model):
         SiteHighlight, on_delete=models.CASCADE, related_name="endpoints"
     )
     end_point = models.CharField()
+
+    def __str__(self):
+        return f"{self.highlight}: {self.end_point}"
 
 
 class Contact(models.Model):
@@ -54,5 +64,6 @@ class SocialLink(models.Model):
     username = models.CharField(max_length=250)
 
 
-class APIEndpoint(models.Model):
-    count = models.IntegerField(default=0)
+class Statistics(models.Model):
+    api_endpoints = models.CharField()
+    automated_tests = models.CharField()

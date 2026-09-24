@@ -20,6 +20,8 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from core.views import MediaRangeView
+
 urlpatterns = [
     path("", include("landing.urls")),
     path("api/v1/", include("landing.api.urls")),
@@ -39,6 +41,17 @@ urlpatterns = [
     path("certificates/", include("certificates.urls")),
 ]
 
+
 if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(
+        settings.STATIC_URL,
+        document_root=settings.STATIC_ROOT,
+    )
+
+    urlpatterns += [
+        path(
+            "media/<path:path>",
+            MediaRangeView.as_view(),
+            name="media",
+        ),
+    ]

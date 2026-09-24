@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.db import transaction
 
 from assessments.models import (
@@ -106,12 +104,17 @@ class CourseService:
 
     def _create_lessons(self, section, lessons):
         for lesson_order, lesson_data in enumerate(lessons, start=1):
+            print(
+                'lesson_data["duration"]',
+                lesson_data["duration"],
+                type(lesson_data["duration"]),
+            )
             lesson = Lesson.objects.create(
                 section=section,
                 title=lesson_data["title"],
                 description=lesson_data["description"],
                 order=lesson_order,
-                duration=timedelta(minutes=lesson_data["duration"]),
+                duration=lesson_data["duration"],
                 is_published=lesson_data["is_published"],
                 is_preview=lesson_data["is_preview"],
             )

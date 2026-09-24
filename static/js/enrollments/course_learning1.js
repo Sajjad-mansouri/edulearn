@@ -1,7 +1,6 @@
 // ============================================
 // LEARNING INTERFACE PAGE CONTROLLER
 // ============================================
-console.log("d")
 const baseUrl = window.location.origin;
 const auth = new Auth({
     "baseURL": window.location.origin + '/api/v1/account/auth',
@@ -656,10 +655,6 @@ class LearningInterface {
         this.videoResumeLoading = false;
         this.videoResumeLoaded = false;
 
-        this._resumeSeekDone = false;
-        this._resumeSeekAttempts = 0;
-        this._resumeSeekTimer = null;
-
         this.isCompleting = false;
 
         this.quizUserAnswers = [];
@@ -960,13 +955,8 @@ class LearningInterface {
             this.videoMetadataLoaded = true;
             this.updateVideoTimeDisplay();
             this.updateProgressBar();
-            this.tryApplyResumePoint();
+            this.applyVideoResumePoint();
         });
-
-        videoElement.addEventListener('loadeddata', () => this.tryApplyResumePoint());
-        videoElement.addEventListener('canplay', () => this.tryApplyResumePoint());
-        videoElement.addEventListener('canplaythrough', () => this.tryApplyResumePoint());
-        videoElement.addEventListener('progress', () => this.tryApplyResumePoint());
 
         videoElement.addEventListener('play', () => this.onVideoPlay());
         videoElement.addEventListener('pause', () => this.onVideoPause());
@@ -1607,6 +1597,9 @@ class LearningInterface {
             }
         }
 
+        this.videoMetadataLoaded = false;
+        this.videoResumeApplied = false;
+
         const lesson = this.getCurrentLesson();
         if (!lesson || lesson.type !== 'video') return;
 
@@ -1740,123 +1733,66 @@ class LearningInterface {
         return totalTime;
     }
 
-    // Retry-based resume seek. Does NOT depend on the video firing any specific
-    // event after load — it polls until the seek sticks or the attempt budget
-    // is exhausted. Works identically in Chrome, Firefox, and Safari.
-    tryApplyResumePoint() {
-        if (!this.videoPlayer || !this.videoMetadataLoaded) return;
-        if (this._resumeSeekDone) return;
+    async applyVideoResumePoint() {
+        if (this.videoResumeApplied || !this.videoPlayer || !this.videoMetadataLoaded) return;
 
         const resumeTime = this.videoResumeTimestamp;
-        if (!resumeTime || resumeTime <= 0) {
-            this._resumeSeekDone = true;
-            this.videoResumeApplied = true;
-            return;
-        }
-
-        // Already running a retry loop for this lesson.
-        if (this._resumeSeekTimer) return;
-
-        const video = this.videoPlayer;
-        const duration = video.duration;
-        if (!duration || duration <= 0) return;
-
-        if (resumeTime >= duration - 5) {
-            this._resumeSeekDone = true;
-            this.videoResumeApplied = true;
-            return;
-        }
-
-        this._resumeSeekAttempts = 0;
-
-        const attempt = () => {
-            if (this._resumeSeekDone) {
-                this._resumeSeekTimer = null;
-                return;
-            }
-
-            this._resumeSeekAttempts++;
-
-            // Give up after ~12 seconds of retries.
-            if (this._resumeSeekAttempts > 40) {
-                console.warn('[resume] giving up after 40 attempts',
-                    { readyState: video.readyState,
-                      currentTime: video.currentTime,
-                      target: resumeTime,
-                      seekable: this.describeTimeRanges(video.seekable) });
-                this._resumeSeekDone = true;
-                this.videoResumeApplied = true;
-                this._resumeSeekTimer = null;
-                return;
-            }
-
-            // Wait until the media can accept a seek. Chrome: readyState >= 1
-            // is enough to set currentTime; the browser will queue it. We do
-            // NOT require seekable coverage (that was the previous bug — Chrome
-            // often reports an empty seekable range for HTTP-range URLs).
-            if (video.readyState < 1) {
-                this._resumeSeekTimer = setTimeout(attempt, 250);
-                return;
-            }
-
-            const before = video.currentTime;
+        if (resumeTime > 0) {
             try {
-                video.currentTime = resumeTime;
-            } catch (e) {
-                this._resumeSeekTimer = setTimeout(attempt, 250);
-                return;
-            }
-
-            // Verify the seek stuck. Chrome sometimes accepts the assignment
-            // synchronously but reverts on the next tick if the target region
-            // isn't buffered yet.
-            setTimeout(() => {
-                if (this._resumeSeekDone) {
-                    this._resumeSeekTimer = null;
-                    return;
+                if (!this.videoPlayer.duration) {
+                    await this.waitForVideoMetadata();
                 }
 
-                const now = video.currentTime;
-                const diff = Math.abs(now - resumeTime);
+                const duration = this.videoPlayer.duration;
+                if (duration > 0) {
+                    this.videoWatchPercentage = Math.round((resumeTime / duration) * 100);
 
-                if (diff <= 1.5) {
-                    // Success.
-                    this._resumeSeekDone = true;
-                    this.videoResumeApplied = true;
-                    this.lastVideoTimeUpdate = now;
-                    this.currentSegmentStart = now;
-                    this.showVideoResumeIndicator(resumeTime);
-                    this._resumeSeekTimer = null;
-
-                    if (duration > 0) {
-                        this.videoWatchPercentage = Math.round((resumeTime / duration) * 100);
-                        if (this.watchedSegments.length === 0) {
-                            this.initializeWatchedSegmentsFromResume(resumeTime);
-                        }
-                        this.updateVideoCompletionIndicator();
+                    if (this.watchedSegments.length === 0) {
+                        this.initializeWatchedSegmentsFromResume(resumeTime);
                     }
-                    return;
+
+                    this.updateVideoCompletionIndicator();
                 }
 
-                // Chrome reverted (usually to 0). Retry.
-                console.log('[resume] seek reverted, retrying',
-                    { attempt: this._resumeSeekAttempts,
-                      before, after: now, target: resumeTime,
-                      readyState: video.readyState,
-                      seekable: this.describeTimeRanges(video.seekable) });
+                if (resumeTime < this.videoPlayer.duration - 5) {
+                    this.videoPlayer.currentTime = resumeTime;
+                    this.lastVideoTimeUpdate = resumeTime;
+                    this.currentSegmentStart = resumeTime;
 
-                this._resumeSeekTimer = setTimeout(attempt, 250);
-            }, 200);
-        };
+                    this.showVideoResumeIndicator(resumeTime);
+                }
+            } catch (e) {
+                console.warn('Failed to apply resume point:', e);
+            }
+        }
 
-        attempt();
+        this.videoResumeApplied = true;
     }
 
-    describeTimeRanges(tr) {
-        if (!tr) return 'null';
-        const out = [];
-        for (let i = 0; i < tr.length; i++) out.push(`[${tr.start(i).toFixed(2)}-${tr.end(i).toFixed(2)}]`);
-        return out.join(', ') || 'empty';
+    waitForVideoMetadata() {
+        if (this.videoPlayer.duration) {
+            return Promise.resolve();
+        }
+
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Timeout waiting for video metadata'));
+            }, 10000);
+
+            const checkMetadata = () => {
+                if (this.videoPlayer.duration) {
+                    clearTimeout(timeout);
+                    resolve();
+                } else if (this.videoPlayer.readyState >= 2) {
+                    clearTimeout(timeout);
+                    resolve();
+                } else {
+                    setTimeout(checkMetadata, 100);
+                }
+            };
+
+            checkMetadata();
+        });
     }
 
     showVideoResumeIndicator(timestamp) {
@@ -1972,11 +1908,6 @@ class LearningInterface {
         if (this.videoTrackingInterval) {
             clearInterval(this.videoTrackingInterval);
             this.videoTrackingInterval = null;
-        }
-
-        if (this._resumeSeekTimer) {
-            clearTimeout(this._resumeSeekTimer);
-            this._resumeSeekTimer = null;
         }
 
         this.endCurrentWatchSegment();
@@ -2476,12 +2407,6 @@ class LearningInterface {
         this.videoResumeTimestamp = 0;
         this.videoMetadataLoaded = false;
         this.videoResumeApplied = false;
-        this._resumeSeekDone = false;
-        this._resumeSeekAttempts = 0;
-        if (this._resumeSeekTimer) {
-            clearTimeout(this._resumeSeekTimer);
-            this._resumeSeekTimer = null;
-        }
 
         if (oldLessonId !== lessonId) {
             this.watchedSegments = [];
@@ -2622,21 +2547,11 @@ class LearningInterface {
                 const vs = document.getElementById('videoPlayerSection'); if (vs) vs.style.display = '';
                 const videoTitle = document.getElementById('videoLessonTitle'); if (videoTitle) videoTitle.textContent = lesson.title;
                 if (this.videoPlayer && lesson.videoUrl) {
-                    const newSrc = lesson.videoUrl;
-                    const currentSrc = this.videoPlayer.getAttribute('src') || '';
-                    if (currentSrc !== newSrc) {
-                        this.videoPlayer.src = newSrc;
-                        this.videoPlayer.load();
-                    }
+                    this.videoPlayer.src = lesson.videoUrl;
+                    this.videoPlayer.load();
 
                     this.videoMetadataLoaded = false;
                     this.videoResumeApplied = false;
-                    this._resumeSeekDone = false;
-                    this._resumeSeekAttempts = 0;
-                    if (this._resumeSeekTimer) {
-                        clearTimeout(this._resumeSeekTimer);
-                        this._resumeSeekTimer = null;
-                    }
                 }
                 const desc = document.getElementById('videoDescription'); if (desc && lesson.description) desc.innerHTML = `<p style="color:#AAA;padding:16px;">${this.escapeHtml(lesson.description)}</p>`;
                 const ph = document.getElementById('videoPlaceholder'); if (ph) ph.style.display = (this.videoPlayer && lesson.videoUrl) ? 'none' : '';

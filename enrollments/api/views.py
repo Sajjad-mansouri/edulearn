@@ -1482,9 +1482,13 @@ class CourseEnrollment(APIView):
     def post(self, request, *args, **kwargs):
         course_id = kwargs.get("course_id")
         course = get_object_or_404(Course, id=course_id)
-
+        status = (
+            Enrollment.Status.ACTIVE
+            if course.price_type == Course.PriceType.FREE
+            else Enrollment.Status.PENDING
+        )
         enrollment, _created = Enrollment.objects.get_or_create(
-            course=course, user=request.user
+            course=course, user=request.user, status=status
         )
         return Response({"enrollment_id": enrollment.id})
 

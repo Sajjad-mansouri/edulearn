@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from landing.models import (
-    APIEndpoint,
     Contact,
     EmailInbox,
     FeatureItem,
@@ -9,6 +8,7 @@ from landing.models import (
     SiteFeature,
     SiteHighlight,
     SocialLink,
+    Statistics,
 )
 
 
@@ -67,9 +67,7 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = ["name", "title", "description", "email", "social_links"]
 
 
-class APIEnpointSerializer(serializers.ModelSerializer):
+class StatisticsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = APIEndpoint
-        fields = [
-            "count",
-        ]
+        model = Statistics
+        fields = ["api_endpoints", "automated_tests"]

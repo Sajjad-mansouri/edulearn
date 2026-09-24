@@ -47,28 +47,7 @@ class NavbarManager {
         }
     }
 
-    async logout() {
-        try {
-            const response = await auth.authenticatedRequest(
-                baseUrl + "/api/v1/account/auth/logout/",
-                {
-                    method: "POST",
-                }
-            );
 
-            if (response.ok) {
-                // Clear any stored auth tokens
-                if (typeof auth.clearTokens === 'function') {
-                    auth.clearTokens();
-                }
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error('Logout error:', error);
-            return false;
-        }
-    }
 
     bindGlobalClickHandler() {
         document.addEventListener('click', (e) => {
@@ -108,12 +87,15 @@ class NavbarManager {
             // Check if user is instructor to hide "Teach on EduLearn" link
 
             let teachLink  = ""
+            let profileLink = "/account/instructor/profile/"
             if (!this.userAuth.is_instructor) {
                 teachLink = `
                                     <a href="/account/auth/register/instructor/" class="nav-link teach-link">
                     <i class="fas fa-chalkboard-user"></i> Teach on EduLearn
                 </a>
                 `
+                profileLink = "/account/student/profile/"
+
 
             }
 
@@ -136,15 +118,8 @@ class NavbarManager {
                          style="display: none; position: absolute; right: 0; top: calc(100% + 8px); background: white;
                                 border: 1px solid #E5E7EB; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
                                 min-width: 200px; z-index: 10000; padding: 8px 0;">
-                        <a href="/dashboard"
-                           style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: #374151;
-                                  text-decoration: none; transition: background 0.2s;"
-                           onmouseover="this.style.background='#F3F4F6'"
-                           onmouseout="this.style.background='none'">
-                            <i class="fas fa-tachometer-alt" style="color: #8B5CF6; width: 20px;"></i>
-                            Dashboard
-                        </a>
-                        <a href="/profile"
+
+                        <a href="${profileLink}"
                            style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: #374151;
                                   text-decoration: none; transition: background 0.2s;"
                            onmouseover="this.style.background='#F3F4F6'"
@@ -188,15 +163,10 @@ class NavbarManager {
     }
 
     async handleLogout() {
+        auth.onLogout = ()=>{window.location.href="/"}
+        await auth.logout()
         const success = await this.logout();
-        if (success) {
-            this.showToast('Logged out successfully');
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 1000);
-        } else {
-            this.showToast('Failed to logout', 'error');
-        }
+
     }
 
     showToast(message, type = 'success') {

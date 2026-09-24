@@ -239,9 +239,10 @@ class CourseApiService {
                 method: "POST",
             }
         );
-
+        console.log("response", response)
         if (!response.ok) throw new Error('Failed to enroll in course');
         const data = await response.json();
+        console.log("data", data)
         return data;
     }
 
@@ -568,7 +569,7 @@ class CourseDetailPage {
                     CourseApiService.checkEnrollment(this.courseId),
                     CourseApiService.checkWishlistStatus(this.courseId)
                 ]);
-
+                console.log("enrollmentData", enrollmentData)
                 this.isEnrolled = enrollmentData.is_enrolled;
                 this.isWishlisted = wishlistData.is_wishlisted;
                 this.enrollment_id = enrollmentData.enrollment_id
@@ -694,7 +695,7 @@ class CourseDetailPage {
         const enrollBtn = document.getElementById('enrollBtn');
         const wishlistBtn = document.getElementById('wishlistBtn');
         const moneyBack = document.querySelector('.money-back');
-
+        console.log("enrollBtn", this.isEnrolled, enrollBtn)
         if (enrollBtn) {
             if (this.isEnrolled) {
                 enrollBtn.outerHTML = `
@@ -790,6 +791,7 @@ class CourseDetailPage {
         const totalLessons = this.curriculumData.reduce((sum, section) => sum + (section.lessons_count || section.lessons?.length || 0), 0);
         const headerBar = document.querySelector('.curriculum-header-bar');
         if (headerBar) {
+
             headerBar.innerHTML = `
                 <span><strong>${this.escapeHtml(String(this.curriculumData.length))} sections</strong> · <strong>${this.escapeHtml(String(totalLessons))} lessons</strong> · <strong>${this.escapeHtml(String(this.courseData.duration))} total length</strong></span>
                 <button class="expand-all-btn" id="expandAllBtn">Expand All</button>
@@ -820,7 +822,7 @@ class CourseDetailPage {
                     <div class="curriculum-section-header" onclick="toggleCurriculumSection(this)">
                         <div class="curriculum-section-info">
                             <i class="fas fa-chevron-down section-arrow"></i>
-                            <h4>Section ${this.escapeHtml(String(section.id))}: ${this.escapeHtml(section.title)}</h4>
+                            <h4>${this.escapeHtml(section.title)}</h4>
                             <span class="section-meta">${this.escapeHtml(String(section.lessons_count || lessons.length))} lessons · ${this.escapeHtml(section.total_duration)}</span>
                         </div>
                     </div>
@@ -840,6 +842,7 @@ class CourseDetailPage {
             quiz: 'fa-circle-question quiz',
             assignment: 'fa-tasks assignment'
         };
+        console.log("lesson", lesson)
 
         const iconClass = typeIcons[lesson.type] || 'fa-file';
         const previewBadge = lesson.is_previewable ?
@@ -1480,9 +1483,10 @@ class CourseDetailPage {
             console.log(coursePrice, coursePrice===0,)
             if (coursePrice === 0) {
                 // Free course - enroll directly
+                console.log("course price is 0")
                 const enrollData = await CourseApiService.enrollInCourse(this.courseId);
 
-                if (enrollData && enrollData.is_enrolled) {
+                if (enrollData) {
                     this.isEnrolled = true;
                     console.log(enrollData)
                     this.enrollment_id = enrollData.enrollment_id

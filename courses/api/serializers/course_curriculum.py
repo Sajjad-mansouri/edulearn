@@ -35,8 +35,8 @@ class CoursesSectionLessonSerializer(serializers.ModelSerializer):
     def get_video_url(self, obj):
         if not hasattr(obj, "content"):
             return None
-        content = obj.content.content_type
-        if not hasattr(content, "video"):
+        content = obj.content
+        if content.content_type != "video":
             return None
 
         return content.video.video_file.url

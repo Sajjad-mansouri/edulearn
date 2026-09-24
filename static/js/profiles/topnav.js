@@ -4,8 +4,8 @@
 const baseUrl = window.location.origin;
 const auth = new Auth({
     "baseURL": window.location.origin + '/api/v1/account/auth',
-    "onLogout": ()=>{window.location.href = baseUrl + '/account/auth/login'}
-})
+    "onLogout": () => { window.location.href = baseUrl + '/account/auth/login' }
+});
 
 class TopNavController {
     constructor() {
@@ -265,9 +265,6 @@ class TopNavController {
                 <a href="/account/instructor/profile" class="dropdown-item active" data-role="instructor-profile">
                     <i class="fas fa-user"></i> View Profile
                 </a>
-                <a href="/instructor/dashboard" class="dropdown-item" data-role="instructor-dashboard">
-                    <i class="fas fa-th-large"></i> Dashboard
-                </a>
             `;
         }
 
@@ -276,26 +273,80 @@ class TopNavController {
 
 
             <div class="dropdown-separator"></div>
-            <a href="/logout" class="dropdown-item logout-item">
+            <a class="dropdown-item logout-item" id="logout" role="button" tabindex="0">
                 <i class="fas fa-right-from-bracket"></i> Logout
             </a>
         `;
 
         dropdown.innerHTML = menuHTML;
 
+        // Bind logout event after rendering
+        this.bindLogoutEvent();
+
         // Re-highlight current page
         this.highlightCurrentPage();
     }
 
-    bindSwitchBtn(){
-        document.querySelector("#switchRoleBtn")?.addEventListener("click", ()=>{
-            const switchTo = event.target.dataset.switch
-            if (switchTo == "instructor"){
-                window.location.href = "/account/instructor/profile/"
-            }else if(switchTo == "student"){
-                window.location.href = "/account/student/profile/"
+    // ============================================
+    // LOGOUT HANDLING
+    // ============================================
+    bindLogoutEvent() {
+        const logoutBtn = document.getElementById('logout');
+        if (logoutBtn) {
+            // Remove any existing listeners by cloning (optional safety)
+            // Or just attach a fresh listener
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.handleLogout();
+            });
+
+            // Support keyboard activation (Enter/Space)
+            logoutBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.handleLogout();
+                }
+            });
+        }
+    }
+
+    async handleLogout() {
+        console.log("handle logout");
+
+        // Prevent double-clicks
+        const logoutBtn = document.getElementById('logout');
+        if (logoutBtn) {
+            logoutBtn.style.pointerEvents = 'none';
+            logoutBtn.classList.add('loading');
+        }
+
+        // Set the onLogout callback to redirect after successful logout
+        auth.onLogout = () => {
+            window.location.href = baseUrl + '/';
+        };
+
+        try {
+            await auth.logout();
+        } catch (error) {
+            console.error('Logout failed:', error);
+            // Re-enable button in case of failure
+            if (logoutBtn) {
+                logoutBtn.style.pointerEvents = '';
+                logoutBtn.classList.remove('loading');
             }
-        })
+        }
+    }
+
+    bindSwitchBtn() {
+        document.querySelector("#switchRoleBtn")?.addEventListener("click", (event) => {
+            const switchTo = event.target.dataset.switch;
+            if (switchTo == "instructor") {
+                window.location.href = "/account/instructor/profile/";
+            } else if (switchTo == "student") {
+                window.location.href = "/account/student/profile/";
+            }
+        });
     }
 
     // ============================================

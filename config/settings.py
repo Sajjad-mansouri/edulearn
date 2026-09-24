@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "instructors",
     "payments",
     "landing",
+    "core",
     # third party
     "rest_framework",
     "rest_framework_simplejwt",
@@ -147,8 +148,8 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-MEDIA_ROOT = "media"
-MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
 EMAIL_BACKEND = config("EMAIL_BACKEND")
 EMAIL_HOST = config("EMAIL_HOST")
 EMAIL_PORT = config("EMAIL_PORT")
