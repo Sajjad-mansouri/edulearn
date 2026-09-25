@@ -687,13 +687,31 @@ class CourseDetailPage {
             const priceEl = document.querySelector('.current-price');
             const originalPriceEl = document.querySelector('.original-price');
             const discountBadge = document.querySelector('.discount-badge');
-            if (priceEl) priceEl.textContent = `$${data.price}`;
-            if (originalPriceEl) originalPriceEl.textContent = `$${data.original_price}`;
-            if (discountBadge) discountBadge.textContent = `${data.price_discount}% OFF`;
-            if(data.original_price == "free"){
-               if (priceEl) priceEl.textContent = "Free"
-                if (originalPriceEl) originalPriceEl.textContent = ``;
-                if (discountBadge) discountBadge.remove() ``;
+
+            if (data.original_price === "free") {
+                if (priceEl) {
+                    priceEl.textContent = "Free";
+                }
+
+                if (originalPriceEl) {
+                    originalPriceEl.textContent = "";
+                }
+
+                if (discountBadge) {
+                    discountBadge.remove();
+                }
+            } else {
+                if (priceEl) {
+                    priceEl.textContent = `$${data.price}`;
+                }
+
+                if (originalPriceEl) {
+                    originalPriceEl.textContent = `$${data.original_price}`;
+                }
+
+                if (discountBadge) {
+                    discountBadge.textContent = `${data.price_discount}% OFF`;
+                }
             }
         }
 

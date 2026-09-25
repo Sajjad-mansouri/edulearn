@@ -56,42 +56,7 @@ class FiltersLoader {
         }
     }
 
-    getDummyFilters() {
-        return {
-            // Categories with their subcategories
-            categories: this.includeCategories ? : [],
-            ratings: [
-                { value: '4.5', label: '4.5 & above', stars: 5 },
-                { value: '4.0', label: '4.0 & above', stars: 4 },
-                { value: '3.0', label: '3.0 & above', stars: 3 }
-            ],
-            levels: [
-                { value: 'beginner', label: 'Beginner' },
-                { value: 'intermediate', label: 'Intermediate' },
-                { value: 'advanced', label: 'Advanced' },
-                { value: 'all-levels', label: 'All Levels' }
-            ],
-            prices: [
-                { value: 'free', label: 'Free' },
-                { value: 'paid', label: 'Paid' }
-            ],
-            durations: [
-                { value: 'short', label: '0-3 Hours' },
-                { value: 'medium', label: '3-10 Hours' },
-                { value: 'long', label: '10+ Hours' }
-            ],
-            languages: [
-                { value: 'en', label: 'English', default: true },
-                { value: 'es', label: 'Español' },
-                { value: 'fr', label: 'Français' },
-                { value: 'de', label: 'Deutsch' },
-                { value: 'ar', label: 'العربية' },
-                { value: 'zh', label: '中文' },
-                { value: 'ja', label: '日本語' },
-                { value: 'pt', label: 'Português' }
-            ]
-        };
-    }
+
 
     renderAllFilters(data) {
         if (!this.container) return;
